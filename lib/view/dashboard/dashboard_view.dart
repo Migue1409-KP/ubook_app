@@ -110,14 +110,7 @@ class _DashboardViewState extends State<DashboardView> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProcessListView(),
-                          ),
-                        );
-                      },
+                      onPressed: _navigateToProcessList,
                       child: const Text('Ver todos'),
                     ),
                   ],
@@ -127,14 +120,7 @@ class _DashboardViewState extends State<DashboardView> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ProcessListView(),
-                      ),
-                    );
-                  },
+                  onTap: _navigateToProcessList,
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.all(20),
@@ -206,6 +192,15 @@ class _DashboardViewState extends State<DashboardView> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _navigateToProcessList() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ProcessListView(),
       ),
     );
   }
