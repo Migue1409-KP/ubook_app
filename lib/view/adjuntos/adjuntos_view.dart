@@ -1,8 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../model/adjuntos/adjunto.dart';
-
-//   file_picker: ^8.1.0
 
 class AdjuntosView extends StatefulWidget {
   const AdjuntosView({super.key});
@@ -85,7 +84,6 @@ class _AdjuntosViewState extends State<AdjuntosView> {
     if (ok == true) _eliminarAdjunto(index);
   }
 }
-────────────────────────────────────────────────────────────────────────────
 
 class _FormularioAdjunto extends StatefulWidget {
   const _FormularioAdjunto();
@@ -121,24 +119,45 @@ class _FormularioAdjuntoState extends State<_FormularioAdjunto> {
     super.dispose();
   }
 
-  /// file_picker: ^8.1.0` 
   Future<void> _seleccionarArchivo() async {
     setState(() => _seleccionando = true);
 
-    //FILE_PICKER
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: [
+          'pdf', 'doc', 'docx', 'ppt', 'pptx',
+          'xls', 'xlsx', 'jpg', 'jpeg', 'png',
+          'zip', 'rar',
+        ],
+        withData: true, // carga los bytes en memoria
+      );
 
-    // Simulacion
-    await Future.delayed(const Duration(milliseconds: 500));
-    setState(() {
-      _archivoNombre  = 'archivo_ejemplo.pdf';
-      _archivoTamano  = 204800; // 200 KB
-      _archivoBytes   = Uint8List(0);
-      if (_fileNameCtrl.text.isEmpty) {
-        _fileNameCtrl.text = _archivoNombre!;
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        final ext = (file.extension ?? 'otro').toUpperCase();
+        setState(() {
+          _archivoBytes  = file.bytes;
+          _archivoNombre = file.name;
+          _archivoTamano = file.size;
+          if (_fileNameCtrl.text.isEmpty) {
+            _fileNameCtrl.text = file.name;
+          }
+          _tipoSeleccionado = _tipos.contains(ext) ? ext : 'OTRO';
+        });
       }
-      _tipoSeleccionado ??= 'PDF';
-      _seleccionando = false;
-    });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al seleccionar archivo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _seleccionando = false);
+    }
   }
 
   void _enviar() {
@@ -468,7 +487,6 @@ class _AdjuntoCard extends StatelessWidget {
             ),
             const SizedBox(width: 14),
 
-            // Info del archivo
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -496,7 +514,6 @@ class _AdjuntoCard extends StatelessWidget {
               ),
             ),
 
-            // Botón eliminar
             IconButton(
               icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
               tooltip: 'Eliminar',
