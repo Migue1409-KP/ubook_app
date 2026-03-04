@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'view/dashboard/dashboard_view.dart';
+import 'view/computer_lab/computer_lab_form_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,6 +18,9 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
+      routes: {
+        '/computer-lab-form': (context) => const ComputerLabFormView(),
+      },
       home: const DashboardView(),
     );
   }

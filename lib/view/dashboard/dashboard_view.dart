@@ -97,6 +97,19 @@ class _DashboardViewState extends State<DashboardView> {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final result = await Navigator.of(context).pushNamed('/computer-lab-form');
+          if (!mounted) return;
+          if (result != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Computer Lab created')),
+            );
+          }
+        },
+        icon: const Icon(Icons.computer),
+        label: const Text('Salas de Cómputo'),
+      ),
     );
   }
 
