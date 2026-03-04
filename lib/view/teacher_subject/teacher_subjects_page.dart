@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../model/teachers/teacher.dart';
-import '../model/subject/subject.dart';
-import '../view_model/teacher_subjects_view_model.dart';
-import '../widgets/subject_card.dart';
-import '../widgets/teacher_header_card.dart';
+import '../../model/teachers/teacher.dart';
+import '../../model/subject/subject.dart';
+import '../../view_model/teacher_subjects_view_model.dart';
+import '../../widgets/subject_card.dart';
+import '../../widgets/teacher_header_card.dart';
 
 class TeacherSubjectsPage extends StatefulWidget {
   final Teacher teacher;
