@@ -22,8 +22,8 @@ class ProcessModel {
     required this.processType, // Obligatorio: tipo de proceso
     this.relatedId, // Opcional: puede ser null
     this.isActive = true, // Opcional: por defecto es true (activo)
-    this.createdAt, // Obligatorio: fecha de creación
-    this.updatedAt, // Obligatorio: fecha de actualización
+    this.createdAt, // Opcional: fecha de creación (puede ser null, suele venir del backend)
+    this.updatedAt, // Opcional: fecha de actualización (puede ser null, suele venir del backend)
   });
 
   factory ProcessModel.fromJson(Map<String, dynamic> json) {
