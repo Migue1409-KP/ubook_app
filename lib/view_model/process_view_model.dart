@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 import '../model/process/process_model.dart';
 
 class ProcessViewModel extends ChangeNotifier {
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
   // Dummy data for Processes
   final List<ProcessModel> _processes = [
     // ===== PROCESOS DE CARRERA =====
@@ -139,19 +147,19 @@ class ProcessViewModel extends ChangeNotifier {
   List<ProcessModel> _getFilteredProcesses() {
     switch (_selectedFilter) {
       case 'Carrera':
-        return _processes
-            .where((p) => p.processType == ProcessType.career)
-            .toList();
+        return List.unmodifiable(
+          _processes.where((p) => p.processType == ProcessType.career),
+        );
       case 'Materia':
-        return _processes
-            .where((p) => p.processType == ProcessType.subject)
-            .toList();
+        return List.unmodifiable(
+          _processes.where((p) => p.processType == ProcessType.subject),
+        );
       case 'Activos':
-        return _processes.where((p) => p.isActive).toList();
+        return List.unmodifiable(_processes.where((p) => p.isActive));
       case 'Inactivos':
-        return _processes.where((p) => !p.isActive).toList();
+        return List.unmodifiable(_processes.where((p) => !p.isActive));
       default:
-        return _processes;
+        return List.unmodifiable(_processes);
     }
   }
 
@@ -168,6 +176,7 @@ class ProcessViewModel extends ChangeNotifier {
 
     // Simulación de carga
     await Future.delayed(const Duration(seconds: 1));
+    if (_disposed) return;
 
     _processes.add(process);
     _isLoading = false;
@@ -181,6 +190,7 @@ class ProcessViewModel extends ChangeNotifier {
 
     // Simulación de carga
     await Future.delayed(const Duration(seconds: 1));
+    if (_disposed) return;
 
     final index = _processes.indexWhere((p) => p.id == process.id);
     if (index != -1) {
@@ -197,10 +207,27 @@ class ProcessViewModel extends ChangeNotifier {
 
     // Simulación de carga
     await Future.delayed(const Duration(milliseconds: 500));
+    if (_disposed) return;
 
     _processes.removeWhere((p) => p.id == processId);
     _isLoading = false;
     notifyListeners();
+  }
+
+  // Restore a previously deleted process at a specific index
+  void restoreProcess(ProcessModel process, int index) {
+    if (_disposed) return;
+    if (index >= 0 && index <= _processes.length) {
+      _processes.insert(index, process);
+    } else {
+      _processes.add(process);
+    }
+    notifyListeners();
+  }
+
+  // Get the raw index of a process in the internal list
+  int indexOfProcess(ProcessModel process) {
+    return _processes.indexOf(process);
   }
 
   // Get process by ID

@@ -94,12 +94,13 @@ class _ProcessListViewState extends State<ProcessListView> {
   }
 
   Widget _buildProcessList() {
+    final processes = _viewModel.processes;
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
-      itemCount: _viewModel.processes.length,
+      itemCount: processes.length,
       itemBuilder: (context, index) {
-        final process = _viewModel.processes[index];
+        final process = processes[index];
         return _buildProcessCard(process);
       },
     );
@@ -285,11 +286,135 @@ class _ProcessListViewState extends State<ProcessListView> {
   }
 
   void _handleAddProcess() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Funcionalidad "Agregar Proceso" próximamente'),
-        duration: Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
+    _showProcessDialog(null);
+  }
+
+  void _handleEditProcess(ProcessModel process) {
+    _showProcessDialog(process);
+  }
+
+  void _showProcessDialog(ProcessModel? process) {
+    final isEditing = process != null;
+    final nameController = TextEditingController(text: process?.name ?? '');
+    final descriptionController =
+        TextEditingController(text: process?.description ?? '');
+    final documentsController = TextEditingController(
+      text: process?.requiredDocuments.join(', ') ?? '',
+    );
+    ProcessType selectedType = process?.processType ?? ProcessType.career;
+    bool isActive = process?.isActive ?? true;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(isEditing ? 'Editar Proceso' : 'Nuevo Proceso'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Nombre'),
+                  textCapitalization: TextCapitalization.sentences,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descriptionController,
+                  decoration:
+                      const InputDecoration(labelText: 'Descripción'),
+                  textCapitalization: TextCapitalization.sentences,
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: documentsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Documentos requeridos',
+                    hintText: 'Separar con comas',
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Tipo:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Row(
+                  children: [
+                    Radio<ProcessType>(
+                      value: ProcessType.career,
+                      groupValue: selectedType,
+                      onChanged: (v) =>
+                          setDialogState(() => selectedType = v!),
+                    ),
+                    const Text('Carrera'),
+                    const SizedBox(width: 16),
+                    Radio<ProcessType>(
+                      value: ProcessType.subject,
+                      groupValue: selectedType,
+                      onChanged: (v) =>
+                          setDialogState(() => selectedType = v!),
+                    ),
+                    const Text('Materia'),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: isActive,
+                      onChanged: (v) =>
+                          setDialogState(() => isActive = v ?? true),
+                    ),
+                    const Text('Activo'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                final name = nameController.text.trim();
+                if (name.isEmpty) return;
+                final docs = documentsController.text
+                    .split(',')
+                    .map((d) => d.trim())
+                    .where((d) => d.isNotEmpty)
+                    .toList();
+                Navigator.pop(context);
+                if (isEditing) {
+                  _viewModel.updateProcess(
+                    process.copyWith(
+                      name: name,
+                      description: descriptionController.text.trim(),
+                      requiredDocuments: docs,
+                      processType: selectedType,
+                      isActive: isActive,
+                    ),
+                  );
+                } else {
+                  _viewModel.addProcess(
+                    ProcessModel(
+                      id: 'proc_${DateTime.now().millisecondsSinceEpoch}',
+                      name: name,
+                      description: descriptionController.text.trim(),
+                      requiredDocuments: docs,
+                      processType: selectedType,
+                      isActive: isActive,
+                    ),
+                  );
+                }
+              },
+              child: Text(isEditing ? 'Guardar' : 'Agregar'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -351,16 +476,6 @@ class _ProcessListViewState extends State<ProcessListView> {
     );
   }
 
-  void _handleEditProcess(ProcessModel process) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Editar proceso: ${process.name}'),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   void _handleDeleteProcess(ProcessModel process) {
     showDialog(
       context: context,
@@ -376,13 +491,21 @@ class _ProcessListViewState extends State<ProcessListView> {
           ),
           TextButton(
             onPressed: () {
+              final originalIndex =
+                  _viewModel.indexOfProcess(process);
               Navigator.pop(context);
               _viewModel.deleteProcess(process.id);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Proceso "${process.name}" eliminado'),
-                  duration: const Duration(seconds: 2),
+                  duration: const Duration(seconds: 4),
                   behavior: SnackBarBehavior.floating,
+                  action: SnackBarAction(
+                    label: 'Deshacer',
+                    onPressed: () {
+                      _viewModel.restoreProcess(process, originalIndex);
+                    },
+                  ),
                 ),
               );
             },
