@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:ubook_app/view/auth/register_view.dart';
 
 class LoginView extends StatelessWidget {
   const LoginView({super.key});
@@ -11,7 +12,7 @@ class LoginView extends StatelessWidget {
       body: SingleChildScrollView(
         child: Container(
           child: Column(
-            children: <Widget>[
+            children: [
               Container(
                 height: 400,
                 decoration: const BoxDecoration(
@@ -21,7 +22,7 @@ class LoginView extends StatelessWidget {
                   ),
                 ),
                 child: Stack(
-                  children: <Widget>[
+                  children: [
                     Positioned(
                       left: 70,
                       width: 80,
@@ -110,7 +111,7 @@ class LoginView extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.all(30.0),
                 child: Column(
-                  children: <Widget>[
+                  children: [
                     FadeInUp(
                       duration: Duration(milliseconds: 1800),
                       child: Container(
@@ -127,7 +128,7 @@ class LoginView extends StatelessWidget {
                           ],
                         ),
                         child: Column(
-                          children: <Widget>[
+                          children: [
                             Container(
                               padding: EdgeInsets.all(8.0),
                               decoration: BoxDecoration(
@@ -177,6 +178,7 @@ class LoginView extends StatelessWidget {
                           child: Text(
                             "Login",
                             style: TextStyle(
+                              fontSize: 20,
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
@@ -184,13 +186,88 @@ class LoginView extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(height: 70),
+                    SizedBox(height: 20),
                     FadeInUp(
                       duration: Duration(milliseconds: 2000),
                       child: Text(
                         "Forgot Password?",
                         style: TextStyle(
+                          fontSize: 15,
                           color: Color.fromRGBO(143, 148, 251, 1),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 25),
+                    FadeInUp(
+                      duration: Duration(milliseconds: 2100),
+                      child: Row(
+                        children: [
+                          Expanded(child: Divider(color: Colors.grey[400])),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            child: Text(
+                              "Or continue with",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                          Expanded(child: Divider(color: Colors.grey[400])),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    FadeInUp(
+                      duration: Duration(milliseconds: 2200),
+                      child: Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Color.fromRGBO(143, 148, 251, 1),
+                          ),
+                          color: Colors.white,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.g_mobiledata,
+                              size: 30,
+                              color: Color.fromRGBO(143, 148, 251, 1),
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              "Sign in with Google",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color.fromRGBO(143, 148, 251, 1),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    FadeInUp(
+                      duration: Duration(milliseconds: 2300),
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterView(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          "Don't have an account? Sign Up",
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Color.fromRGBO(143, 148, 251, 1),
+                          ),
                         ),
                       ),
                     ),
