@@ -4,8 +4,10 @@ class Teacher {
   final String lastName;
   final String email;
   final String phone;
+  final int age;
   final String department;
   final String specialty;
+  final List<String> subjects;
   final String profileImageUrl;
   final bool isActive;
   final DateTime createdAt;
@@ -17,8 +19,10 @@ class Teacher {
     required this.lastName,
     required this.email,
     this.phone = '',
+    this.age = 0,
     this.department = '',
     this.specialty = '',
+    this.subjects = const [],
     this.profileImageUrl = '',
     this.isActive = true,
     required this.createdAt,
@@ -34,8 +38,13 @@ class Teacher {
       lastName: json['last_name'] as String,
       email: json['email'] as String,
       phone: json['phone'] as String? ?? '',
+      age: json['age'] as int? ?? 0,
       department: json['department'] as String? ?? '',
       specialty: json['specialty'] as String? ?? '',
+      subjects: (json['subjects'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
       profileImageUrl: json['profile_image_url'] as String? ?? '',
       isActive: json['is_active'] as bool? ?? true,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -50,8 +59,10 @@ class Teacher {
       'last_name': lastName,
       'email': email,
       'phone': phone,
+      'age': age,
       'department': department,
       'specialty': specialty,
+      'subjects': subjects,
       'profile_image_url': profileImageUrl,
       'is_active': isActive,
       'created_at': createdAt.toIso8601String(),
@@ -65,8 +76,10 @@ class Teacher {
     String? lastName,
     String? email,
     String? phone,
+    int? age,
     String? department,
     String? specialty,
+    List<String>? subjects,
     String? profileImageUrl,
     bool? isActive,
     DateTime? createdAt,
@@ -78,8 +91,10 @@ class Teacher {
       lastName: lastName ?? this.lastName,
       email: email ?? this.email,
       phone: phone ?? this.phone,
+      age: age ?? this.age,
       department: department ?? this.department,
       specialty: specialty ?? this.specialty,
+      subjects: subjects ?? this.subjects,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
