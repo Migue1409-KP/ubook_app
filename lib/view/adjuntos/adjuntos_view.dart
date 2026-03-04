@@ -3,8 +3,25 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../model/adjuntos/adjunto.dart';
 
+/// Vista del módulo de adjuntos.
+///
+/// [subjectId]    – ID de la materia (viene de la pantalla anterior).
+/// [teacherId]    – ID del profesor  (viene de la pantalla anterior).
+/// [uploadedById] – ID del usuario logueado (pendiente de implementar).
+///
+/// Cuando los módulos se integren, pasar los valores reales al construir
+/// esta vista. Por ahora admite strings vacíos como placeholder.
 class AdjuntosView extends StatefulWidget {
-  const AdjuntosView({super.key});
+  final String subjectId;    // TODO: recibir de la pantalla de materia
+  final String teacherId;    // TODO: recibir de la pantalla de materia
+  final String uploadedById; // TODO: obtener del usuario logueado
+
+  const AdjuntosView({
+    super.key,
+    this.subjectId    = '',
+    this.teacherId    = '',
+    this.uploadedById = '',
+  });
 
   @override
   State<AdjuntosView> createState() => _AdjuntosViewState();
@@ -27,7 +44,11 @@ class _AdjuntosViewState extends State<AdjuntosView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const _FormularioAdjunto(),
+      builder: (_) => _FormularioAdjunto(
+        uploadedById: widget.uploadedById,
+        subjectId:    widget.subjectId,
+        teacherId:    widget.teacherId,
+      ),
     );
     if (resultado != null) _agregarAdjunto(resultado);
   }
@@ -86,7 +107,15 @@ class _AdjuntosViewState extends State<AdjuntosView> {
 }
 
 class _FormularioAdjunto extends StatefulWidget {
-  const _FormularioAdjunto();
+  final String uploadedById;
+  final String subjectId;
+  final String teacherId;
+
+  const _FormularioAdjunto({
+    required this.uploadedById,
+    required this.subjectId,
+    required this.teacherId,
+  });
 
   @override
   State<_FormularioAdjunto> createState() => _FormularioAdjuntoState();
@@ -95,12 +124,10 @@ class _FormularioAdjunto extends StatefulWidget {
 class _FormularioAdjuntoState extends State<_FormularioAdjunto> {
   final _formKey = GlobalKey<FormState>();
 
-  final _fileNameCtrl     = TextEditingController();
-  final _uploadedByCtrl   = TextEditingController();
-  final _subjectCtrl      = TextEditingController();
-  final _teacherCtrl      = TextEditingController();
+  final _fileNameCtrl = TextEditingController();
 
-  String? _tipoSeleccionado;
+  // Tipo detectado automáticamente a partir de la extensión del archivo
+  String _tipoDetectado = '';
 
   Uint8List? _archivoBytes;
   String?    _archivoNombre;
@@ -108,14 +135,15 @@ class _FormularioAdjuntoState extends State<_FormularioAdjunto> {
 
   bool _seleccionando = false;
 
-  static const _tipos = ['PDF', 'DOCX', 'PPTX', 'XLSX', 'JPG', 'PNG', 'ZIP', 'RAR', 'DOC', 'OTRO'];
+  // Extensiones reconocidas para normalizar el tipo
+  static const _extConocidas = [
+    'PDF', 'DOC', 'DOCX', 'PPT', 'PPTX', 'XLS', 'XLSX',
+    'JPG', 'JPEG', 'PNG', 'ZIP', 'RAR',
+  ];
 
   @override
   void dispose() {
     _fileNameCtrl.dispose();
-    _uploadedByCtrl.dispose();
-    _subjectCtrl.dispose();
-    _teacherCtrl.dispose();
     super.dispose();
   }
 
@@ -137,13 +165,11 @@ class _FormularioAdjuntoState extends State<_FormularioAdjunto> {
         final file = result.files.first;
         final ext = (file.extension ?? 'otro').toUpperCase();
         setState(() {
-          _archivoBytes  = file.bytes;
-          _archivoNombre = file.name;
-          _archivoTamano = file.size;
-          if (_fileNameCtrl.text.isEmpty) {
-            _fileNameCtrl.text = file.name;
-          }
-          _tipoSeleccionado = _tipos.contains(ext) ? ext : 'OTRO';
+          _archivoBytes   = file.bytes;
+          _archivoNombre  = file.name;
+          _archivoTamano  = file.size;
+          _fileNameCtrl.text = file.name;
+          _tipoDetectado  = _extConocidas.contains(ext) ? ext : 'OTRO';
         });
       }
     } catch (e) {
@@ -174,10 +200,10 @@ class _FormularioAdjuntoState extends State<_FormularioAdjunto> {
 
     final adjunto = Adjunto(
       fileName:     _fileNameCtrl.text.trim(),
-      fileType:     _tipoSeleccionado!,
-      uploadedById: _uploadedByCtrl.text.trim(),
-      subjectId:    _subjectCtrl.text.trim(),
-      teacherId:    _teacherCtrl.text.trim(),
+      fileType:     _tipoDetectado,
+      uploadedById: widget.uploadedById, // TODO: usuario logueado
+      subjectId:    widget.subjectId,    // TODO: materia de la pantalla anterior
+      teacherId:    widget.teacherId,    // TODO: profesor de la pantalla anterior
       fileBytes:    _archivoBytes,
       fileSize:     _archivoTamano,
       uploadedAt:   DateTime.now(),
@@ -223,7 +249,8 @@ class _FormularioAdjuntoState extends State<_FormularioAdjunto> {
 
               _SelectorArchivo(
                 nombreArchivo: _archivoNombre,
-                tamano: _archivoBytes != null
+                tipoDetectado: _tipoDetectado.isNotEmpty ? _tipoDetectado : null,
+                tamano: _archivoTamano != null
                     ? Adjunto(
                         fileName: '',
                         fileType: '',
@@ -245,55 +272,6 @@ class _FormularioAdjuntoState extends State<_FormularioAdjunto> {
                 icon: Icons.insert_drive_file,
                 validator: (v) => (v == null || v.trim().isEmpty)
                     ? 'Ingresa el nombre del archivo'
-                    : null,
-              ),
-              const SizedBox(height: 12),
-
-              DropdownButtonFormField<String>(
-                value: _tipoSeleccionado,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo de archivo *',
-                  prefixIcon: Icon(Icons.category),
-                  border: OutlineInputBorder(),
-                ),
-                items: _tipos
-                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                    .toList(),
-                onChanged: (v) => setState(() => _tipoSeleccionado = v),
-                validator: (v) =>
-                    v == null ? 'Selecciona el tipo de archivo' : null,
-              ),
-              const SizedBox(height: 12),
-
-              _Campo(
-                controller: _uploadedByCtrl,
-                label: 'ID de usuario *',
-                icon: Icons.person,
-                helper: 'FK: quien sube el archivo',
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Ingresa el ID del usuario'
-                    : null,
-              ),
-              const SizedBox(height: 12),
-
-              _Campo(
-                controller: _subjectCtrl,
-                label: 'ID de materia *',
-                icon: Icons.book,
-                helper: 'FK: materia a la que pertenece',
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Ingresa el ID de la materia'
-                    : null,
-              ),
-              const SizedBox(height: 12),
-
-              _Campo(
-                controller: _teacherCtrl,
-                label: 'ID de profesor *',
-                icon: Icons.school,
-                helper: 'FK: profesor asociado',
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Ingresa el ID del profesor'
                     : null,
               ),
               const SizedBox(height: 24),
@@ -325,12 +303,14 @@ class _FormularioAdjuntoState extends State<_FormularioAdjunto> {
 
 class _SelectorArchivo extends StatelessWidget {
   final String?  nombreArchivo;
+  final String?  tipoDetectado;
   final String?  tamano;
   final bool     cargando;
   final VoidCallback onSeleccionar;
 
   const _SelectorArchivo({
     required this.nombreArchivo,
+    required this.tipoDetectado,
     required this.tamano,
     required this.cargando,
     required this.onSeleccionar,
@@ -393,13 +373,36 @@ class _SelectorArchivo extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (tamano != null) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            tamano!,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              if (tipoDetectado != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade200,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    tipoDetectado!,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green.shade800,
+                                    ),
+                                  ),
+                                ),
+                              if (tipoDetectado != null)
+                                const SizedBox(width: 6),
+                              Text(
+                                tamano!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
                           ),
                         ] else
                           Text(
