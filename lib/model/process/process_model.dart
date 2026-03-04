@@ -11,8 +11,8 @@ class ProcessModel {
   final ProcessType processType;
   final String? relatedId;
   final bool isActive;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const ProcessModel({
     required this.id, // Obligatorio: necesitamos un ID
@@ -22,8 +22,8 @@ class ProcessModel {
     required this.processType, // Obligatorio: tipo de proceso
     this.relatedId, // Opcional: puede ser null
     this.isActive = true, // Opcional: por defecto es true (activo)
-    required this.createdAt, // Obligatorio: fecha de creación
-    required this.updatedAt, // Obligatorio: fecha de actualización
+    this.createdAt, // Obligatorio: fecha de creación
+    this.updatedAt, // Obligatorio: fecha de actualización
   });
 
   factory ProcessModel.fromJson(Map<String, dynamic> json) {
@@ -37,8 +37,12 @@ class ProcessModel {
           : ProcessType.subject,
       relatedId: json['related_id'] as String?,
       isActive: json['is_active'] as bool? ?? true,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : null,
     );
   }
 
@@ -52,9 +56,8 @@ class ProcessModel {
       'process_type': processType.name,
       'related_id': relatedId,
       'is_active': isActive,
-      // .toIso8601String() convierte DateTime a texto formato estándar
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 
