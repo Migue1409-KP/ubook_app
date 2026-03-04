@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'view/dashboard/dashboard_view.dart';
-import 'view/process/process_list_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +17,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: const ProcessListView(),
+      home: const DashboardView(),
     );
   }
 }
