@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../view_model/computer_lab_form_view_model.dart';
 import '../../model/computer_lab/computer_lab.dart';
+import '../../view_model/computer_count_provider.dart';
 
 class ComputerLabFormView extends StatefulWidget {
   const ComputerLabFormView({super.key});
@@ -38,6 +40,26 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Counter visible in the view using Provider
+              Consumer<ComputerCountProvider>(
+                builder: (context, counter, _) => Card(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.computer),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Total computadoras: ${counter.totalComputers}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _vm.nameController,
                 textInputAction: TextInputAction.next,
@@ -73,10 +95,10 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
-                  labelText: 'Capacity',
-                  hintText: 'e.g., 30',
+                  labelText: 'Número de computadoras',
+                  hintText: 'p. ej., 30',
                 ),
-                validator: (v) => _vm.validatePositiveInt(v, field: 'Capacity'),
+                validator: (v) => _vm.validatePositiveInt(v, field: 'Número de computadoras'),
               ),
               const SizedBox(height: 12),
               Row(
@@ -115,6 +137,8 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                     : () async {
                         final ComputerLab? saved = await _vm.submit();
                         if (saved != null && mounted) {
+                          // Add the number of computers to the counter
+                          context.read<ComputerCountProvider>().addComputers(saved.capacity);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Computer Lab saved')),
                           );
