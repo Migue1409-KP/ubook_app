@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../model/educational_center/educational_center_model.dart';
 import '../../view_model/educational_center_view_model.dart';
 import '../../widgets/educational_center_row.dart';
+import '../../widgets/educational_center_form.dart';
 
 class EducationalCenterScreen extends StatefulWidget {
   const EducationalCenterScreen({super.key});
@@ -54,7 +55,12 @@ class _EducationalCenterScreenState extends State<EducationalCenterScreen> {
                 const SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: () {
-                    // Aquí luego irá navegación
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return const EducationalCenterForm();
+                      },
+                    );
                   },
                   child: const Icon(Icons.add),
                 ),

@@ -1,9 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:ubook_app/view/auth/register_view.dart';
+import 'package:ubook_app/view_model/auth/login_view_model.dart';
 
-class LoginView extends StatelessWidget {
+class LoginView extends StatefulWidget {
   const LoginView({super.key});
+
+  @override
+  State<LoginView> createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<LoginView> {
+  late final LoginViewModel _vm;
+
+  @override
+  void initState() {
+    super.initState();
+    _vm = LoginViewModel();
+    _vm.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _vm.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,10 +115,10 @@ class LoginView extends StatelessWidget {
                           margin: EdgeInsets.only(top: 50),
                           child: Center(
                             child: Text(
-                              "Login",
+                              "Iniciar Sesión",
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 40,
+                                fontSize: 35,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -110,168 +131,206 @@ class LoginView extends StatelessWidget {
               ),
               Padding(
                 padding: EdgeInsets.all(30.0),
-                child: Column(
-                  children: [
-                    FadeInUp(
-                      duration: Duration(milliseconds: 1800),
-                      child: Container(
-                        padding: EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Color.fromRGBO(143, 148, 251, .2),
-                              blurRadius: 20.0,
-                              offset: Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(8.0),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: Color.fromRGBO(143, 148, 251, 1),
+                child: Form(
+                  key: _vm.formKey,
+                  autovalidateMode: AutovalidateMode.disabled,
+                  child: Column(
+                    children: [
+                      FadeInUp(
+                        duration: Duration(milliseconds: 1800),
+                        child: Container(
+                          padding: EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color.fromRGBO(143, 148, 251, .2),
+                                blurRadius: 20.0,
+                                offset: Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: Color.fromRGBO(143, 148, 251, 1),
+                                    ),
+                                  ),
+                                ),
+                                child: TextFormField(
+                                  controller: _vm.emailController,
+                                  keyboardType: TextInputType.emailAddress,
+                                  validator: _vm.validateEmail,
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: "Correo electrónico",
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey[700],
+                                    ),
                                   ),
                                 ),
                               ),
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  hintText: "Email",
-                                  hintStyle: TextStyle(color: Colors.grey[700]),
+                              Container(
+                                padding: EdgeInsets.all(8.0),
+                                child: TextFormField(
+                                  controller: _vm.passwordController,
+                                  obscureText: true,
+                                  validator: _vm.validatePassword,
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: "Contraseña",
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                            Container(
-                              padding: EdgeInsets.all(8.0),
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  hintText: "Password",
-                                  hintStyle: TextStyle(color: Colors.grey[700]),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 30),
-                    FadeInUp(
-                      duration: Duration(milliseconds: 1900),
-                      child: Container(
-                        height: 50,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          gradient: LinearGradient(
-                            colors: [
-                              Color.fromRGBO(143, 148, 251, 1),
-                              Color.fromRGBO(143, 148, 251, .6),
                             ],
                           ),
                         ),
-                        child: Center(
-                          child: Text(
-                            "Login",
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
                       ),
-                    ),
-                    SizedBox(height: 20),
-                    FadeInUp(
-                      duration: Duration(milliseconds: 2000),
-                      child: Text(
-                        "Forgot Password?",
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Color.fromRGBO(143, 148, 251, 1),
+                      if (_vm.errorMessage != null) ...[
+                        SizedBox(height: 15),
+                        Text(
+                          _vm.errorMessage!,
+                          style: TextStyle(color: Colors.red, fontSize: 14),
                         ),
-                      ),
-                    ),
-                    SizedBox(height: 25),
-                    FadeInUp(
-                      duration: Duration(milliseconds: 2100),
-                      child: Row(
-                        children: [
-                          Expanded(child: Divider(color: Colors.grey[400])),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 10),
-                            child: Text(
-                              "Or continue with",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
+                      ],
+                      SizedBox(height: 30),
+                      FadeInUp(
+                        duration: Duration(milliseconds: 1900),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _vm.isLoading
+                                ? null
+                                : () async {
+                                    final success = await _vm.login();
+                                    if (success && context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Inicio de sesión exitoso',
+                                          ),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color.fromRGBO(143, 148, 251, 1),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
+                            child: _vm.isLoading
+                                ? CircularProgressIndicator(color: Colors.white)
+                                : Text(
+                                    "Iniciar Sesión",
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
-                          Expanded(child: Divider(color: Colors.grey[400])),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    FadeInUp(
-                      duration: Duration(milliseconds: 2200),
-                      child: Container(
-                        height: 50,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: Color.fromRGBO(143, 148, 251, 1),
-                          ),
-                          color: Colors.white,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.g_mobiledata,
-                              size: 30,
-                              color: Color.fromRGBO(143, 148, 251, 1),
-                            ),
-                            SizedBox(width: 10),
-                            Text(
-                              "Sign in with Google",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Color.fromRGBO(143, 148, 251, 1),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
                         ),
                       ),
-                    ),
-                    SizedBox(height: 20),
-                    FadeInUp(
-                      duration: Duration(milliseconds: 2300),
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RegisterView(),
-                            ),
-                          );
-                        },
+                      SizedBox(height: 20),
+                      FadeInUp(
+                        duration: Duration(milliseconds: 2000),
                         child: Text(
-                          "Don't have an account? Sign Up",
+                          "¿Olvidaste tu contraseña?",
                           style: TextStyle(
                             fontSize: 15,
                             color: Color.fromRGBO(143, 148, 251, 1),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 25),
+                      FadeInUp(
+                        duration: Duration(milliseconds: 2100),
+                        child: Row(
+                          children: [
+                            Expanded(child: Divider(color: Colors.grey[400])),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 10),
+                              child: Text(
+                                "O continuar con",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                            Expanded(child: Divider(color: Colors.grey[400])),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      FadeInUp(
+                        duration: Duration(milliseconds: 2200),
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Color.fromRGBO(143, 148, 251, 1),
+                            ),
+                            color: Colors.white,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.g_mobiledata,
+                                size: 30,
+                                color: Color.fromRGBO(143, 148, 251, 1),
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                "Iniciar sesión con Google",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Color.fromRGBO(143, 148, 251, 1),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      FadeInUp(
+                        duration: Duration(milliseconds: 2300),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const RegisterView(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            "¿No tienes cuenta? Regístrate",
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Color.fromRGBO(143, 148, 251, 1),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
