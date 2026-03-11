@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../model/teachers/teacher.dart';
 import '../../view_model/teachers/teacher_list_view_model.dart';
-// import '../teacher_subjects_page.dart';
+import '../teacher_subject/teacher_subjects_page.dart';
 import 'teacher_form_view.dart';
 
 class TeacherListView extends StatefulWidget {
@@ -30,14 +30,14 @@ class _TeacherListViewState extends State<TeacherListView> {
     super.dispose();
   }
 
-  // void _navigateToTeacherSubjects(Teacher teacher) {
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (_) => TeacherSubjectsPage(teacher: teacher),
-  //     ),
-  //   );
-  // }
+   void _navigateToTeacherSubjects(Teacher teacher) {
+     Navigator.push(
+       context,
+       MaterialPageRoute(
+         builder: (_) => TeacherSubjectsPage(teacher: teacher),
+       ),
+     );
+   }
 
   void _onDeleteTeacher(Teacher teacher) {
     showDialog(
@@ -208,10 +208,10 @@ class _TeacherListViewState extends State<TeacherListView> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // TextButton(
-        //   onPressed: () => _navigateToTeacherSubjects(teacher),
-        //   child: const Text('Ver', style: TextStyle(color: Color(0xFF4A90D9), fontSize: 12)),
-        // ),
+         TextButton(
+           onPressed: () => _navigateToTeacherSubjects(teacher),
+           child: const Text('Ver', style: TextStyle(color: Color(0xFF4A90D9), fontSize: 12)),
+         ),
         TextButton(
           onPressed: () async {
             final result = await Navigator.of(context).push<Teacher>(
