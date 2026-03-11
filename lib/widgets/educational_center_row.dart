@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../model/educational_center/educational_center_model.dart';
+import 'educational_center_form.dart';
 
 class EducationalCenterRow extends StatelessWidget {
   final EducationalCenter center;
@@ -23,7 +24,14 @@ class EducationalCenterRow extends StatelessWidget {
               tooltip: 'Ver',
             ),
             IconButton(
-              onPressed: () {},
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return const EducationalCenterForm(isEditing: true);
+                  },
+                );
+              },
               icon: const Icon(Icons.edit),
               tooltip: 'Editar',
             ),
