@@ -4,6 +4,7 @@ import '../../widgets/dashboard_app_bar.dart';
 import '../../widgets/top_items_carousel.dart';
 import '../process/process_list_view.dart';
 import '../teachers/teacher_list_view.dart';
+import '../educational_center/educational_center_screen.dart';
 
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
@@ -49,7 +50,7 @@ class _DashboardViewState extends State<DashboardView> {
               TopItemsCarousel(
                 title: 'Top 5 Centros Educativos',
                 onSeeAll: () {
-                  // TODO: Navigate to all centers
+                  _navigateToEducationalCenters();
                 },
                 items: _viewModel.topCenters,
                 itemBuilder: (item) => _buildCard(
@@ -211,6 +212,15 @@ class _DashboardViewState extends State<DashboardView> {
       context,
       MaterialPageRoute(
         builder: (context) => const TeacherListView(),
+      ),
+    );
+  }
+
+  void _navigateToEducationalCenters() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const EducationalCenterScreen(),
       ),
     );
   }
