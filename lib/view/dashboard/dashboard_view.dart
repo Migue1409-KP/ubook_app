@@ -3,6 +3,7 @@ import '../../view_model/dashboard_view_model.dart';
 import '../../widgets/dashboard_app_bar.dart';
 import '../../widgets/top_items_carousel.dart';
 import '../process/process_list_view.dart';
+import '../teachers/teacher_list_view.dart';
 
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
@@ -82,7 +83,7 @@ class _DashboardViewState extends State<DashboardView> {
               TopItemsCarousel(
                 title: 'Top 5 Profesores',
                 onSeeAll: () {
-                  // TODO: Navigate to all teachers
+                  _navigateToTeacherList();
                 },
                 items: _viewModel.topTeachers,
                 itemBuilder: (item) => _buildCard(
@@ -201,6 +202,15 @@ class _DashboardViewState extends State<DashboardView> {
       context,
       MaterialPageRoute(
         builder: (context) => const ProcessListView(),
+      ),
+    );
+  }
+
+  void _navigateToTeacherList() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TeacherListView(),
       ),
     );
   }

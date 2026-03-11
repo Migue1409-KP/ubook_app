@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../model/teachers/teacher.dart';
 import '../../view_model/teachers/teacher_list_view_model.dart';
-import 'teacher_detail_view.dart';
+// import '../teacher_subjects_page.dart';
+import 'teacher_form_view.dart';
 
 class TeacherListView extends StatefulWidget {
   const TeacherListView({super.key});
@@ -29,32 +30,36 @@ class _TeacherListViewState extends State<TeacherListView> {
     super.dispose();
   }
 
-  void _navigateToDetail(Teacher teacher) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => TeacherDetailView(teacher: teacher),
-      ),
-    );
-  }
+  // void _navigateToTeacherSubjects(Teacher teacher) {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (_) => TeacherSubjectsPage(teacher: teacher),
+  //     ),
+  //   );
+  // }
 
   void _onDeleteTeacher(Teacher teacher) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar Profesor'),
-        content: Text('¿Estás seguro de que deseas eliminar a ${teacher.fullName}?'),
+        backgroundColor: const Color(0xFF161B22),
+        title: const Text('Eliminar profesor', style: TextStyle(color: Colors.white)),
+        content: Text(
+          '¿Estás seguro de que deseas eliminar a ${teacher.fullName}?',
+          style: const TextStyle(color: Colors.white70),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               _viewModel.deleteTeacher(teacher.id);
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
             child: const Text('Eliminar'),
           ),
         ],
@@ -65,15 +70,12 @@ class _TeacherListViewState extends State<TeacherListView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFF0D1117),
       appBar: AppBar(
-        title: const Text(
-          'Profesores',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        backgroundColor: const Color(0xFF161B22),
+        foregroundColor: Colors.white,
+        title: const Text('Profesores', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
         elevation: 0,
         scrolledUnderElevation: 1,
       ),
@@ -97,35 +99,49 @@ class _TeacherListViewState extends State<TeacherListView> {
           child: TextField(
             controller: _searchController,
             onChanged: _viewModel.search,
+            style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Buscar...',
-              prefixIcon: const Icon(Icons.search),
+              hintStyle: const TextStyle(color: Colors.white38),
+              prefixIcon: const Icon(Icons.search, color: Colors.white54),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: const Color(0xFF161B22),
               contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: const BorderSide(color: Color(0xFF30363D)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: const BorderSide(color: Color(0xFF30363D)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                borderSide: const BorderSide(color: Color(0xFF4A90D9), width: 2),
               ),
             ),
           ),
         ),
         const SizedBox(width: 12),
         FilledButton.icon(
-          onPressed: () {
-            // TODO: Navigate to create teacher form
+          onPressed: () async {
+            final result = await Navigator.of(context).push<Teacher>(
+              MaterialPageRoute(builder: (_) => const TeacherFormView()),
+            );
+            if (result != null) {
+              _viewModel.addTeacher(result);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Profesor creado exitosamente')),
+                );
+              }
+            }
           },
           icon: const Icon(Icons.add),
           label: const Text('Crear'),
           style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF4A90D9),
+            foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -142,11 +158,11 @@ class _TeacherListViewState extends State<TeacherListView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.person_off_outlined, size: 64, color: Colors.grey[400]),
+            const Icon(Icons.person_off_outlined, size: 64, color: Colors.white24),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'No se encontraron profesores',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 16, color: Colors.white54),
             ),
           ],
         ),
@@ -155,35 +171,29 @@ class _TeacherListViewState extends State<TeacherListView> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF161B22),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFF30363D)),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(Colors.grey.shade100),
+            headingRowColor: WidgetStateProperty.all(const Color(0xFF0D1117)),
             columnSpacing: 24,
             columns: const [
-              DataColumn(label: Text('Nombre', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('ID', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Edad', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
-              DataColumn(label: Text('Acciones', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Nombre', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+              DataColumn(label: Text('ID', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+              DataColumn(label: Text('Edad', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)), numeric: true),
+              DataColumn(label: Text('Acciones', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
             ],
             rows: teachers.map((teacher) {
               return DataRow(
                 cells: [
-                  DataCell(Text(teacher.fullName)),
-                  DataCell(Text(teacher.id)),
-                  DataCell(Text(teacher.age.toString())),
+                  DataCell(Text(teacher.fullName, style: const TextStyle(color: Colors.white))),
+                  DataCell(Text(teacher.id, style: const TextStyle(color: Colors.white70))),
+                  DataCell(Text(teacher.age.toString(), style: const TextStyle(color: Colors.white70))),
                   DataCell(_buildActionButtons(teacher)),
                 ],
               );
@@ -198,20 +208,27 @@ class _TeacherListViewState extends State<TeacherListView> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // TextButton(
+        //   onPressed: () => _navigateToTeacherSubjects(teacher),
+        //   child: const Text('Ver', style: TextStyle(color: Color(0xFF4A90D9), fontSize: 12)),
+        // ),
         TextButton(
-          onPressed: () => _navigateToDetail(teacher),
-          child: const Text('Ver'),
-        ),
-        TextButton(
-          onPressed: () {
-            // TODO: Navigate to edit teacher form
+          onPressed: () async {
+            final result = await Navigator.of(context).push<Teacher>(
+              MaterialPageRoute(
+                builder: (_) => TeacherFormView(teacher: teacher),
+              ),
+            );
+            if (result != null) {
+              _viewModel.updateTeacher(result);
+            }
           },
-          child: const Text('Editar'),
+          child: const Text('Editar', style: TextStyle(color: Color(0xFF90CAF9), fontSize: 12)),
         ),
         TextButton(
           onPressed: () => _onDeleteTeacher(teacher),
-          style: TextButton.styleFrom(foregroundColor: Colors.red),
-          child: const Text('Eliminar'),
+          style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+          child: const Text('Eliminar', style: TextStyle(fontSize: 12)),
         ),
       ],
     );
