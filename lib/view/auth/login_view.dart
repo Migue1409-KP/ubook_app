@@ -1,5 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter/material.dart';
+import 'package:ubook_app/theme/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'package:ubook_app/view_model/auth/user_count_provider.dart';
 import 'package:ubook_app/view/auth/register_view.dart';
 import 'package:ubook_app/view_model/auth/login_view_model.dart';
 
@@ -29,313 +32,428 @@ class _LoginViewState extends State<LoginView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Container(
-          child: Column(
-            children: [
-              Container(
-                height: 400,
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          // ── Imágenes decorativas de fondo ──
+          Positioned(
+            left: 30,
+            top: 0,
+            width: 60,
+            height: 200,
+            child: FadeInUp(
+              duration: const Duration(seconds: 1),
+              child: Container(
                 decoration: const BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage('assets/images/background.png'),
-                    fit: BoxFit.fill,
+                    image: AssetImage('assets/images/auth/light-1.png'),
                   ),
                 ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      left: 70,
-                      width: 80,
-                      height: 200,
-                      child: FadeInUp(
-                        duration: Duration(seconds: 1),
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage('assets/images/light-1.png'),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 140,
-                      width: 80,
-                      height: 150,
-                      child: FadeInUp(
-                        duration: Duration(milliseconds: 1200),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage('assets/images/light-2.png'),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      right: 40,
-                      top: 40,
-                      width: 80,
-                      height: 150,
-                      child: FadeInDown(
-                        duration: Duration(milliseconds: 1300),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage('assets/images/clock.png'),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      child: FadeInDown(
-                        duration: Duration(milliseconds: 1000),
-                        child: Container(
-                          margin: EdgeInsets.only(bottom: 50),
-                          child: Center(
-                            child: Text(
-                              "UBOOK",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 50,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      child: FadeInUp(
-                        duration: Duration(milliseconds: 1600),
-                        child: Container(
-                          margin: EdgeInsets.only(top: 50),
-                          child: Center(
-                            child: Text(
-                              "Iniciar Sesión",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 35,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+              ),
+            ),
+          ),
+          Positioned(
+            left: 100,
+            top: 0,
+            width: 60,
+            height: 150,
+            child: FadeInUp(
+              duration: const Duration(milliseconds: 1200),
+              child: Container(
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/auth/light-2.png'),
+                  ),
                 ),
               ),
-              Padding(
-                padding: EdgeInsets.all(30.0),
-                child: Form(
-                  key: _vm.formKey,
-                  autovalidateMode: AutovalidateMode.disabled,
-                  child: Column(
-                    children: [
-                      FadeInUp(
-                        duration: Duration(milliseconds: 1800),
-                        child: Container(
-                          padding: EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color.fromRGBO(143, 148, 251, .2),
-                                blurRadius: 20.0,
-                                offset: Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(8.0),
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      color: Color.fromRGBO(143, 148, 251, 1),
-                                    ),
-                                  ),
-                                ),
-                                child: TextFormField(
-                                  controller: _vm.emailController,
-                                  keyboardType: TextInputType.emailAddress,
-                                  validator: _vm.validateEmail,
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: "Correo electrónico",
-                                    hintStyle: TextStyle(
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: EdgeInsets.all(8.0),
-                                child: TextFormField(
-                                  controller: _vm.passwordController,
-                                  obscureText: true,
-                                  validator: _vm.validatePassword,
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: "Contraseña",
-                                    hintStyle: TextStyle(
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+            ),
+          ),
+          Positioned(
+            right: 40,
+            top: 40,
+            width: 80,
+            height: 150,
+            child: FadeInDown(
+              duration: const Duration(milliseconds: 1300),
+              child: Container(
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/auth/clock.png'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // ── Contenido principal ──
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Form(
+                key: _vm.formKey,
+                autovalidateMode: AutovalidateMode.disabled,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 60),
+
+                    // ── Logo / App Icon ──
+                    FadeInDown(
+                      duration: const Duration(milliseconds: 800),
+                      child: Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.auto_awesome,
+                          color: Colors.white,
+                          size: 32,
                         ),
                       ),
-                      if (_vm.errorMessage != null) ...[
-                        SizedBox(height: 15),
-                        Text(
-                          _vm.errorMessage!,
-                          style: TextStyle(color: Colors.red, fontSize: 14),
-                        ),
-                      ],
-                      SizedBox(height: 30),
-                      FadeInUp(
-                        duration: Duration(milliseconds: 1900),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: _vm.isLoading
-                                ? null
-                                : () async {
-                                    final success = await _vm.login();
-                                    if (success && context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Inicio de sesión exitoso',
-                                          ),
-                                          backgroundColor: Colors.green,
-                                        ),
-                                      );
-                                    }
-                                  },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Color.fromRGBO(143, 148, 251, 1),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: _vm.isLoading
-                                ? CircularProgressIndicator(color: Colors.white)
-                                : Text(
-                                    "Iniciar Sesión",
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                          ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // ── Ubook ──
+                    FadeInDown(
+                      duration: const Duration(milliseconds: 1000),
+                      child: const Text(
+                        'UBOOK',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w300,
+                          color: AppColors.primary,
                         ),
                       ),
-                      SizedBox(height: 20),
-                      FadeInUp(
-                        duration: Duration(milliseconds: 2000),
+                    ),
+
+                    // Contador de usuarios activos
+                    Consumer<UserCountProvider>(
+                      builder: (context, userCountProvider, child) {
+                        return Text(
+                          '${userCountProvider.userCount} usuarios activos',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ── Título ──
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 900),
+                      child: const Text(
+                        'Iniciar Sesión',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // ── Subtítulo ──
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1000),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
                         child: Text(
-                          "¿Olvidaste tu contraseña?",
+                          'Para iniciar sesión en la aplicación, ingresa tu correo electrónico y contraseña',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 15,
-                            color: Color.fromRGBO(143, 148, 251, 1),
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ),
-                      SizedBox(height: 25),
-                      FadeInUp(
-                        duration: Duration(milliseconds: 2100),
-                        child: Row(
-                          children: [
-                            Expanded(child: Divider(color: Colors.grey[400])),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 10),
-                              child: Text(
-                                "O continuar con",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // ── Input E-mail ──
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1100),
+                      child: TextFormField(
+                        controller: _vm.emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: _vm.validateEmail,
+                        decoration: InputDecoration(
+                          hintText: 'Correo electrónico',
+                          hintStyle: const TextStyle(
+                            color: AppColors.placeholder,
+                          ),
+                          filled: true,
+                          fillColor: AppColors.inputFill,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
+                          prefixIcon: Container(
+                            margin: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            Expanded(child: Divider(color: Colors.grey[400])),
-                          ],
+                            child: const Icon(
+                              Icons.email_outlined,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
                         ),
                       ),
-                      SizedBox(height: 20),
-                      FadeInUp(
-                        duration: Duration(milliseconds: 2200),
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: Color.fromRGBO(143, 148, 251, 1),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ── Input Password ──
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1300),
+                      child: TextFormField(
+                        controller: _vm.passwordController,
+                        obscureText: true,
+                        validator: _vm.validatePassword,
+                        decoration: InputDecoration(
+                          hintText: 'Contraseña',
+                          hintStyle: const TextStyle(
+                            color: AppColors.placeholder,
+                          ),
+                          filled: true,
+                          fillColor: AppColors.inputFill,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
+                          prefixIcon: Container(
+                            margin: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            color: Colors.white,
+                            child: const Icon(
+                              Icons.lock_outline,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // ── Mensaje de error ──
+                    if (_vm.errorMessage != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _vm.errorMessage!,
+                        style: const TextStyle(color: Colors.red, fontSize: 14),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+
+                    // ── ¿Olvidaste tu contraseña? ──
+                    FadeInLeft(
+                      duration: const Duration(milliseconds: 1400),
+                      child: const Text(
+                        '¿Olvidaste tu contraseña?',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Botón "Continuar" (primario) ──
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1500),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _vm.isLoading
+                              ? null
+                              : () async {
+                                  final success = await _vm.login();
+                                  if (success && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Inicio de sesión exitoso',
+                                        ),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: AppColors.primary
+                                .withValues(alpha: 0.6),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: _vm.isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : const Text(
+                                  'Continuar',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── ¿No tienes cuenta? ──
+                    const Text(
+                      '¿Aún no tienes una cuenta?',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // ── Botón "Crear una cuenta" (secundario) ──
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterView(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.inputFill,
+                          foregroundColor: AppColors.textPrimary,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text(
+                          'Crear una cuenta',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ── Botón "Iniciar sesión con Google" ──
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1700),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // TODO: Implementar login con Google
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.inputFill,
+                            foregroundColor: AppColors.textPrimary,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.g_mobiledata,
-                                size: 30,
-                                color: Color.fromRGBO(143, 148, 251, 1),
+                              Image.asset(
+                                'assets/images/auth/logo-google.png',
+                                width: 20,
+                                height: 20,
                               ),
-                              SizedBox(width: 10),
-                              Text(
-                                "Iniciar sesión con Google",
+                              const SizedBox(width: 10),
+                              const Text(
+                                'Iniciar sesión con Google',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Color.fromRGBO(143, 148, 251, 1),
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                      SizedBox(height: 20),
-                      FadeInUp(
-                        duration: Duration(milliseconds: 2300),
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const RegisterView(),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            "¿No tienes cuenta? Regístrate",
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Color.fromRGBO(143, 148, 251, 1),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ── Texto legal ──
+                    FadeIn(
+                      duration: const Duration(milliseconds: 2000),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text.rich(
+                          TextSpan(
+                            text:
+                                'Al hacer clic en "Continuar", he leído y acepto los ',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
                             ),
+                            children: const [
+                              TextSpan(
+                                text: 'Términos de Servicio',
+                                style: TextStyle(
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                              TextSpan(text: ', '),
+                              TextSpan(
+                                text: 'Política de Privacidad',
+                                style: TextStyle(
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ],
                           ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
