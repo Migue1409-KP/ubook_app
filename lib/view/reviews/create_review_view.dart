@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../view_model/create_review_view_model.dart';
+import '../../theme/app_colors.dart';
 
 class CreateReviewView extends StatefulWidget {
   // Parámetros solicitados que deben ser enviados por quien convoque esta pantalla
@@ -77,14 +78,14 @@ class _CreateReviewViewState extends State<CreateReviewView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
           'Escribir Reseña',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: AppColors.background,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: true,
       ),
@@ -100,7 +101,7 @@ class _CreateReviewViewState extends State<CreateReviewView> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -129,7 +130,7 @@ class _CreateReviewViewState extends State<CreateReviewView> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 12),
@@ -137,19 +138,20 @@ class _CreateReviewViewState extends State<CreateReviewView> {
                 controller: _titleController,
                 decoration: InputDecoration(
                   hintText: 'Ej. Excelente centro educativo',
+                  hintStyle: const TextStyle(color: AppColors.placeholder),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: AppColors.inputFill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
+                    borderSide: const BorderSide(color: AppColors.divider),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
+                    borderSide: const BorderSide(color: AppColors.divider),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.indigo, width: 2),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
                   ),
                 ),
                 textCapitalization: TextCapitalization.sentences,
@@ -162,7 +164,7 @@ class _CreateReviewViewState extends State<CreateReviewView> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 12),
@@ -171,19 +173,20 @@ class _CreateReviewViewState extends State<CreateReviewView> {
                 maxLines: 6,
                 decoration: InputDecoration(
                   hintText: '¿Qué te gustó? ¿Qué mejorarías?',
+                  hintStyle: const TextStyle(color: AppColors.placeholder),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: AppColors.inputFill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
+                    borderSide: const BorderSide(color: AppColors.divider),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
+                    borderSide: const BorderSide(color: AppColors.divider),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.indigo, width: 2),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
                   ),
                 ),
                 textCapitalization: TextCapitalization.sentences,
@@ -197,7 +200,7 @@ class _CreateReviewViewState extends State<CreateReviewView> {
                 child: ElevatedButton(
                   onPressed: _viewModel.isLoading ? null : _onSubmit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),

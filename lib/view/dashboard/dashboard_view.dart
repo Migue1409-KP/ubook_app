@@ -5,6 +5,7 @@ import '../../widgets/top_items_carousel.dart';
 import '../process/process_list_view.dart';
 import '../teachers/teacher_list_view.dart';
 import '../educational_center/educational_center_screen.dart';
+import '../../theme/app_colors.dart';
 
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
@@ -33,7 +34,7 @@ class _DashboardViewState extends State<DashboardView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.background,
       appBar: DashboardAppBar(
         selectedFilter: _viewModel.selectedFilter,
         filterOptions: _viewModel.filterOptions,
@@ -108,12 +109,12 @@ class _DashboardViewState extends State<DashboardView> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     TextButton(
                       onPressed: _navigateToProcessList,
-                      child: const Text('Ver todos'),
+                      child: const Text('Ver todos', style: TextStyle(color: AppColors.primary)),
                     ),
                   ],
                 ),
@@ -128,14 +129,14 @@ class _DashboardViewState extends State<DashboardView> {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Colors.blue.shade400, Colors.blue.shade700],
+                        colors: [AppColors.primary.withOpacity(0.8), AppColors.primary],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.blue.withOpacity(0.3),
+                          color: AppColors.primary.withOpacity(0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -265,7 +266,7 @@ class _DashboardViewState extends State<DashboardView> {
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
-                color: Colors.black87,
+                color: AppColors.textPrimary,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -273,7 +274,7 @@ class _DashboardViewState extends State<DashboardView> {
             const SizedBox(height: 6),
             Text(
               subtitle,
-              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -287,7 +288,7 @@ class _DashboardViewState extends State<DashboardView> {
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: Colors.black87,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
