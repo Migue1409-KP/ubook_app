@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../view_model/dashboard_view_model.dart';
 import '../../widgets/dashboard_app_bar.dart';
 import '../../widgets/top_items_carousel.dart';
@@ -9,202 +10,195 @@ import '../../model/teachers/teacher.dart';
 import '../educational_center/educational_center_screen.dart';
 import '../../theme/app_colors.dart';
 
-class DashboardView extends StatefulWidget {
+class DashboardView extends StatelessWidget {
   const DashboardView({super.key});
 
   @override
-  State<DashboardView> createState() => _DashboardViewState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => DashboardViewModel(),
+      child: _DashboardViewContent(),
+    );
+  }
 }
 
-class _DashboardViewState extends State<DashboardView> {
-  final DashboardViewModel _viewModel = DashboardViewModel();
-
-  @override
-  void initState() {
-    super.initState();
-    _viewModel.addListener(() {
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _viewModel.dispose();
-    super.dispose();
-  }
-
+class _DashboardViewContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: DashboardAppBar(
-        selectedFilter: _viewModel.selectedFilter,
-        filterOptions: _viewModel.filterOptions,
-        onFilterChanged: _viewModel.setFilter,
-      ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top Centros Educativos
-              TopItemsCarousel(
-                title: 'Top 5 Centros Educativos',
-                onSeeAll: () {
-                  _navigateToEducationalCenters();
-                },
-                items: _viewModel.topCenters,
-                itemBuilder: (item) => _buildCard(
-                  title: item['name'],
-                  subtitle: item['location'],
-                  rating: item['rating'],
-                  icon: Icons.account_balance,
-                  color: Colors.blue,
-                  onTap: _navigateToEducationalCenters,
-                ),
-              ),
-              const SizedBox(height: 28),
-
-              // Top Carreras
-              TopItemsCarousel(
-                title: 'Top 5 Carreras',
-                onSeeAll: () {
-                  // TODO: Navigate to all careers
-                },
-                items: _viewModel.topCareers,
-                itemBuilder: (item) => _buildCard(
-                  title: item['name'],
-                  subtitle: item['faculty'],
-                  rating: item['rating'],
-                  icon: Icons.school,
-                  color: Colors.orange,
-                  onTap: () {}, // TODO: Navigate to career detail
-                ),
-              ),
-              const SizedBox(height: 28),
-
-              // Top Profesores
-              TopItemsCarousel(
-                title: 'Top 5 Profesores',
-                onSeeAll: () {
-                  _navigateToTeacherList();
-                },
-                items: _viewModel.topTeachers,
-                itemBuilder: (item) => _buildCard(
-                  title: item['name'],
-                  subtitle: item['subject'],
-                  rating: item['rating'],
-                  icon: Icons.person,
-                  color: Colors.green,
-                  onTap: () => _navigateToTeacherDetail(item),
-                ),
-              ),
-              const SizedBox(height: 28),
-
-              // Gestión de Procesos
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Gestión de Procesos',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
+    return Consumer<DashboardViewModel>(
+      builder: (context, viewModel, child) {
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: DashboardAppBar(
+            selectedFilter: viewModel.selectedFilter,
+            filterOptions: viewModel.filterOptions,
+            onFilterChanged: viewModel.setFilter,
+          ),
+          body: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top Centros Educativos
+                  TopItemsCarousel(
+                    title: 'Top 5 Centros Educativos',
+                    onSeeAll: () {
+                      _navigateToEducationalCenters(context);
+                    },
+                    items: viewModel.topCenters,
+                    itemBuilder: (item) => _buildCard(
+                      title: item['name'],
+                      subtitle: item['location'],
+                      rating: item['rating'],
+                      icon: Icons.account_balance,
+                      color: Colors.blue,
+                      onTap: () => _navigateToEducationalCenters(context),
                     ),
-                    TextButton(
-                      onPressed: _navigateToProcessList,
-                      child: const Text('Ver todos', style: TextStyle(color: AppColors.primary)),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Top Carreras
+                  TopItemsCarousel(
+                    title: 'Top 5 Carreras',
+                    onSeeAll: () {
+                      // TODO: Navigate to all careers
+                    },
+                    items: viewModel.topCareers,
+                    itemBuilder: (item) => _buildCard(
+                      title: item['name'],
+                      subtitle: item['faculty'],
+                      rating: item['rating'],
+                      icon: Icons.school,
+                      color: Colors.orange,
+                      onTap: () {}, // TODO: Navigate to career detail
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: InkWell(
-                  onTap: _navigateToProcessList,
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [AppColors.primary.withOpacity(0.8), AppColors.primary],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Top Profesores
+                  TopItemsCarousel(
+                    title: 'Top 5 Profesores',
+                    onSeeAll: () {
+                      _navigateToTeacherList(context);
+                    },
+                    items: viewModel.topTeachers,
+                    itemBuilder: (item) => _buildCard(
+                      title: item['name'],
+                      subtitle: item['subject'],
+                      rating: item['rating'],
+                      icon: Icons.person,
+                      color: Colors.green,
+                      onTap: () => _navigateToTeacherDetail(context, item),
                     ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Gestión de Procesos
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.description,
-                            color: Colors.white,
-                            size: 32,
+                        const Text(
+                          'Gestión de Procesos',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Procesos Académicos',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Gestiona procesos de carreras y materias',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.arrow_forward_ios,
-                          color: Colors.white,
-                          size: 20,
+                        TextButton(
+                          onPressed: () => _navigateToProcessList(context),
+                          child: const Text('Ver todos', style: TextStyle(color: AppColors.primary)),
                         ),
                       ],
                     ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: InkWell(
+                      onTap: () => _navigateToProcessList(context),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [AppColors.primary.withOpacity(0.8), AppColors.primary],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.description,
+                                color: Colors.white,
+                                size: 32,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Procesos Académicos',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Gestiona procesos de carreras y materias',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                ],
               ),
-              const SizedBox(height: 28),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  void _navigateToProcessList() {
+  void _navigateToProcessList(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -213,7 +207,7 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  void _navigateToTeacherList() {
+  void _navigateToTeacherList(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -222,7 +216,7 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  void _navigateToEducationalCenters() {
+  void _navigateToEducationalCenters(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -231,7 +225,7 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  void _navigateToTeacherDetail(Map<String, dynamic> item) {
+  void _navigateToTeacherDetail(BuildContext context, Map<String, dynamic> item) {
     final parts = (item['name'] as String? ?? 'Profesor').split(' ');
     final firstName = parts.isNotEmpty ? parts[0] : 'Desconocido';
     final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
