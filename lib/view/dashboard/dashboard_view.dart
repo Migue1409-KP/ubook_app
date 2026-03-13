@@ -4,6 +4,8 @@ import '../../widgets/dashboard_app_bar.dart';
 import '../../widgets/top_items_carousel.dart';
 import '../process/process_list_view.dart';
 import '../teachers/teacher_list_view.dart';
+import '../teachers/teacher_detail_view.dart';
+import '../../model/teachers/teacher.dart';
 import '../educational_center/educational_center_screen.dart';
 import '../../theme/app_colors.dart';
 
@@ -60,6 +62,7 @@ class _DashboardViewState extends State<DashboardView> {
                   rating: item['rating'],
                   icon: Icons.account_balance,
                   color: Colors.blue,
+                  onTap: _navigateToEducationalCenters,
                 ),
               ),
               const SizedBox(height: 28),
@@ -77,6 +80,7 @@ class _DashboardViewState extends State<DashboardView> {
                   rating: item['rating'],
                   icon: Icons.school,
                   color: Colors.orange,
+                  onTap: () {}, // TODO: Navigate to career detail
                 ),
               ),
               const SizedBox(height: 28),
@@ -94,6 +98,7 @@ class _DashboardViewState extends State<DashboardView> {
                   rating: item['rating'],
                   icon: Icons.person,
                   color: Colors.green,
+                  onTap: () => _navigateToTeacherDetail(item),
                 ),
               ),
               const SizedBox(height: 28),
@@ -226,12 +231,42 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
+  void _navigateToTeacherDetail(Map<String, dynamic> item) {
+    final parts = (item['name'] as String? ?? 'Profesor').split(' ');
+    final firstName = parts.isNotEmpty ? parts[0] : 'Desconocido';
+    final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+
+    final dummyTeacher = Teacher(
+      id: 'DUMMY-TCH',
+      firstName: firstName,
+      lastName: lastName,
+      email: 'profesor@uco.edu',
+      phone: '000-000-0000',
+      age: 40,
+      department: 'General',
+      specialty: item['subject'] as String? ?? 'Desconocida',
+      subjects: [item['subject'] as String? ?? 'Materia 1'],
+      profileImageUrl: 'https://via.placeholder.com/150',
+      isActive: true,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TeacherDetailView(teacher: dummyTeacher),
+      ),
+    );
+  }
+
   Widget _buildCard({
     required String title,
     required String subtitle,
     required double rating,
     required IconData icon,
     required MaterialColor color,
+    VoidCallback? onTap,
   }) {
     return Container(
       width: 160,
@@ -246,11 +281,17 @@ class _DashboardViewState extends State<DashboardView> {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             Container(
               height: 48,
               width: 48,
@@ -296,6 +337,8 @@ class _DashboardViewState extends State<DashboardView> {
           ],
         ),
       ),
+    ),
+    ),
     );
   }
 }
