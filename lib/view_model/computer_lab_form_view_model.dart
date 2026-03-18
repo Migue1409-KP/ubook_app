@@ -19,8 +19,20 @@ class ComputerLabFormViewModel extends ChangeNotifier {
 
   bool available = true;
   bool isSaving = false;
+  bool isLoadingLabs = false;
+  List<ComputerLab> savedLabs = const [];
 
   final formKey = GlobalKey<FormState>();
+
+  Future<void> loadSavedLabs() async {
+    isLoadingLabs = true;
+    notifyListeners();
+
+    savedLabs = await _repository.getAll();
+
+    isLoadingLabs = false;
+    notifyListeners();
+  }
 
   String? validateRequired(String? value, {String field = 'This field'}) {
     if (value == null || value.trim().isEmpty) {
@@ -59,10 +71,23 @@ class ComputerLabFormViewModel extends ChangeNotifier {
     );
 
     final saved = await _repository.save(lab);
+    savedLabs = await _repository.getAll();
 
     isSaving = false;
     notifyListeners();
     return saved;
+  }
+
+  void clearForm() {
+    nameController.clear();
+    buildingController.clear();
+    roomNumberController.clear();
+    capacityController.clear();
+    equipmentController.clear();
+    notesController.clear();
+    available = true;
+    formKey.currentState?.reset();
+    notifyListeners();
   }
 
   @override

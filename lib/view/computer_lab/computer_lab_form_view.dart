@@ -19,6 +19,7 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
     super.initState();
     _vm = ComputerLabFormViewModel();
     _vm.addListener(() => setState(() {}));
+    _vm.loadSavedLabs();
   }
 
   @override
@@ -60,6 +61,48 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                 ),
               ),
               const SizedBox(height: 12),
+              if (_vm.isLoadingLabs)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (_vm.savedLabs.isNotEmpty) ...[
+                Text(
+                  'Computers almacenados',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 220,
+                  child: ListView.separated(
+                    itemCount: _vm.savedLabs.length,
+                    shrinkWrap: true,
+                    itemBuilder: (context, index) {
+                      final lab = _vm.savedLabs[index];
+                      return Card(
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            child: Text('${index + 1}'),
+                          ),
+                          title: Text(lab.name),
+                          subtitle: Text(
+                            '${lab.building} - ${lab.roomNumber}\n${lab.capacity} computadoras',
+                          ),
+                          isThreeLine: true,
+                          trailing: Icon(
+                            lab.available ? Icons.check_circle : Icons.cancel,
+                            color: lab.available ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      );
+                    },
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               TextFormField(
                 controller: _vm.nameController,
                 textInputAction: TextInputAction.next,
@@ -139,10 +182,10 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                         if (saved != null && mounted) {
                           // Add the number of computers to the counter
                           context.read<ComputerCountProvider>().addComputers(saved.capacity);
+                          _vm.clearForm();
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Computer Lab saved')),
                           );
-                          Navigator.of(context).pop(saved);
                         }
                       },
                 icon: _vm.isSaving
