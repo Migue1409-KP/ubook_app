@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ubook_app/model/subjectteacher/subjectteacher.dart';
 import 'package:ubook_app/view/teacher_subject/assign_subject_teacher_page.dart';
 import '../../model/teachers/teacher.dart';
 import '../../model/subjects/subjects.dart';
-import '../../view_model/teacher_subjects_view_model.dart';
+import '../../view_model/teacher_subject/teacher_subjects_view_model.dart';
+import '../../theme/app_colors.dart';
 
-class TeacherSubjectsPage extends StatefulWidget {
+class TeacherSubjectsPage extends StatelessWidget {
   final Teacher? teacher;
   final Subject? subject;
-
-  // Listas que vienen del ViewModel del compañero — no se queman aquí
   final List<Subject> allSubjects;
   final List<Teacher> allTeachers;
 
@@ -22,12 +22,43 @@ class TeacherSubjectsPage extends StatefulWidget {
   }) : assert(teacher != null || subject != null);
 
   @override
-  State<TeacherSubjectsPage> createState() => _TeacherSubjectsPageState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => TeacherSubjectsViewModel(
+        teacher: teacher,
+        subject: subject,
+        allSubjects: allSubjects,
+        allTeachers: allTeachers,
+      ),
+      child: _TeacherSubjectsView(
+        teacher: teacher,
+        subject: subject,
+        allSubjects: allSubjects,
+        allTeachers: allTeachers,
+      ),
+    );
+  }
 }
 
-class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
+class _TeacherSubjectsView extends StatefulWidget {
+  final Teacher? teacher;
+  final Subject? subject;
+  final List<Subject> allSubjects;
+  final List<Teacher> allTeachers;
+
+  const _TeacherSubjectsView({
+    this.teacher,
+    this.subject,
+    this.allSubjects = const [],
+    this.allTeachers = const [],
+  });
+
+  @override
+  State<_TeacherSubjectsView> createState() => _TeacherSubjectsViewState();
+}
+
+class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
     with SingleTickerProviderStateMixin {
-  late final TeacherSubjectsViewModel _vm;
   late final TabController _tabController;
   final TextEditingController _searchCtrl = TextEditingController();
   String? _busySubjectId;
@@ -35,26 +66,14 @@ class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
   @override
   void initState() {
     super.initState();
-    _vm = TeacherSubjectsViewModel(
-      teacher: widget.teacher,
-      subject: widget.subject,
-      allSubjects: widget.allSubjects,
-      allTeachers: widget.allTeachers,
-    );
-    // Tabs solo en modo profesor (asignadas / disponibles)
     _tabController = TabController(
       length: widget.teacher != null ? 2 : 1,
       vsync: this,
     );
-    _vm.addListener(_onVmChange);
   }
-
-  void _onVmChange() => setState(() {});
 
   @override
   void dispose() {
-    _vm.removeListener(_onVmChange);
-    _vm.dispose();
     _tabController.dispose();
     _searchCtrl.dispose();
     super.dispose();
@@ -62,23 +81,25 @@ class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
 
   @override
   Widget build(BuildContext context) {
+    // context.watch reconstruye el widget cada vez que el VM notifica
+    final vm = context.watch<TeacherSubjectsViewModel>();
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF161B22),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        title: Text(_vm.pageTitle,
+        title: Text(vm.pageTitle,
             style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Recargar',
-            onPressed: _vm.isInitialLoading ? null : _vm.refresh,
+            onPressed: vm.isInitialLoading ? null : vm.refresh,
           ),
-          // Botón asignar nueva relación → pasa las listas para no quemar datos
           IconButton(
             icon: const Icon(Icons.add_link_rounded),
-            tooltip: 'Asignar nueva relación',
+            tooltip: 'Asignar nueva Materia Profesor',
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -87,96 +108,93 @@ class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
                   allSubjects: widget.allSubjects,
                 ),
               ),
-            ).then((_) => _vm.refresh()),
+            ).then((_) => vm.refresh()),
           ),
         ],
-        bottom: _vm.isTeacherMode
+        bottom: vm.isTeacherMode
             ? TabBar(
                 controller: _tabController,
-                indicatorColor: const Color(0xFF4A90D9),
-                labelColor: const Color(0xFF4A90D9),
-                unselectedLabelColor: Colors.white54,
+                indicatorColor: Colors.white,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white60,
                 tabs: [
                   Tab(
                     icon: const Icon(Icons.book),
-                    text: 'Asignadas (${_vm.assignedSubjects.length})',
+                    text: 'Asignadas (${vm.assignedSubjects.length})',
                   ),
                   Tab(
                     icon: const Icon(Icons.add_box_outlined),
-                    text: 'Disponibles (${_vm.availableSubjects.length})',
+                    text: 'Disponibles (${vm.availableSubjects.length})',
                   ),
                 ],
               )
             : null,
       ),
-      body: _vm.isInitialLoading
+      body: vm.isInitialLoading
           ? _buildSkeleton()
-          : _vm.errorMessage != null &&
-                  (_vm.isTeacherMode
-                      ? _vm.assignedSubjects.isEmpty
-                      : _vm.subjectLinks.isEmpty)
-              ? _buildError()
-              : _vm.isTeacherMode
-                  ? _buildTeacherBody()
-                  : _buildSubjectBody(),
+          : vm.errorMessage != null &&
+                  (vm.isTeacherMode
+                      ? vm.assignedSubjects.isEmpty
+                      : vm.subjectLinks.isEmpty)
+              ? _buildError(vm)
+              : vm.isTeacherMode
+                  ? _buildTeacherBody(vm)
+                  : _buildSubjectBody(vm),
     );
   }
 
-  // ── Modo PROFESOR: tabs asignadas / disponibles ───────────────────────────
-  Widget _buildTeacherBody() {
-    return Column(
-      children: [
-        _buildTeacherHeader(),
-        _buildSearchBar(),
-        const SizedBox(height: 4),
-        if (_vm.errorMessage != null) _buildErrorBanner(),
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildSubjectList(_vm.filteredAssigned(), assigned: true),
-              _buildSubjectList(_vm.filteredAvailable(), assigned: false),
-            ],
-          ),
+  // ── Modo PROFESOR ─────────────────────────────────────────────────────────
+  Widget _buildTeacherBody(TeacherSubjectsViewModel vm) {
+    return Column(children: [
+      _buildTeacherHeader(vm),
+      _buildSearchBar(vm),
+      const SizedBox(height: 4),
+      if (vm.errorMessage != null) _buildErrorBanner(vm),
+      Expanded(
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildSubjectList(vm, vm.filteredAssigned(), assigned: true),
+            _buildSubjectList(vm, vm.filteredAvailable(), assigned: false),
+          ],
         ),
-      ],
-    );
+      ),
+    ]);
   }
 
-  // ── Modo MATERIA: lista de profesores que la tienen ───────────────────────
-  Widget _buildSubjectBody() {
-    final links = _vm.subjectLinks;
-    return Column(
-      children: [
-        _buildSubjectHeader(),
-        if (_vm.errorMessage != null) _buildErrorBanner(),
-        links.isEmpty
-            ? Expanded(child: _buildEmpty())
-            : Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  itemCount: links.length,
-                  itemBuilder: (_, i) => _TeacherLinkCard(
-                    link: links[i],
-                    isBusy: _vm.isBusy,
-                    onRemove: () => _handleRemoveLink(links[i]),
-                  ),
+  // ── Modo MATERIA ──────────────────────────────────────────────────────────
+  Widget _buildSubjectBody(TeacherSubjectsViewModel vm) {
+    final links = vm.subjectLinks;
+    return Column(children: [
+      _buildSubjectHeader(vm),
+      if (vm.errorMessage != null) _buildErrorBanner(vm),
+      links.isEmpty
+          ? Expanded(child: _buildEmpty())
+          : Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.only(bottom: 24),
+                itemCount: links.length,
+                itemBuilder: (_, i) => _TeacherLinkCard(
+                  link: links[i],
+                  isBusy: vm.isBusy,
+                  onRemove: () => _handleRemoveLink(links[i]),
                 ),
               ),
-      ],
-    );
+            ),
+    ]);
   }
 
-  // ── Lista materias (modo profesor) ────────────────────────────────────────
-  Widget _buildSubjectList(List<Subject> subjects, {required bool assigned}) {
+  Widget _buildSubjectList(
+      TeacherSubjectsViewModel vm, List<Subject> subjects,
+      {required bool assigned}) {
     if (subjects.isEmpty) {
       return _EmptyState(
         icon: assigned ? Icons.book_outlined : Icons.check_circle_outline,
-        message: _vm.searchQuery.isEmpty
+        message: vm.searchQuery.isEmpty
             ? assigned
                 ? 'Este profesor no tiene materias asignadas.'
                 : 'Todas las materias ya están asignadas.'
-            : 'No hay resultados para "${_vm.searchQuery}".',
+            : 'No hay resultados para "${vm.searchQuery}".',
         actionLabel: assigned ? 'Ver disponibles' : null,
         onAction: assigned ? () => _tabController.animateTo(1) : null,
       );
@@ -195,14 +213,14 @@ class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
               : assigned
                   ? () => _handleRemove(s)
                   : () => _handleAssign(s),
-          onAdjuntos: assigned ? () => _goToAdjuntos(s.id) : null,
+          onAdjuntos: assigned ? () => _goToAdjuntos(vm, s.id) : null,
         );
       },
     );
   }
 
   // ── Headers ───────────────────────────────────────────────────────────────
-  Widget _buildTeacherHeader() {
+  Widget _buildTeacherHeader(TeacherSubjectsViewModel vm) {
     final t = widget.teacher!;
     return _InfoHeader(
       initials: '${t.firstName[0]}${t.lastName[0]}',
@@ -210,13 +228,13 @@ class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
       subtitle: t.email,
       tag: t.department,
       badge1Label: 'Materias',
-      badge1Value: '${_vm.assignedSubjects.length}',
+      badge1Value: '${vm.assignedSubjects.length}',
       badge2Label: 'Créditos',
-      badge2Value: '${_vm.totalCredits}',
+      badge2Value: '${vm.totalCredits}',
     );
   }
 
-  Widget _buildSubjectHeader() {
+  Widget _buildSubjectHeader(TeacherSubjectsViewModel vm) {
     final s = widget.subject!;
     return _InfoHeader(
       initials: s.nombre.substring(0, 2).toUpperCase(),
@@ -224,7 +242,7 @@ class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
       subtitle: s.contenido,
       tag: '${s.creditos} créditos  •  ${s.horas} h',
       badge1Label: 'Profesores',
-      badge1Value: '${_vm.subjectLinks.length}',
+      badge1Value: '${vm.subjectLinks.length}',
       badge2Label: '',
       badge2Value: '',
     );
@@ -232,54 +250,54 @@ class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
 
   // ── Acciones ──────────────────────────────────────────────────────────────
   Future<void> _handleAssign(Subject subject) async {
+    // context.read accede al VM sin suscribirse (solo para llamar métodos)
+    final vm = context.read<TeacherSubjectsViewModel>();
     setState(() => _busySubjectId = subject.id);
-    final ok = await _vm.assignSubject(subject);
+    final ok = await vm.assignSubject(subject);
     setState(() => _busySubjectId = null);
     if (!mounted) return;
     if (ok) {
       _snack('✅  ${subject.nombre} asignada correctamente');
       _tabController.animateTo(0);
     } else {
-      _snack('❌  ${_vm.errorMessage}', isError: true);
+      _snack('❌  ${vm.errorMessage}', isError: true);
     }
   }
 
   Future<void> _handleRemove(Subject subject) async {
+    final vm = context.read<TeacherSubjectsViewModel>();
     final confirmed = await _confirmDialog(subject.nombre);
     if (!confirmed || !mounted) return;
     setState(() => _busySubjectId = subject.id);
-    final ok = await _vm.removeSubject(subject);
+    final ok = await vm.removeSubject(subject);
     setState(() => _busySubjectId = null);
     if (!mounted) return;
     ok
         ? _snack('🗑  ${subject.nombre} quitada del profesor')
-        : _snack('❌  ${_vm.errorMessage}', isError: true);
+        : _snack('❌  ${vm.errorMessage}', isError: true);
   }
 
   Future<void> _handleRemoveLink(SubjectTeacher link) async {
+    final vm = context.read<TeacherSubjectsViewModel>();
     final confirmed = await _confirmDialog(link.teacherName);
     if (!confirmed || !mounted) return;
-    final ok = await _vm.removeLink(link);
+    final ok = await vm.removeLink(link);
     if (!mounted) return;
     ok
         ? _snack('🗑  Asignación eliminada')
-        : _snack('❌  ${_vm.errorMessage}', isError: true);
+        : _snack('❌  ${vm.errorMessage}', isError: true);
   }
 
-  void _goToAdjuntos(String subjectId) {
-    // Obtiene el linkId real de la relación
-    final link = _vm.subjectLinks.isEmpty
-        ? null
-        : _vm.subjectLinks
-            .where((l) =>
-                l.subjectId == subjectId &&
-                l.teacherId == widget.teacher?.id)
-            .firstOrNull;
+  void _goToAdjuntos(TeacherSubjectsViewModel vm, String subjectId) {
+    final link = vm.subjectLinks
+        .where((l) =>
+            l.subjectId == subjectId && l.teacherId == widget.teacher?.id)
+        .firstOrNull;
     final linkId = link?.id ?? 'sin-link';
     // TODO: Navigator.push(context, MaterialPageRoute(builder: (_) => AdjuntosPage(linkId: linkId)));
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('📎  Adjuntos — linkId: $linkId'),
-      backgroundColor: const Color(0xFF1A2C42),
+      backgroundColor: AppColors.primary,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ));
@@ -290,18 +308,18 @@ class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
     return await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            backgroundColor: const Color(0xFF1E1E1E),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            title: const Text('Confirmar',
-                style: TextStyle(color: Colors.white)),
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+            title: Text('Confirmar',
+                style: TextStyle(color: AppColors.textPrimary)),
             content: Text('¿Quitar "$name" de esta asignación?',
-                style: const TextStyle(color: Colors.white70)),
+                style: TextStyle(color: AppColors.textSecondary)),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Cancelar',
-                      style: TextStyle(color: Colors.white54))),
+                  child: Text('Cancelar',
+                      style: TextStyle(color: AppColors.textSecondary))),
               ElevatedButton(
                   style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.redAccent),
@@ -316,35 +334,35 @@ class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
   void _snack(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: isError ? Colors.redAccent : const Color(0xFF1A2C42),
+      backgroundColor: isError ? Colors.redAccent : AppColors.primary,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       duration: const Duration(seconds: 2),
     ));
   }
 
-  Widget _buildSearchBar() => Padding(
+  Widget _buildSearchBar(TeacherSubjectsViewModel vm) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         child: TextField(
           controller: _searchCtrl,
-          style: const TextStyle(color: Colors.white),
-          onChanged: _vm.setSearch,
+          style: TextStyle(color: AppColors.textPrimary),
+          onChanged: vm.setSearch,
           decoration: InputDecoration(
             hintText: 'Buscar materia...',
-            hintStyle: const TextStyle(color: Colors.white38),
-            prefixIcon: const Icon(Icons.search, color: Colors.white38),
+            hintStyle: TextStyle(color: AppColors.placeholder),
+            prefixIcon: Icon(Icons.search, color: AppColors.placeholder),
             filled: true,
-            fillColor: const Color(0xFF1E1E1E),
+            fillColor: AppColors.inputFill,
             contentPadding: const EdgeInsets.symmetric(vertical: 10),
-            border: _border(const Color(0xFF333333)),
-            enabledBorder: _border(const Color(0xFF333333)),
-            focusedBorder: _border(const Color(0xFF4A90D9)),
-            suffixIcon: _vm.searchQuery.isNotEmpty
+            border: _border(AppColors.divider),
+            enabledBorder: _border(AppColors.divider),
+            focusedBorder: _border(AppColors.primary),
+            suffixIcon: vm.searchQuery.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.clear, color: Colors.white38),
+                    icon: Icon(Icons.clear, color: AppColors.placeholder),
                     onPressed: () {
                       _searchCtrl.clear();
-                      _vm.setSearch('');
+                      vm.setSearch('');
                     },
                   )
                 : null,
@@ -353,7 +371,8 @@ class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
       );
 
   OutlineInputBorder _border(Color c) => OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: c));
+      borderRadius: BorderRadius.circular(8),
+      borderSide: BorderSide(color: c));
 
   Widget _buildSkeleton() => ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -362,24 +381,24 @@ class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
           margin: const EdgeInsets.symmetric(vertical: 6),
           height: 72,
           decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
+              color: AppColors.inputFill,
               borderRadius: BorderRadius.circular(10)),
           child: Row(children: [
             const SizedBox(width: 16),
             Container(
                 width: 40,
                 height: 40,
-                decoration: const BoxDecoration(
-                    color: Color(0xFF2E2E2E), shape: BoxShape.circle)),
+                decoration: BoxDecoration(
+                    color: AppColors.divider, shape: BoxShape.circle)),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(height: 14, width: 140, color: const Color(0xFF2E2E2E)),
+                    Container(height: 14, width: 140, color: AppColors.divider),
                     const SizedBox(height: 8),
-                    Container(height: 10, width: 90, color: const Color(0xFF2E2E2E)),
+                    Container(height: 10, width: 90, color: AppColors.divider),
                   ]),
             ),
             Container(
@@ -387,34 +406,37 @@ class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
                 width: 70,
                 height: 30,
                 decoration: BoxDecoration(
-                    color: const Color(0xFF2E2E2E),
+                    color: AppColors.divider,
                     borderRadius: BorderRadius.circular(6))),
           ]),
         ),
       );
 
-  Widget _buildError() => Center(
+  Widget _buildError(TeacherSubjectsViewModel vm) => Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.wifi_off_rounded, size: 60, color: Colors.white24),
+          Icon(Icons.wifi_off_rounded,
+              size: 60, color: AppColors.textSecondary),
           const SizedBox(height: 12),
-          Text(_vm.errorMessage!,
-              style: const TextStyle(color: Colors.white54)),
+          Text(vm.errorMessage!,
+              style: TextStyle(color: AppColors.textSecondary)),
           const SizedBox(height: 16),
           ElevatedButton.icon(
-              onPressed: _vm.refresh,
+              onPressed: vm.refresh,
               icon: const Icon(Icons.refresh),
               label: const Text('Reintentar'),
               style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4A90D9))),
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white)),
         ]),
       );
 
   Widget _buildEmpty() => Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.link_off_rounded, size: 60, color: Colors.white24),
+          Icon(Icons.link_off_rounded,
+              size: 60, color: AppColors.textSecondary),
           const SizedBox(height: 12),
-          const Text('No hay asignaciones aún.',
-              style: TextStyle(color: Colors.white38)),
+          Text('No hay asignaciones aún.',
+              style: TextStyle(color: AppColors.textSecondary)),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () => Navigator.push(
@@ -425,34 +447,35 @@ class _TeacherSubjectsPageState extends State<TeacherSubjectsPage>
                   allSubjects: widget.allSubjects,
                 ),
               ),
-            ).then((_) => _vm.refresh()),
+            ).then((_) => context.read<TeacherSubjectsViewModel>().refresh()),
             icon: const Icon(Icons.add_link_rounded),
             label: const Text('Asignar nueva relación'),
             style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A90D9)),
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white),
           ),
         ]),
       );
 
-  Widget _buildErrorBanner() => Container(
+  Widget _buildErrorBanner(TeacherSubjectsViewModel vm) => Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-            color: Colors.redAccent.withOpacity(0.15),
+            color: Colors.redAccent.withOpacity(0.1),
             border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
             borderRadius: BorderRadius.circular(8)),
         child: Row(children: [
           const Icon(Icons.error_outline, color: Colors.redAccent, size: 18),
           const SizedBox(width: 8),
           Expanded(
-              child: Text(_vm.errorMessage!,
+              child: Text(vm.errorMessage!,
                   style:
                       const TextStyle(color: Colors.redAccent, fontSize: 12))),
         ]),
       );
 }
 
-// ── Card materia (modo profesor) ──────────────────────────────────────────
+// ── Card materia ──────────────────────────────────────────────────────────
 class _SubjectCard extends StatelessWidget {
   final Subject subject;
   final bool isAssigned;
@@ -474,80 +497,73 @@ class _SubjectCard extends StatelessWidget {
       duration: const Duration(milliseconds: 250),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: isAssigned ? const Color(0xFF1E3A5F) : const Color(0xFF1E1E1E),
+        color: isAssigned ? AppColors.primary.withOpacity(0.08) : Colors.white,
         border: Border.all(
-            color: isAssigned
-                ? const Color(0xFF4A90D9)
-                : const Color(0xFF333333),
+            color: isAssigned ? AppColors.primary : AppColors.divider,
             width: 1.2),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         ListTile(
           leading: CircleAvatar(
-            backgroundColor: isAssigned
-                ? const Color(0xFF4A90D9)
-                : const Color(0xFF333333),
+            backgroundColor:
+                isAssigned ? AppColors.primary : AppColors.inputFill,
             child: Text(
               subject.nombre.substring(0, 2).toUpperCase(),
-              style: const TextStyle(
-                  color: Colors.white,
+              style: TextStyle(
+                  color: isAssigned ? Colors.white : AppColors.textSecondary,
                   fontSize: 11,
                   fontWeight: FontWeight.bold),
             ),
           ),
           title: Text(subject.nombre,
               style: TextStyle(
-                  color: isAssigned ? Colors.white : Colors.white70,
+                  color: AppColors.textPrimary,
                   fontWeight: FontWeight.w600)),
           subtitle: Text(
               '${subject.creditos} créditos  •  ${subject.horas} h',
-              style: TextStyle(
-                  color: isAssigned
-                      ? const Color(0xFF90CAF9)
-                      : Colors.white38,
-                  fontSize: 12)),
+              style:
+                  TextStyle(color: AppColors.textSecondary, fontSize: 12)),
           trailing: isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 24,
                   height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2))
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: AppColors.primary))
               : OutlinedButton(
                   onPressed: onToggle,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: isAssigned
                         ? Colors.redAccent
-                        : const Color(0xFF4A90D9),
+                        : AppColors.primary,
                     side: BorderSide(
                         color: isAssigned
                             ? Colors.redAccent
-                            : const Color(0xFF4A90D9)),
+                            : AppColors.primary),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 6),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(6)),
                     minimumSize: const Size(76, 32),
                   ),
-                  child: Text(
-                    isAssigned ? 'Quitar' : 'Asignar',
-                    style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
+                  child: Text(isAssigned ? 'Quitar' : 'Asignar',
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
         ),
-        // Botón adjuntos solo en materias asignadas
         if (isAssigned && onAdjuntos != null)
           Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
+            padding:
+                const EdgeInsets.only(left: 16, right: 16, bottom: 10),
             child: OutlinedButton.icon(
               onPressed: isLoading ? null : onAdjuntos,
               icon: const Icon(Icons.attach_file_rounded, size: 16),
               label: const Text('Adjuntos', style: TextStyle(fontSize: 12)),
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF90CAF9),
-                side: const BorderSide(color: Color(0xFF4A90D9)),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                foregroundColor: AppColors.primary,
+                side: BorderSide(color: AppColors.primary),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 6),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(6)),
               ),
@@ -579,28 +595,30 @@ class _TeacherLinkCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A2C42),
-        border: Border.all(color: const Color(0xFF4A90D9), width: 1.2),
+        color: Colors.white,
+        border: Border.all(color: AppColors.divider, width: 1.2),
         borderRadius: BorderRadius.circular(10),
       ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: const Color(0xFF4A90D9),
+          backgroundColor: AppColors.primary,
           child: Text(initials,
               style: const TextStyle(
                   color: Colors.white, fontWeight: FontWeight.bold)),
         ),
         title: Text(link.teacherName,
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w600)),
+            style: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600)),
         subtitle: Text(link.teacherEmail,
             style:
-                const TextStyle(color: Color(0xFF90CAF9), fontSize: 12)),
+                TextStyle(color: AppColors.textSecondary, fontSize: 12)),
         trailing: isBusy
-            ? const SizedBox(
+            ? SizedBox(
                 width: 22,
                 height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2))
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: AppColors.primary))
             : IconButton(
                 icon: const Icon(Icons.link_off_rounded,
                     color: Colors.redAccent),
@@ -633,14 +651,20 @@ class _InfoHeader extends StatelessWidget {
         margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A2C42),
-          border: Border.all(color: const Color(0xFF4A90D9)),
+          color: Colors.white,
+          border: Border.all(color: AppColors.divider),
           borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 6,
+                offset: const Offset(0, 2))
+          ],
         ),
         child: Row(children: [
           CircleAvatar(
             radius: 26,
-            backgroundColor: const Color(0xFF4A90D9),
+            backgroundColor: AppColors.primary,
             child: Text(initials,
                 style: const TextStyle(
                     color: Colors.white,
@@ -653,18 +677,18 @@ class _InfoHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title,
-                      style: const TextStyle(
-                          color: Colors.white,
+                      style: TextStyle(
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 15)),
                   if (subtitle.isNotEmpty)
                     Text(subtitle,
-                        style: const TextStyle(
-                            color: Colors.white54, fontSize: 11)),
+                        style: TextStyle(
+                            color: AppColors.textSecondary, fontSize: 11)),
                   if (tag.isNotEmpty)
                     Text(tag,
-                        style: const TextStyle(
-                            color: Color(0xFF90CAF9), fontSize: 11)),
+                        style: TextStyle(
+                            color: AppColors.primary, fontSize: 11)),
                 ]),
           ),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -686,20 +710,20 @@ class _Badge extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-            color: const Color(0xFF0D1B2A),
+            color: AppColors.inputFill,
             borderRadius: BorderRadius.circular(20)),
         child: RichText(
           text: TextSpan(children: [
             TextSpan(
                 text: '$value ',
-                style: const TextStyle(
-                    color: Color(0xFF4A90D9),
+                style: TextStyle(
+                    color: AppColors.primary,
                     fontWeight: FontWeight.bold,
                     fontSize: 13)),
             TextSpan(
                 text: label,
-                style:
-                    const TextStyle(color: Colors.white54, fontSize: 11)),
+                style: TextStyle(
+                    color: AppColors.textSecondary, fontSize: 11)),
           ]),
         ),
       );
@@ -721,19 +745,18 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 60, color: Colors.white24),
+          Icon(icon, size: 60, color: AppColors.textSecondary),
           const SizedBox(height: 12),
           Text(message,
               textAlign: TextAlign.center,
               style:
-                  const TextStyle(color: Colors.white38, fontSize: 14)),
+                  TextStyle(color: AppColors.textSecondary, fontSize: 14)),
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(height: 16),
             TextButton(
                 onPressed: onAction,
                 child: Text(actionLabel!,
-                    style: const TextStyle(
-                        color: Color(0xFF4A90D9)))),
+                    style: TextStyle(color: AppColors.primary))),
           ],
         ]),
       );
