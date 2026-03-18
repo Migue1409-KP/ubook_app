@@ -4,6 +4,8 @@ import '../../model/teachers/teacher.dart';
 import '../../theme/app_colors.dart';
 import '../../view_model/teachers/teacher_list_view_model.dart';
 import '../../view_model/teachers/teacher_count_provider.dart';
+import '../../widgets/teachers/teacher_row_card.dart';
+import '../../widgets/teachers/teacher_delete_dialog.dart';
 import '../teacher_subject/teacher_subjects_page.dart';
 import 'teacher_form_view.dart';
 
@@ -49,39 +51,15 @@ class _TeacherListViewState extends State<TeacherListView> {
   }
 
   void _onDeleteTeacher(Teacher teacher) {
-    showDialog(
+    TeacherDeleteDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text(
-          'Eliminar profesor',
-          style: TextStyle(color: AppColors.textPrimary),
-        ),
-        content: Text(
-          '¿Estás seguro de que deseas eliminar a ${teacher.fullName}?',
-          style: const TextStyle(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancelar',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _viewModel.deleteTeacher(teacher.id);
-              context.read<TeacherCountProvider>().removeTeacher(
-                    wasActive: teacher.isActive,
-                  );
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+      teacherName: teacher.fullName,
+      onConfirm: () {
+        _viewModel.deleteTeacher(teacher.id);
+        context.read<TeacherCountProvider>().removeTeacher(
+              wasActive: teacher.isActive,
+            );
+      },
     );
   }
 
@@ -106,7 +84,7 @@ class _TeacherListViewState extends State<TeacherListView> {
           children: [
             _buildSearchAndCreateRow(),
             const SizedBox(height: 16),
-            Expanded(child: _buildTeacherTable()),
+            Expanded(child: _buildTeacherList()),
           ],
         ),
       ),
@@ -177,7 +155,7 @@ class _TeacherListViewState extends State<TeacherListView> {
     );
   }
 
-  Widget _buildTeacherTable() {
+  Widget _buildTeacherList() {
     final teachers = _viewModel.filteredTeachers;
 
     if (teachers.isEmpty) {
@@ -197,87 +175,15 @@ class _TeacherListViewState extends State<TeacherListView> {
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            headingRowColor:
-                WidgetStateProperty.all(AppColors.background),
-            columnSpacing: 24,
-            columns: const [
-              DataColumn(
-                label: Text('Nombre',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary)),
-              ),
-              DataColumn(
-                label: Text('ID',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary)),
-              ),
-              DataColumn(
-                label: Text('Edad',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary)),
-                numeric: true,
-              ),
-              DataColumn(
-                label: Text('Acciones',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary)),
-              ),
-            ],
-            rows: teachers.map((teacher) {
-              return DataRow(
-                cells: [
-                  DataCell(Text(teacher.fullName,
-                      style:
-                          const TextStyle(color: AppColors.textPrimary))),
-                  DataCell(Text(teacher.id,
-                      style:
-                          const TextStyle(color: AppColors.textSecondary))),
-                  DataCell(Text(teacher.age.toString(),
-                      style:
-                          const TextStyle(color: AppColors.textSecondary))),
-                  DataCell(_buildActionButtons(teacher)),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(Teacher teacher) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextButton(
-          onPressed: () => _navigateToTeacherSubjects(teacher),
-          child: const Text('Ver',
-              style: TextStyle(color: AppColors.primary, fontSize: 12)),
-        ),
-        TextButton(
-          onPressed: () async {
+    return ListView.separated(
+      itemCount: teachers.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final teacher = teachers[index];
+        return TeacherRowCard(
+          teacher: teacher,
+          onView: () => _navigateToTeacherSubjects(teacher),
+          onEdit: () async {
             final result = await Navigator.of(context).push<Teacher>(
               MaterialPageRoute(
                 builder: (_) => TeacherFormView(teacher: teacher),
@@ -287,15 +193,9 @@ class _TeacherListViewState extends State<TeacherListView> {
               _viewModel.updateTeacher(result);
             }
           },
-          child: const Text('Editar',
-              style: TextStyle(color: AppColors.primary, fontSize: 12)),
-        ),
-        TextButton(
-          onPressed: () => _onDeleteTeacher(teacher),
-          style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-          child: const Text('Eliminar', style: TextStyle(fontSize: 12)),
-        ),
-      ],
+          onDelete: () => _onDeleteTeacher(teacher),
+        );
+      },
     );
   }
 }

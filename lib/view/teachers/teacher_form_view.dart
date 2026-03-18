@@ -4,6 +4,8 @@ import '../../theme/app_colors.dart';
 import '../../view_model/teachers/teacher_form_view_model.dart';
 import '../../view_model/teachers/teacher_count_provider.dart';
 import '../../model/teachers/teacher.dart';
+import '../../widgets/teachers/teacher_form_field.dart';
+import '../../widgets/teachers/teacher_active_switch.dart';
 
 class TeacherFormView extends StatefulWidget {
   const TeacherFormView({super.key, this.teacher});
@@ -108,32 +110,32 @@ class _TeacherFormViewState extends State<TeacherFormView> {
                   );
                 },
               ),
-              _buildField(
+              TeacherFormField(
                 controller: _vm.firstNameController,
                 label: 'Nombre',
                 hint: 'ej. Juan Pablo',
                 validator: (v) => _vm.validateRequired(v, field: 'Nombre'),
               ),
-              _buildField(
+              TeacherFormField(
                 controller: _vm.lastNameController,
                 label: 'Apellido',
                 hint: 'ej. Gómez',
                 validator: (v) => _vm.validateRequired(v, field: 'Apellido'),
               ),
-              _buildField(
+              TeacherFormField(
                 controller: _vm.emailController,
                 label: 'Email',
                 hint: 'ej. juan@uni.edu',
                 keyboardType: TextInputType.emailAddress,
                 validator: _vm.validateEmail,
               ),
-              _buildField(
+              TeacherFormField(
                 controller: _vm.phoneController,
                 label: 'Teléfono',
                 hint: 'ej. 809-555-0101',
                 keyboardType: TextInputType.phone,
               ),
-              _buildField(
+              TeacherFormField(
                 controller: _vm.ageController,
                 label: 'Edad',
                 hint: 'ej. 35',
@@ -141,19 +143,19 @@ class _TeacherFormViewState extends State<TeacherFormView> {
                 validator: (v) =>
                     _vm.validatePositiveInt(v, field: 'Edad'),
               ),
-              _buildField(
+              TeacherFormField(
                 controller: _vm.departmentController,
                 label: 'Departamento',
                 hint: 'ej. Ingeniería de Sistemas',
                 validator: (v) =>
                     _vm.validateRequired(v, field: 'Departamento'),
               ),
-              _buildField(
+              TeacherFormField(
                 controller: _vm.specialtyController,
                 label: 'Especialidad',
                 hint: 'ej. Desarrollo Móvil',
               ),
-              _buildField(
+              TeacherFormField(
                 controller: _vm.profileImageUrlController,
                 label: 'URL de imagen de perfil',
                 hint: 'ej. https://example.com/avatar.jpg',
@@ -161,7 +163,10 @@ class _TeacherFormViewState extends State<TeacherFormView> {
                 action: TextInputAction.done,
               ),
               const SizedBox(height: 12),
-              _buildActiveSwitch(),
+              TeacherActiveSwitch(
+                value: _vm.isActive,
+                onChanged: (val) => setState(() => _vm.isActive = val),
+              ),
               const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: _vm.isSaving
@@ -212,81 +217,4 @@ class _TeacherFormViewState extends State<TeacherFormView> {
     );
   }
 
-  Widget _buildField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    TextInputAction action = TextInputAction.next,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextFormField(
-        controller: controller,
-        textInputAction: action,
-        keyboardType: keyboardType,
-        style: const TextStyle(color: AppColors.textPrimary),
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          labelStyle: const TextStyle(color: AppColors.textSecondary),
-          hintStyle: const TextStyle(color: AppColors.placeholder),
-          filled: true,
-          fillColor: AppColors.inputFill,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.divider),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.divider),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.redAccent),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.redAccent, width: 2),
-          ),
-        ),
-        validator: validator,
-      ),
-    );
-  }
-
-  Widget _buildActiveSwitch() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.verified_user_outlined,
-              color: AppColors.textSecondary, size: 20),
-          const SizedBox(width: 12),
-          const Text(
-            'Activo',
-            style: TextStyle(color: AppColors.textPrimary, fontSize: 16),
-          ),
-          const Spacer(),
-          Switch(
-            value: _vm.isActive,
-            activeColor: AppColors.primary,
-            onChanged: (val) => setState(() => _vm.isActive = val),
-          ),
-        ],
-      ),
-    );
-  }
 }
