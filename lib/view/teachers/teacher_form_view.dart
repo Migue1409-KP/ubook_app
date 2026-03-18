@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../theme/app_colors.dart';
 import '../../view_model/teachers/teacher_form_view_model.dart';
+import '../../view_model/teachers/teacher_count_provider.dart';
 import '../../model/teachers/teacher.dart';
 
 class TeacherFormView extends StatefulWidget {
   const TeacherFormView({super.key, this.teacher});
 
-  /// Pass a [Teacher] to enter edit mode with pre-filled fields.
   final Teacher? teacher;
 
   @override
@@ -31,10 +33,10 @@ class _TeacherFormViewState extends State<TeacherFormView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF161B22),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
         title: Text(
           _vm.isEditing ? 'Editar Profesor' : 'Nuevo Profesor',
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -50,6 +52,62 @@ class _TeacherFormViewState extends State<TeacherFormView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Consumer<TeacherCountProvider>(
+                builder: (context, counter, _) {
+                  final wasActive = widget.teacher?.isActive ?? false;
+                  final previewTotal =
+                      counter.total + (_vm.isEditing ? 0 : 1);
+                  final previewActive = counter.active +
+                      (_vm.isActive ? 1 : 0) -
+                      (_vm.isEditing ? (wasActive ? 1 : 0) : 0);
+                  final isActiveNow = _vm.isActive;
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.person,
+                            color: AppColors.primary, size: 22),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Profesores registrados: $previewTotal',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const Spacer(),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: (isActiveNow ? Colors.green : Colors.red)
+                                .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'Activos: $previewActive',
+                            style: TextStyle(
+                              color: isActiveNow
+                                  ? Colors.green[700]
+                                  : Colors.red[700],
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
               _buildField(
                 controller: _vm.firstNameController,
                 label: 'Nombre',
@@ -80,13 +138,15 @@ class _TeacherFormViewState extends State<TeacherFormView> {
                 label: 'Edad',
                 hint: 'ej. 35',
                 keyboardType: TextInputType.number,
-                validator: (v) => _vm.validatePositiveInt(v, field: 'Edad'),
+                validator: (v) =>
+                    _vm.validatePositiveInt(v, field: 'Edad'),
               ),
               _buildField(
                 controller: _vm.departmentController,
                 label: 'Departamento',
                 hint: 'ej. Ingeniería de Sistemas',
-                validator: (v) => _vm.validateRequired(v, field: 'Departamento'),
+                validator: (v) =>
+                    _vm.validateRequired(v, field: 'Departamento'),
               ),
               _buildField(
                 controller: _vm.specialtyController,
@@ -109,6 +169,11 @@ class _TeacherFormViewState extends State<TeacherFormView> {
                     : () async {
                         final Teacher? saved = await _vm.submit();
                         if (saved != null && mounted) {
+                          if (!_vm.isEditing) {
+                            context.read<TeacherCountProvider>().addTeacher(
+                                  isActive: saved.isActive,
+                                );
+                          }
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(_vm.isEditing
@@ -131,7 +196,7 @@ class _TeacherFormViewState extends State<TeacherFormView> {
                     : const Icon(Icons.save),
                 label: Text(_vm.isSaving ? 'Guardando...' : 'Guardar'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF4A90D9),
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -161,27 +226,27 @@ class _TeacherFormViewState extends State<TeacherFormView> {
         controller: controller,
         textInputAction: action,
         keyboardType: keyboardType,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: AppColors.textPrimary),
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          labelStyle: const TextStyle(color: Colors.white54),
-          hintStyle: const TextStyle(color: Colors.white24),
+          labelStyle: const TextStyle(color: AppColors.textSecondary),
+          hintStyle: const TextStyle(color: AppColors.placeholder),
           filled: true,
-          fillColor: const Color(0xFF161B22),
+          fillColor: AppColors.inputFill,
           contentPadding:
               const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF30363D)),
+            borderSide: const BorderSide(color: AppColors.divider),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF30363D)),
+            borderSide: const BorderSide(color: AppColors.divider),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF4A90D9), width: 2),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -201,23 +266,23 @@ class _TeacherFormViewState extends State<TeacherFormView> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF30363D)),
+        border: Border.all(color: AppColors.divider),
       ),
       child: Row(
         children: [
           const Icon(Icons.verified_user_outlined,
-              color: Colors.white54, size: 20),
+              color: AppColors.textSecondary, size: 20),
           const SizedBox(width: 12),
           const Text(
             'Activo',
-            style: TextStyle(color: Colors.white70, fontSize: 16),
+            style: TextStyle(color: AppColors.textPrimary, fontSize: 16),
           ),
           const Spacer(),
           Switch(
             value: _vm.isActive,
-            activeColor: const Color(0xFF4A90D9),
+            activeColor: AppColors.primary,
             onChanged: (val) => setState(() => _vm.isActive = val),
           ),
         ],
