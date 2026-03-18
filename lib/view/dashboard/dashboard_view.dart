@@ -8,6 +8,9 @@ import '../teachers/teacher_list_view.dart';
 import '../teachers/teacher_detail_view.dart';
 import '../../model/teachers/teacher.dart';
 import '../educational_center/educational_center_screen.dart';
+import '../subjects/subject_detail_dialog.dart';
+import '../subjects/subjects_view.dart';
+import '../../model/subjects/subjects.dart';
 import '../../theme/app_colors.dart';
 
 class DashboardView extends StatelessWidget {
@@ -63,7 +66,7 @@ class _DashboardViewContent extends StatelessWidget {
                   TopItemsCarousel(
                     title: 'Top 5 Carreras',
                     onSeeAll: () {
-                      // TODO: Navigate to all careers
+                      _navigateToSubjects(context);
                     },
                     items: viewModel.topCareers,
                     itemBuilder: (item) => _buildCard(
@@ -72,7 +75,7 @@ class _DashboardViewContent extends StatelessWidget {
                       rating: item['rating'],
                       icon: Icons.school,
                       color: Colors.orange,
-                      onTap: () {}, // TODO: Navigate to career detail
+                      onTap: () => _showSubjectDetail(context, item),
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -222,6 +225,31 @@ class _DashboardViewContent extends StatelessWidget {
       MaterialPageRoute(
         builder: (context) => const EducationalCenterScreen(),
       ),
+    );
+  }
+
+  void _navigateToSubjects(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SubjectsView(),
+      ),
+    );
+  }
+
+  void _showSubjectDetail(BuildContext context, Map<String, dynamic> item) {
+    final dummySubject = Subject(
+      id: 'DUMMY-SUB',
+      nombre: item['name'] as String? ?? 'Desconocida',
+      horas: 48,
+      creditos: 3,
+      prerrequisitos: ['Fundamentos de programación', 'Matemáticas'],
+      contenido: 'Materia enfocada en el desarrollo y la lógica correspondiente del área de ${item['faculty'] ?? 'estudio'}.',
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => SubjectDetailDialog(subject: dummySubject),
     );
   }
 
