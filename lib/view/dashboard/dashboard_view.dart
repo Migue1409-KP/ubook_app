@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../view_model/dashboard_view_model.dart';
 import '../../widgets/dashboard_app_bar.dart';
 import '../../widgets/top_items_carousel.dart';
+import '../../theme/app_colors.dart';
 import '../process/process_list_view.dart';
 import '../teachers/teacher_list_view.dart';
 import '../educational_center/educational_center_screen.dart';
@@ -128,14 +129,14 @@ class _DashboardViewState extends State<DashboardView> {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Colors.blue.shade400, Colors.blue.shade700],
+                        colors: [AppColors.primary, AppColors.primary],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.blue.withOpacity(0.3),
+                          color: AppColors.primary.withOpacity(0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
