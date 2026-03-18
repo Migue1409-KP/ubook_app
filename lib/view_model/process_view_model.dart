@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import '../model/process/process_model.dart';
+import '../repository/process/process_repository.dart';
 
 class ProcessViewModel extends ChangeNotifier {
+  ProcessViewModel({ProcessRepository? repository})
+    : _repository = repository ?? InMemoryProcessRepository() {
+    loadProcesses();
+  }
+
+  final ProcessRepository _repository;
   bool _disposed = false;
 
   @override
@@ -10,120 +17,7 @@ class ProcessViewModel extends ChangeNotifier {
     super.dispose();
   }
 
-  // Dummy data for Processes
-  final List<ProcessModel> _processes = [
-    // ===== PROCESOS DE CARRERA =====
-    ProcessModel(
-      id: 'proc_001',
-      name: 'Inscripción de Carrera',
-      description:
-          'Proceso para inscribir una nueva carrera universitaria. Permite a los estudiantes registrarse oficialmente en el programa académico.',
-      requiredDocuments: [
-        'Documento de identidad',
-        'Certificado de bachillerato',
-        'Formulario de inscripción',
-        'Foto 3x4',
-      ],
-      processType: ProcessType.career,
-      relatedId: 'career_001',
-      isActive: true,
-    ),
-    ProcessModel(
-      id: 'proc_002',
-      name: 'Solicitud de Certificado Académico',
-      description:
-          'Solicitud de certificado oficial que acredita estar cursando una carrera o haber completado semestres.',
-      requiredDocuments: [
-        'Documento de identidad',
-        'Recibo de pago',
-        'Formulario de solicitud',
-      ],
-      processType: ProcessType.career,
-      relatedId: 'career_001',
-      isActive: true,
-    ),
-    ProcessModel(
-      id: 'proc_003',
-      name: 'Retiro de Carrera',
-      description:
-          'Proceso para retirarse formalmente de una carrera universitaria. Incluye cancelación de matrícula.',
-      requiredDocuments: [
-        'Documento de identidad',
-        'Carta de retiro',
-        'Paz y salvo académico',
-        'Paz y salvo financiero',
-      ],
-      processType: ProcessType.career,
-      isActive: true,
-    ),
-    // ===== PROCESOS DE MATERIA =====
-    ProcessModel(
-      id: 'proc_004',
-      name: 'Cancelación de Materia',
-      description:
-          'Permite cancelar una materia antes de la fecha límite sin afectar el promedio académico.',
-      requiredDocuments: [
-        'Documento de identidad',
-        'Formulario de cancelación',
-        'Justificación escrita',
-      ],
-      processType: ProcessType.subject,
-      relatedId: 'subject_001',
-      isActive: true,
-    ),
-    ProcessModel(
-      id: 'proc_005',
-      name: 'Solicitud de Examen Supletorio',
-      description:
-          'Proceso para solicitar un examen supletorio cuando se reprueba el examen final por primera vez.',
-      requiredDocuments: [
-        'Documento de identidad',
-        'Solicitud formal',
-        'Recibo de pago',
-        'Justificación académica',
-      ],
-      processType: ProcessType.subject,
-      relatedId: 'subject_002',
-      isActive: true,
-    ),
-    ProcessModel(
-      id: 'proc_006',
-      name: 'Solicitud de Retroalimentación',
-      description:
-          'Permite solicitar retroalimentación detallada sobre calificaciones o evaluaciones de una materia.',
-      requiredDocuments: ['Documento de identidad', 'Formato de solicitud'],
-      processType: ProcessType.subject,
-      relatedId: 'subject_003',
-      isActive: true,
-    ),
-    ProcessModel(
-      id: 'proc_007',
-      name: 'Inscripción de Materia',
-      description:
-          'Proceso para inscribirse en una nueva materia durante el período de matrículas.',
-      requiredDocuments: [
-        'Documento de identidad',
-        'Recibo de pago',
-        'Formulario de inscripción',
-      ],
-      processType: ProcessType.subject,
-      isActive: true,
-    ),
-    ProcessModel(
-      id: 'proc_008',
-      name: 'Revisión de Examen',
-      description:
-          'Solicitud para revisar un examen y verificar la calificación obtenida. Disponible 5 días después de publicadas las notas.',
-      requiredDocuments: [
-        'Documento de identidad',
-        'Solicitud de revisión',
-        'Copia del examen (si está disponible)',
-      ],
-      processType: ProcessType.subject,
-      relatedId: 'subject_001',
-      isActive: false,
-    ),
-  ];
+  List<ProcessModel> _processes = [];
 
   // Filter state
   String _selectedFilter = 'Todos';
@@ -142,6 +36,18 @@ class ProcessViewModel extends ChangeNotifier {
   List<ProcessModel> get processes => _getFilteredProcesses();
   String get selectedFilter => _selectedFilter;
   bool get isLoading => _isLoading;
+
+  Future<void> loadProcesses() async {
+    _isLoading = true;
+    notifyListeners();
+
+    final processes = await _repository.getProcesses();
+    if (_disposed) return;
+
+    _processes = processes;
+    _isLoading = false;
+    notifyListeners();
+  }
 
   // Get filtered processes based on selected filter
   List<ProcessModel> _getFilteredProcesses() {
@@ -174,8 +80,7 @@ class ProcessViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    // Simulación de carga
-    await Future.delayed(const Duration(seconds: 1));
+    await _repository.addProcess(process);
     if (_disposed) return;
 
     _processes.add(process);
@@ -188,8 +93,7 @@ class ProcessViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    // Simulación de carga
-    await Future.delayed(const Duration(seconds: 1));
+    await _repository.updateProcess(process);
     if (_disposed) return;
 
     final index = _processes.indexWhere((p) => p.id == process.id);
@@ -205,8 +109,7 @@ class ProcessViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    // Simulación de carga
-    await Future.delayed(const Duration(milliseconds: 500));
+    await _repository.deleteProcess(processId);
     if (_disposed) return;
 
     _processes.removeWhere((p) => p.id == processId);
@@ -222,6 +125,7 @@ class ProcessViewModel extends ChangeNotifier {
     } else {
       _processes.add(process);
     }
+    _repository.addProcess(process);
     notifyListeners();
   }
 

@@ -26,6 +26,18 @@ class AppColors {
   /// Color de divisores
   static const divider = Color(0xFFD0D5D3);
 
+  /// Texto/íconos sobre fondo primario
+  static const onPrimary = Colors.white;
+
+  /// Color para acción editar
+  static const processSubject = Color(0xFFFF9800);
+
+  /// Estado activo
+  static const processActive = Color(0xFF4CAF50);
+
+  /// Estado inactivo y acción eliminar
+  static const processDanger = Color(0xFFD32F2F);
+
   // ── Opción 2: Paleta azul profundo ───────────────────────────
   // static const background    = Color(0xFFF8F9FA);   // Blanco suave
   // static const primary       = Color(0xFF1A73E8);   // Azul profundo
