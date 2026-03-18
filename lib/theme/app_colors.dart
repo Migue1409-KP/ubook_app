@@ -26,12 +26,10 @@ class AppColors {
   /// Color de divisores
   static const divider = Color(0xFFD0D5D3);
 
-  // ── Colores módulo procesos ───────────────────────────
-
   /// Texto/íconos sobre fondo primario
   static const onPrimary = Colors.white;
 
-  /// Color para procesos de materia y acción editar
+  /// Color para acción editar
   static const processSubject = Color(0xFFFF9800);
 
   /// Estado activo
