@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String selectedFilter;
@@ -16,19 +17,19 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       elevation: 0,
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black87,
+      backgroundColor: AppColors.background,
+      foregroundColor: AppColors.textPrimary,
       title: const Text(
         'UBook',
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          color: Colors.indigo,
+          color: AppColors.primary,
           fontSize: 24,
         ),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Colors.black87),
+          icon: const Icon(Icons.notifications_outlined, color: AppColors.textPrimary),
           onPressed: () {
             // TODO: Show notifications
           },
@@ -40,7 +41,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           icon: const CircleAvatar(
             radius: 16,
-            backgroundColor: Colors.indigo,
+            backgroundColor: AppColors.primary,
             child: Icon(Icons.person, size: 20, color: Colors.white),
           ),
           onSelected: (value) {
@@ -52,9 +53,9 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                 value: 'profile',
                 child: Row(
                   children: [
-                    Icon(Icons.person_outline, color: Colors.indigo, size: 20),
+                    Icon(Icons.person_outline, color: AppColors.primary, size: 20),
                     SizedBox(width: 12),
-                    Text('Mi Perfil'),
+                    Text('Mi Perfil', style: TextStyle(color: AppColors.textPrimary)),
                   ],
                 ),
               ),
@@ -62,9 +63,9 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                 value: 'users',
                 child: Row(
                   children: [
-                    Icon(Icons.manage_accounts_outlined, color: Colors.indigo, size: 20),
+                    Icon(Icons.manage_accounts_outlined, color: AppColors.primary, size: 20),
                     SizedBox(width: 12),
-                    Text('Administrar Usuarios'),
+                    Text('Administrar Usuarios', style: TextStyle(color: AppColors.textPrimary)),
                   ],
                 ),
               ),
@@ -72,9 +73,9 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                 value: 'pqrs',
                 child: Row(
                   children: [
-                    Icon(Icons.support_agent_outlined, color: Colors.indigo, size: 20),
+                    Icon(Icons.support_agent_outlined, color: AppColors.primary, size: 20),
                     SizedBox(width: 12),
-                    Text('PQRS'),
+                    Text('PQRS', style: TextStyle(color: AppColors.textPrimary)),
                   ],
                 ),
               ),
@@ -92,15 +93,15 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: AppColors.inputFill,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey[300]!),
+                    border: Border.all(color: AppColors.divider),
                   ),
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Buscar en UBook...',
-                      hintStyle: TextStyle(color: Colors.grey[500]),
-                      prefixIcon: const Icon(Icons.search, color: Colors.indigo),
+                      hintStyle: const TextStyle(color: AppColors.placeholder),
+                      prefixIcon: const Icon(Icons.search, color: AppColors.primary),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -110,11 +111,11 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
               const SizedBox(width: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.indigo,
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.indigo.withOpacity(0.3),
+                      color: AppColors.primary.withOpacity(0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -155,11 +156,11 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close, color: AppColors.textPrimary),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -169,11 +170,11 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                 return RadioListTile<String>(
                   title: Text(
                     option,
-                    style: const TextStyle(fontSize: 16),
+                    style: const TextStyle(fontSize: 16, color: AppColors.textPrimary),
                   ),
                   value: option,
                   groupValue: selectedFilter,
-                  activeColor: Colors.indigo,
+                  activeColor: AppColors.primary,
                   contentPadding: EdgeInsets.zero,
                   onChanged: (value) {
                     if (value != null) {
