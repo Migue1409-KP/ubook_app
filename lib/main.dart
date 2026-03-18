@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
 import 'view/auth/register_view.dart';
+import 'view/pqrs/pqrs_page.dart';
+import 'view_model/pqrs/pqrs_viewmodel.dart';
 import 'view_model/auth/user_count_provider.dart';
 import 'view_model/teachers/teacher_count_provider.dart';
 
@@ -30,6 +32,10 @@ class MyApp extends StatelessWidget {
         routes: {
           '/login': (context) => const LoginView(),
           '/register': (context) => const RegisterView(),
+          '/pqrs': (context) => ChangeNotifierProvider(
+            create: (_) => PQRSViewModel(),
+            child: const PQRSPage(),
+          ),
         },
         home: const DashboardView(),
       ),

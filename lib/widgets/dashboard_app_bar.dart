@@ -45,7 +45,17 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
             child: Icon(Icons.person, size: 20, color: Colors.white),
           ),
           onSelected: (value) {
-            // TODO: Handle action
+            switch (value) {
+              case 'profile':
+                // TODO: Navegar a perfil
+                break;
+              case 'users':
+                // TODO: Navegar a administrar usuarios
+                break;
+              case 'pqrs':
+                Navigator.pushNamed(context, '/pqrs');
+                break;
+            }
           },
           itemBuilder: (BuildContext context) {
             return [
