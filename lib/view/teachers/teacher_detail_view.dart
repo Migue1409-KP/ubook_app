@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../model/teachers/teacher.dart';
+import '../../theme/app_colors.dart';
 import '../../view_model/teachers/teacher_detail_view_model.dart';
 
 class TeacherDetailView extends StatefulWidget {
@@ -32,7 +33,7 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
           'Profesor',
@@ -40,7 +41,7 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 1,
       ),
@@ -49,22 +50,23 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTeacherInfoCard(context),
+            _buildTeacherInfoCard(),
             const SizedBox(height: 24),
-            _buildSubjectsSection(context),
+            _buildSubjectsSection(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTeacherInfoCard(BuildContext context) {
+  Widget _buildTeacherInfoCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -80,11 +82,11 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                  child: Icon(
+                  backgroundColor: AppColors.primary.withOpacity(0.12),
+                  child: const Icon(
                     Icons.person,
                     size: 30,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: AppColors.primary,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -97,15 +99,15 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         _viewModel.id,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[600],
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -119,8 +121,13 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
             icon: const Icon(Icons.edit, size: 18),
             label: const Text('Editar'),
             style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ],
@@ -128,7 +135,7 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
     );
   }
 
-  Widget _buildSubjectsSection(BuildContext context) {
+  Widget _buildSubjectsSection() {
     final subjects = _viewModel.subjects;
 
     return Column(
@@ -141,7 +148,7 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: AppColors.textPrimary,
             ),
           ),
         ),
@@ -152,11 +159,15 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.divider),
             ),
-            child: Center(
+            child: const Center(
               child: Text(
                 'No tiene materias asignadas',
-                style: TextStyle(color: Colors.grey[500], fontSize: 15),
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 15,
+                ),
               ),
             ),
           )
@@ -165,6 +176,7 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.divider),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.04),
@@ -179,17 +191,26 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: subjects.length,
-                separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.shade200),
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 1, color: AppColors.divider),
                 itemBuilder: (context, index) {
                   final subject = subjects[index];
                   return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 4),
                     title: Text(
                       subject,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                     trailing: TextButton(
                       onPressed: () => _viewModel.onViewSubject(subject),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                      ),
                       child: const Text('Ver'),
                     ),
                   );
