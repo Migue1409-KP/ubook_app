@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:ubook_app/model/subjects/subjects.dart';
 import 'package:ubook_app/model/teachers/teacher.dart';
-import 'package:ubook_app/view_model/assign_subject_teacher_view_model.dart';
+import 'package:ubook_app/view_model/teacher_subject/assign_subject_teacher_view_model.dart';
+import '../../theme/app_colors.dart';
 
 class AssignSubjectTeacherPage extends StatefulWidget {
-  // Listas que vienen de afuera — no se queman aquí
   final List<Teacher> allTeachers;
   final List<Subject> allSubjects;
 
   const AssignSubjectTeacherPage({
     super.key,
-    required this.allTeachers,
-    required this.allSubjects,
+    this.allTeachers = const [],
+    this.allSubjects = const [],
   });
 
   @override
@@ -19,8 +19,7 @@ class AssignSubjectTeacherPage extends StatefulWidget {
       _AssignSubjectTeacherPageState();
 }
 
-class _AssignSubjectTeacherPageState
-    extends State<AssignSubjectTeacherPage> {
+class _AssignSubjectTeacherPageState extends State<AssignSubjectTeacherPage> {
   late final AssignSubjectTeacherViewModel _vm;
   final TextEditingController _teacherSearch = TextEditingController();
   final TextEditingController _subjectSearch = TextEditingController();
@@ -46,15 +45,16 @@ class _AssignSubjectTeacherPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF161B22),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         title: const Text('Asignar Profesor ↔ Materia',
             style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: _vm.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(color: AppColors.primary))
           : Column(children: [
               if (_vm.errorMessage != null) _buildBanner(),
               Expanded(child: _buildBody()),
@@ -67,13 +67,13 @@ class _AssignSubjectTeacherPageState
       if (constraints.maxWidth >= 700) {
         return Row(children: [
           SizedBox(width: 280, child: _buildTeacherPanel()),
-          const VerticalDivider(color: Color(0xFF30363D), width: 1),
+          VerticalDivider(color: AppColors.divider, width: 1),
           Expanded(child: _buildSubjectPanel()),
         ]);
       }
       return Column(children: [
         SizedBox(height: 220, child: _buildTeacherPanel()),
-        const Divider(color: Color(0xFF30363D), height: 1),
+        Divider(color: AppColors.divider, height: 1),
         Expanded(child: _buildSubjectPanel()),
       ]);
     });
@@ -81,7 +81,7 @@ class _AssignSubjectTeacherPageState
 
   Widget _buildTeacherPanel() {
     return Column(children: [
-      _SectionHeader(title: 'Profesores', count: widget.allTeachers.length),
+      _SectionHeader(title: 'Profesores', count: _vm.filteredTeachers.length),
       _SearchField(
           controller: _teacherSearch,
           hint: 'Buscar profesor...',
@@ -96,27 +96,29 @@ class _AssignSubjectTeacherPageState
             return ListTile(
               dense: true,
               selected: selected,
-              selectedTileColor: const Color(0xFF1A2C42),
+              selectedTileColor: AppColors.primary.withOpacity(0.08),
               leading: CircleAvatar(
                 radius: 18,
                 backgroundColor:
-                    selected ? const Color(0xFF4A90D9) : const Color(0xFF2E2E2E),
+                    selected ? AppColors.primary : AppColors.inputFill,
                 child: Text('${t.firstName[0]}${t.lastName[0]}',
-                    style: const TextStyle(
-                        color: Colors.white,
+                    style: TextStyle(
+                        color: selected
+                            ? Colors.white
+                            : AppColors.textSecondary,
                         fontSize: 12,
                         fontWeight: FontWeight.bold)),
               ),
               title: Text(t.fullName,
                   style: TextStyle(
-                      color: selected ? Colors.white : Colors.white70,
+                      color: AppColors.textPrimary,
                       fontSize: 13,
                       fontWeight: selected
                           ? FontWeight.bold
                           : FontWeight.normal)),
               subtitle: Text(t.department,
-                  style: const TextStyle(
-                      color: Colors.white38, fontSize: 11)),
+                  style: TextStyle(
+                      color: AppColors.textSecondary, fontSize: 11)),
               onTap: () => _vm.selectTeacher(t.id),
             );
           },
@@ -128,9 +130,9 @@ class _AssignSubjectTeacherPageState
   Widget _buildSubjectPanel() {
     final teacherId = _vm.selectedTeacherId;
     if (teacherId == null) {
-      return const Center(
+      return Center(
           child: Text('Selecciona un profesor',
-              style: TextStyle(color: Colors.white38)));
+              style: TextStyle(color: AppColors.textSecondary)));
     }
 
     final assigned = _vm.filteredSubjects
@@ -143,7 +145,7 @@ class _AssignSubjectTeacherPageState
     return Column(children: [
       _SectionHeader(
         title: 'Materias de ${_vm.selectedTeacher?.firstName ?? ''}',
-        count: widget.allSubjects.length,
+        count: _vm.filteredSubjects.length,
         extra: '${assigned.length} asignadas',
       ),
       _SearchField(
@@ -194,11 +196,9 @@ class _AssignSubjectTeacherPageState
   void _snack(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor:
-          isError ? Colors.redAccent : const Color(0xFF1A2C42),
+      backgroundColor: isError ? Colors.redAccent : AppColors.primary,
       behavior: SnackBarBehavior.floating,
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       duration: const Duration(seconds: 2),
     ));
   }
@@ -207,13 +207,11 @@ class _AssignSubjectTeacherPageState
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-            color: Colors.redAccent.withOpacity(0.15),
-            border:
-                Border.all(color: Colors.redAccent.withOpacity(0.4)),
+            color: Colors.redAccent.withOpacity(0.1),
+            border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
             borderRadius: BorderRadius.circular(8)),
         child: Row(children: [
-          const Icon(Icons.error_outline,
-              color: Colors.redAccent, size: 18),
+          const Icon(Icons.error_outline, color: Colors.redAccent, size: 18),
           const SizedBox(width: 8),
           Expanded(
               child: Text(_vm.errorMessage!,
@@ -233,20 +231,19 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        color: const Color(0xFF161B22),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        color: AppColors.inputFill,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(children: [
           Expanded(
               child: Text(title,
-                  style: const TextStyle(
-                      color: Colors.white,
+                  style: TextStyle(
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 14))),
           if (extra != null)
             Text(extra!,
-                style: const TextStyle(
-                    color: Color(0xFF4A90D9), fontSize: 12)),
+                style:
+                    TextStyle(color: AppColors.primary, fontSize: 12)),
         ]),
       );
 }
@@ -262,34 +259,29 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: TextField(
           controller: controller,
-          style:
-              const TextStyle(color: Colors.white, fontSize: 13),
+          style: TextStyle(color: AppColors.textPrimary, fontSize: 13),
           onChanged: onChanged,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle:
-                const TextStyle(color: Colors.white38, fontSize: 13),
-            prefixIcon: const Icon(Icons.search,
-                color: Colors.white38, size: 18),
+                TextStyle(color: AppColors.placeholder, fontSize: 13),
+            prefixIcon:
+                Icon(Icons.search, color: AppColors.placeholder, size: 18),
             filled: true,
-            fillColor: const Color(0xFF1E1E1E),
+            fillColor: AppColors.inputFill,
             contentPadding: const EdgeInsets.symmetric(vertical: 8),
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide:
-                    const BorderSide(color: Color(0xFF333333))),
+                borderSide: BorderSide(color: AppColors.divider)),
             enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide:
-                    const BorderSide(color: Color(0xFF333333))),
+                borderSide: BorderSide(color: AppColors.divider)),
             focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide:
-                    const BorderSide(color: Color(0xFF4A90D9))),
+                borderSide: BorderSide(color: AppColors.primary)),
           ),
         ),
       );
@@ -301,11 +293,10 @@ class _ListLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding:
-            const EdgeInsets.only(left: 16, top: 12, bottom: 4),
+        padding: const EdgeInsets.only(left: 16, top: 12, bottom: 4),
         child: Text(text,
-            style: const TextStyle(
-                color: Colors.white38,
+            style: TextStyle(
+                color: AppColors.textSecondary,
                 fontSize: 10,
                 letterSpacing: 1.0)),
       );
@@ -328,23 +319,20 @@ class _SubjectToggleItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      margin:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       decoration: BoxDecoration(
         color: isAssigned
-            ? const Color(0xFF1E3A5F)
-            : const Color(0xFF1E1E1E),
+            ? AppColors.primary.withOpacity(0.08)
+            : Colors.white,
         border: Border.all(
-            color: isAssigned
-                ? const Color(0xFF4A90D9)
-                : const Color(0xFF333333)),
+            color: isAssigned ? AppColors.primary : AppColors.divider),
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
         dense: true,
         title: Text(subject.nombre,
             style: TextStyle(
-                color: isAssigned ? Colors.white : Colors.white70,
+                color: AppColors.textPrimary,
                 fontSize: 13,
                 fontWeight: isAssigned
                     ? FontWeight.w600
@@ -352,22 +340,20 @@ class _SubjectToggleItem extends StatelessWidget {
         subtitle: Text(
             '${subject.creditos} créditos  •  ${subject.horas} h',
             style: TextStyle(
-                color: isAssigned
-                    ? const Color(0xFF90CAF9)
-                    : Colors.white38,
-                fontSize: 11)),
+                color: AppColors.textSecondary, fontSize: 11)),
         trailing: isBusy
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2))
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: AppColors.primary))
             : Icon(
                 isAssigned
                     ? Icons.check_circle_rounded
                     : Icons.add_circle_outline_rounded,
                 color: isAssigned
-                    ? const Color(0xFF4A90D9)
-                    : Colors.white38,
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
                 size: 22,
               ),
         onTap: isBusy ? null : onTap,
