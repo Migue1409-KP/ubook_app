@@ -1,31 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../model/pqrs/pqrs.dart';
+import '../../view_model/pqrs/pqrs_viewmodel.dart';
+import '../../widgets/pqrs/pqrs_form_sheet.dart';
 
 class PQRSPage extends StatelessWidget {
   const PQRSPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final List<PQRS> mockPQRS = [
-      PQRS(
-        tipo: 'Peticion',
-        descripcion: 'Solicitud de informacion',
-        fecha: DateTime.now(),
-        estado: 'Abierta',
-      ),
-      PQRS(
-        tipo: 'Queja',
-        descripcion: 'Problema con el servicio',
-        fecha: DateTime.now(),
-        estado: 'En proceso',
-      ),
-      PQRS(
-        tipo: 'Reclamo',
-        descripcion: 'Cobro incorrecto',
-        fecha: DateTime.now(),
-        estado: 'Cerrada',
-      ),
-    ];
+    final viewModel = context.watch<PQRSViewModel>();
+    final items = viewModel.items;
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -59,13 +44,21 @@ class PQRSPage extends StatelessWidget {
                 style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
               const SizedBox(height: 20),
-              for (final pqrs in mockPQRS) _buildPQRSCard(pqrs),
+              if (items.isEmpty)
+                _buildEmptyState()
+              else
+                for (final entry in items.asMap().entries)
+                  _buildPQRSCard(
+                    context: context,
+                    pqrs: entry.value,
+                    index: entry.key,
+                  ),
             ],
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: () => _openCreateModal(context),
         backgroundColor: Colors.blue.shade700,
         icon: const Icon(Icons.add),
         label: const Text('Nueva PQRS'),
@@ -73,7 +66,70 @@ class PQRSPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPQRSCard(PQRS pqrs) {
+  void _openCreateModal(BuildContext context) {
+    final viewModel = context.read<PQRSViewModel>();
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: false,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (context) => ChangeNotifierProvider.value(
+            value: viewModel,
+            child: const PQRSFormSheet(),
+          ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.info_outline, color: Colors.blue),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Text(
+              'Aun no tienes PQRS registradas.',
+              style: TextStyle(
+                color: Colors.black87,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPQRSCard({
+    required BuildContext context,
+    required PQRS pqrs,
+    required int index,
+  }) {
     final typeColor = _typeColor(pqrs.tipo);
     final statusColor = _statusColor(pqrs.estado);
 
@@ -136,7 +192,16 @@ class PQRSPage extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.chevron_right, color: Colors.black45),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.black45),
+            onSelected: (value) =>
+                context.read<PQRSViewModel>().updateEstado(index, value),
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'Abierta', child: Text('Abierta')),
+              PopupMenuItem(value: 'En proceso', child: Text('En proceso')),
+              PopupMenuItem(value: 'Cerrada', child: Text('Cerrada')),
+            ],
+          ),
         ],
       ),
     );
