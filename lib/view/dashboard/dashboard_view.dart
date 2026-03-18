@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../view_model/dashboard_view_model.dart';
 import '../../widgets/dashboard_app_bar.dart';
 import '../../widgets/top_items_carousel.dart';
-import '../../theme/app_colors.dart';
 import '../process/process_list_view.dart';
 import '../teachers/teacher_list_view.dart';
 import '../teachers/teacher_detail_view.dart';
