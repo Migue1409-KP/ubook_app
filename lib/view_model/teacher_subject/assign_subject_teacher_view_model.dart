@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../model/teachers/teacher.dart';
-import '../model/subjectteacher/subjectteacher.dart';
-import '../model/subjects/subjects.dart';
+import '../../model/teachers/teacher.dart';
+import '../../model/subjectteacher/subjectteacher.dart';
+import '../../model/subjects/subjects.dart';
 
 class _FakeApi {
   // Fallback teachers cuando no llegan de afuera
