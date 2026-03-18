@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../model/teachers/teacher.dart';
+import '../../theme/app_colors.dart';
 import '../../view_model/teachers/teacher_detail_view_model.dart';
+import '../../widgets/teachers/teacher_info_card.dart';
 
 class TeacherDetailView extends StatefulWidget {
   final Teacher teacher;
@@ -32,7 +34,7 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
           'Profesor',
@@ -40,7 +42,7 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 1,
       ),
@@ -49,86 +51,24 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTeacherInfoCard(context),
+            _buildTeacherInfoCard(),
             const SizedBox(height: 24),
-            _buildSubjectsSection(context),
+            _buildSubjectsSection(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTeacherInfoCard(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                  child: Icon(
-                    Icons.person,
-                    size: 30,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _viewModel.fullName,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _viewModel.id,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          FilledButton.icon(
-            onPressed: _viewModel.onEdit,
-            icon: const Icon(Icons.edit, size: 18),
-            label: const Text('Editar'),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-        ],
-      ),
+  Widget _buildTeacherInfoCard() {
+    return TeacherInfoCard(
+      fullName: _viewModel.fullName,
+      id: _viewModel.id,
+      onEdit: _viewModel.onEdit,
     );
   }
 
-  Widget _buildSubjectsSection(BuildContext context) {
+  Widget _buildSubjectsSection() {
     final subjects = _viewModel.subjects;
 
     return Column(
@@ -141,7 +81,7 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: AppColors.textPrimary,
             ),
           ),
         ),
@@ -152,11 +92,15 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.divider),
             ),
-            child: Center(
+            child: const Center(
               child: Text(
                 'No tiene materias asignadas',
-                style: TextStyle(color: Colors.grey[500], fontSize: 15),
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 15,
+                ),
               ),
             ),
           )
@@ -165,6 +109,7 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.divider),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.04),
@@ -179,17 +124,26 @@ class _TeacherDetailViewState extends State<TeacherDetailView> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: subjects.length,
-                separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.shade200),
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 1, color: AppColors.divider),
                 itemBuilder: (context, index) {
                   final subject = subjects[index];
                   return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 4),
                     title: Text(
                       subject,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                     trailing: TextButton(
                       onPressed: () => _viewModel.onViewSubject(subject),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                      ),
                       child: const Text('Ver'),
                     ),
                   );

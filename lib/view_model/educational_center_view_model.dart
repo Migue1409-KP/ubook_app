@@ -4,6 +4,7 @@ class EducationalCenterViewModel {
   final List<EducationalCenter> centers = [
     EducationalCenter(id: '1', name: 'Universidad Nacional'),
     EducationalCenter(id: '2', name: 'Instituto Tecnológico de Medellín'),
+    EducationalCenter(id: '3', name: 'Colegio Internacional de Bogotá'),
   ];
 
   List<EducationalCenter> searchCenter(String query) {
