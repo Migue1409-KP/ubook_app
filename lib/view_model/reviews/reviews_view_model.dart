@@ -43,7 +43,7 @@ class ReviewsViewModel extends ChangeNotifier {
         entityType: entityType,
       );
     } catch (_) {
-      _errorMessage = 'No fue posible cargar las resenas.';
+      _errorMessage = 'No fue posible cargar las reseñas.';
     } finally {
       _isLoading = false;
       notifyListeners();

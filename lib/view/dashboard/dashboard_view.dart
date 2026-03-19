@@ -4,8 +4,8 @@ import '../../view_model/dashboard/dashboard_view_model.dart';
 import '../../widgets/dashboard_app_bar.dart';
 import '../../widgets/top_items_carousel.dart';
 import '../process/process_list_view.dart';
+import '../teacher_subject/teacher_subjects_page.dart';
 import '../teachers/teacher_list_view.dart';
-import '../teachers/teacher_detail_view.dart';
 import '../../model/teachers/teacher.dart';
 import '../educational_center/educational_center_screen.dart';
 import '../subjects/subject_detail_dialog.dart';
@@ -219,9 +219,7 @@ class _DashboardViewContent extends StatelessWidget {
   void _navigateToSubjects(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const SubjectsView(),
-      ),
+      MaterialPageRoute(builder: (context) => const SubjectsView()),
     );
   }
 
@@ -232,7 +230,8 @@ class _DashboardViewContent extends StatelessWidget {
       horas: 48,
       creditos: 3,
       prerrequisitos: ['Fundamentos de programación', 'Matemáticas'],
-      contenido: 'Materia enfocada en el desarrollo y la lógica correspondiente del área de ${item['faculty'] ?? 'estudio'}.',
+      contenido:
+          'Materia enfocada en el desarrollo y la lógica correspondiente del área de ${item['faculty'] ?? 'estudio'}.',
     );
 
     showDialog(
@@ -241,7 +240,10 @@ class _DashboardViewContent extends StatelessWidget {
     );
   }
 
-  void _navigateToTeacherDetail(BuildContext context, Map<String, dynamic> item) {
+  void _navigateToTeacherDetail(
+    BuildContext context,
+    Map<String, dynamic> item,
+  ) {
     final parts = (item['name'] as String? ?? 'Profesor').split(' ');
     final firstName = parts.isNotEmpty ? parts[0] : 'Desconocido';
     final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
@@ -265,7 +267,7 @@ class _DashboardViewContent extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => TeacherDetailView(teacher: dummyTeacher),
+        builder: (context) => TeacherSubjectsPage(teacher: dummyTeacher),
       ),
     );
   }
