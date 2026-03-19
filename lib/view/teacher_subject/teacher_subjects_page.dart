@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ubook_app/model/subjectteacher/subjectteacher.dart';
 import 'package:ubook_app/view/teacher_subject/assign_subject_teacher_page.dart';
+import '../../model/reviews/review.dart';
+import '../../model/reviews/review_entity_types.dart';
 import '../../model/teachers/teacher.dart';
 import '../../model/subjects/subjects.dart';
-import '../../view_model/teacher_subject/teacher_subjects_view_model.dart';
 import '../../theme/app_colors.dart';
+import '../../view/reviews/create_review_view.dart';
+import '../../view_model/reviews/reviews_view_model.dart';
+import '../../view_model/teacher_subject/teacher_subjects_view_model.dart';
 import '../../view/attachments/attachments_view.dart';
 
 // ---------------------------------------------------------------------------
@@ -69,18 +73,36 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
   late final TabController _tabController;
   final TextEditingController _searchCtrl = TextEditingController();
   String? _busySubjectId;
+  ReviewsViewModel? _reviewsViewModel;
+
+  void _onReviewsChange() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: widget.teacher != null ? 2 : 1,
+      length: widget.teacher != null ? 3 : 1,
       vsync: this,
     );
+
+    if (widget.teacher != null) {
+      _reviewsViewModel = ReviewsViewModel();
+      _reviewsViewModel!.addListener(_onReviewsChange);
+      _reviewsViewModel!.loadReviews(
+        entityId: widget.teacher!.id,
+        entityType: ReviewEntityTypes.teacher,
+      );
+    }
   }
 
   @override
   void dispose() {
+    _reviewsViewModel?.removeListener(_onReviewsChange);
+    _reviewsViewModel?.dispose();
     _tabController.dispose();
     _searchCtrl.dispose();
     super.dispose();
@@ -96,8 +118,10 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        title: Text(vm.pageTitle,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          vm.pageTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -133,6 +157,10 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
                     icon: const Icon(Icons.add_box_outlined),
                     text: 'Disponibles (${vm.availableSubjects.length})',
                   ),
+                  Tab(
+                    icon: const Icon(Icons.reviews_outlined),
+                    text: 'Reseñas (${_reviewsViewModel?.reviews.length ?? 0})',
+                  ),
                 ],
               )
             : null,
@@ -140,67 +168,289 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
       body: vm.isInitialLoading
           ? _buildSkeleton()
           : vm.errorMessage != null &&
-                  (vm.isTeacherMode
-                      ? vm.assignedSubjects.isEmpty
-                      : vm.subjectLinks.isEmpty)
-              ? _buildError(vm)
-              : vm.isTeacherMode
-                  ? _buildTeacherBody(vm)
-                  : _buildSubjectBody(vm),
+                (vm.isTeacherMode
+                    ? vm.assignedSubjects.isEmpty
+                    : vm.subjectLinks.isEmpty)
+          ? _buildError(vm)
+          : vm.isTeacherMode
+          ? _buildTeacherBody(vm)
+          : _buildSubjectBody(vm),
     );
   }
 
   // ── Modo PROFESOR ─────────────────────────────────────────────────────────
   Widget _buildTeacherBody(TeacherSubjectsViewModel vm) {
-    return Column(children: [
-      _buildTeacherHeader(vm),
-      _buildSearchBar(vm),
-      const SizedBox(height: 4),
-      if (vm.errorMessage != null) _buildErrorBanner(vm),
-      Expanded(
-        child: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildSubjectList(vm, vm.filteredAssigned(), assigned: true),
-            _buildSubjectList(vm, vm.filteredAvailable(), assigned: false),
+    return Column(
+      children: [
+        _buildTeacherHeader(vm),
+        _buildSearchBar(vm),
+        const SizedBox(height: 4),
+        if (vm.errorMessage != null) _buildErrorBanner(vm),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildSubjectList(vm, vm.filteredAssigned(), assigned: true),
+              _buildSubjectList(vm, vm.filteredAvailable(), assigned: false),
+              _buildReviewsTab(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReviewsTab() {
+    final reviewsVm = _reviewsViewModel;
+    if (reviewsVm == null) {
+      return const SizedBox.shrink();
+    }
+
+    final reviews = reviewsVm.reviews;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: FilledButton.icon(
+            onPressed: _openCreateReview,
+            icon: const Icon(Icons.rate_review_outlined, size: 18),
+            label: const Text('Crear reseñas'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (reviewsVm.isLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (reviewsVm.errorMessage != null)
+          _buildReviewStatusCard(
+            message: reviewsVm.errorMessage!,
+            actionLabel: 'Reintentar',
+            onAction: reviewsVm.refresh,
+          )
+        else if (reviews.isEmpty)
+          _buildReviewStatusCard(
+            message: 'Aun no hay reseñas para este profesor.',
+          )
+        else ...[
+          _buildReviewSummaryCard(reviewsVm),
+          const SizedBox(height: 10),
+          ...reviews.map(_buildReviewCard),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildReviewSummaryCard(ReviewsViewModel reviewsVm) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.star_rounded, color: Colors.amber, size: 24),
+          const SizedBox(width: 8),
+          Text(
+            reviewsVm.averageRating.toStringAsFixed(1),
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            '${reviewsVm.reviews.length} reseñas',
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewCard(Review review) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  review.title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              Text(
+                _formatDate(review.createdAt),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _buildStars(review.rating),
+          if (review.content != null && review.content!.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              review.content!,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.35,
+              ),
+            ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewStatusCard({
+    required String message,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+            ),
+          ),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: onAction,
+              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+              child: Text(actionLabel),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStars(int rating) {
+    return Row(
+      children: List<Widget>.generate(5, (index) {
+        return Icon(
+          index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+          color: Colors.amber,
+          size: 18,
+        );
+      }),
+    );
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '--/--/----';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    return '$day/$month/$year';
+  }
+
+  Future<void> _openCreateReview() async {
+    if (widget.teacher == null || _reviewsViewModel == null) return;
+
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateReviewView(
+          entityId: widget.teacher!.id,
+          entityType: ReviewEntityTypes.teacher,
+          userId: 'USR-APP-001',
         ),
       ),
-    ]);
+    );
+
+    if (!mounted) return;
+
+    await _reviewsViewModel!.refresh();
   }
 
   // ── Modo MATERIA ──────────────────────────────────────────────────────────
   Widget _buildSubjectBody(TeacherSubjectsViewModel vm) {
     final links = vm.subjectLinks;
-    return Column(children: [
-      _buildSubjectHeader(vm),
-      if (vm.errorMessage != null) _buildErrorBanner(vm),
-      links.isEmpty
-          ? Expanded(child: _buildEmpty())
-          : Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.only(bottom: 24),
-                itemCount: links.length,
-                itemBuilder: (_, i) => _TeacherLinkCard(
-                  link: links[i],
-                  isBusy: vm.isBusy,
-                  onRemove: () => _handleRemoveLink(links[i]),
+    return Column(
+      children: [
+        _buildSubjectHeader(vm),
+        if (vm.errorMessage != null) _buildErrorBanner(vm),
+        links.isEmpty
+            ? Expanded(child: _buildEmpty())
+            : Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  itemCount: links.length,
+                  itemBuilder: (_, i) => _TeacherLinkCard(
+                    link: links[i],
+                    isBusy: vm.isBusy,
+                    onRemove: () => _handleRemoveLink(links[i]),
+                  ),
                 ),
               ),
-            ),
-    ]);
+      ],
+    );
   }
 
   Widget _buildSubjectList(
-      TeacherSubjectsViewModel vm, List<Subject> subjects,
-      {required bool assigned}) {
+    TeacherSubjectsViewModel vm,
+    List<Subject> subjects, {
+    required bool assigned,
+  }) {
     if (subjects.isEmpty) {
       return _EmptyState(
         icon: assigned ? Icons.book_outlined : Icons.check_circle_outline,
         message: vm.searchQuery.isEmpty
             ? assigned
-                ? 'Este profesor no tiene materias asignadas.'
-                : 'Todas las materias ya están asignadas.'
+                  ? 'Este profesor no tiene materias asignadas.'
+                  : 'Todas las materias ya están asignadas.'
             : 'No hay resultados para "${vm.searchQuery}".',
         actionLabel: assigned ? 'Ver disponibles' : null,
         onAction: assigned ? () => _tabController.animateTo(1) : null,
@@ -218,8 +468,8 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
           onToggle: _busySubjectId != null
               ? null
               : assigned
-                  ? () => _handleRemove(s)
-                  : () => _handleAssign(s),
+              ? () => _handleRemove(s)
+              : () => _handleAssign(s),
           onAdjuntos: assigned ? () => _goToAdjuntos(vm, s.id) : null,
         );
       },
@@ -315,21 +565,31 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
           builder: (ctx) => AlertDialog(
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
-            title: Text('Confirmar',
-                style: TextStyle(color: AppColors.textPrimary)),
-            content: Text('¿Quitar "$name" de esta asignación?',
-                style: TextStyle(color: AppColors.textSecondary)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: Text(
+              'Confirmar',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
+            content: Text(
+              '¿Quitar "$name" de esta asignación?',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
             actions: [
               TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: Text('Cancelar',
-                      style: TextStyle(color: AppColors.textSecondary))),
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(
+                  'Cancelar',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              ),
               ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent),
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Quitar')),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Quitar'),
+              ),
             ],
           ),
         ) ??
@@ -337,147 +597,175 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
   }
 
   void _snack(String msg, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: isError ? Colors.redAccent : AppColors.primary,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      duration: const Duration(seconds: 2),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? Colors.redAccent : AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   Widget _buildSearchBar(TeacherSubjectsViewModel vm) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        child: TextField(
-          controller: _searchCtrl,
-          style: TextStyle(color: AppColors.textPrimary),
-          onChanged: vm.setSearch,
-          decoration: InputDecoration(
-            hintText: 'Buscar materia...',
-            hintStyle: TextStyle(color: AppColors.placeholder),
-            prefixIcon: Icon(Icons.search, color: AppColors.placeholder),
-            filled: true,
-            fillColor: AppColors.inputFill,
-            contentPadding: const EdgeInsets.symmetric(vertical: 10),
-            border: _border(AppColors.divider),
-            enabledBorder: _border(AppColors.divider),
-            focusedBorder: _border(AppColors.primary),
-            suffixIcon: vm.searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: Icon(Icons.clear, color: AppColors.placeholder),
-                    onPressed: () {
-                      _searchCtrl.clear();
-                      vm.setSearch('');
-                    },
-                  )
-                : null,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    child: TextField(
+      controller: _searchCtrl,
+      style: TextStyle(color: AppColors.textPrimary),
+      onChanged: vm.setSearch,
+      decoration: InputDecoration(
+        hintText: 'Buscar materia...',
+        hintStyle: TextStyle(color: AppColors.placeholder),
+        prefixIcon: Icon(Icons.search, color: AppColors.placeholder),
+        filled: true,
+        fillColor: AppColors.inputFill,
+        contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        border: _border(AppColors.divider),
+        enabledBorder: _border(AppColors.divider),
+        focusedBorder: _border(AppColors.primary),
+        suffixIcon: vm.searchQuery.isNotEmpty
+            ? IconButton(
+                icon: Icon(Icons.clear, color: AppColors.placeholder),
+                onPressed: () {
+                  _searchCtrl.clear();
+                  vm.setSearch('');
+                },
+              )
+            : null,
+      ),
+    ),
+  );
 
   OutlineInputBorder _border(Color c) => OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: c));
+    borderRadius: BorderRadius.circular(8),
+    borderSide: BorderSide(color: c),
+  );
 
   Widget _buildSkeleton() => ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: 5,
-        itemBuilder: (_, __) => Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          height: 72,
-          decoration: BoxDecoration(
-              color: AppColors.inputFill,
-              borderRadius: BorderRadius.circular(10)),
-          child: Row(children: [
-            const SizedBox(width: 16),
-            Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                    color: AppColors.divider, shape: BoxShape.circle)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(height: 14, width: 140, color: AppColors.divider),
-                    const SizedBox(height: 8),
-                    Container(height: 10, width: 90, color: AppColors.divider),
-                  ]),
+    padding: const EdgeInsets.all(16),
+    itemCount: 5,
+    itemBuilder: (_, __) => Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      height: 72,
+      decoration: BoxDecoration(
+        color: AppColors.inputFill,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 16),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              shape: BoxShape.circle,
             ),
-            Container(
-                margin: const EdgeInsets.only(right: 16),
-                width: 70,
-                height: 30,
-                decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(6))),
-          ]),
-        ),
-      );
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(height: 14, width: 140, color: AppColors.divider),
+                const SizedBox(height: 8),
+                Container(height: 10, width: 90, color: AppColors.divider),
+              ],
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            width: 70,
+            height: 30,
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 
   Widget _buildError(TeacherSubjectsViewModel vm) => Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.wifi_off_rounded,
-              size: 60, color: AppColors.textSecondary),
-          const SizedBox(height: 12),
-          Text(vm.errorMessage!,
-              style: TextStyle(color: AppColors.textSecondary)),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-              onPressed: vm.refresh,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Reintentar'),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white)),
-        ]),
-      );
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.wifi_off_rounded, size: 60, color: AppColors.textSecondary),
+        const SizedBox(height: 12),
+        Text(
+          vm.errorMessage!,
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton.icon(
+          onPressed: vm.refresh,
+          icon: const Icon(Icons.refresh),
+          label: const Text('Reintentar'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildEmpty() => Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.link_off_rounded,
-              size: 60, color: AppColors.textSecondary),
-          const SizedBox(height: 12),
-          Text('No hay asignaciones aún.',
-              style: TextStyle(color: AppColors.textSecondary)),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AssignSubjectTeacherPage(
-                  allTeachers: widget.allTeachers,
-                  allSubjects: widget.allSubjects,
-                ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.link_off_rounded, size: 60, color: AppColors.textSecondary),
+        const SizedBox(height: 12),
+        Text(
+          'No hay asignaciones aún.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AssignSubjectTeacherPage(
+                allTeachers: widget.allTeachers,
+                allSubjects: widget.allSubjects,
               ),
-            ).then((_) => context.read<TeacherSubjectsViewModel>().refresh()),
-            icon: const Icon(Icons.add_link_rounded),
-            label: const Text('Asignar nueva relación'),
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white),
+            ),
+          ).then((_) => context.read<TeacherSubjectsViewModel>().refresh()),
+          icon: const Icon(Icons.add_link_rounded),
+          label: const Text('Asignar nueva relación'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
           ),
-        ]),
-      );
+        ),
+      ],
+    ),
+  );
 
   Widget _buildErrorBanner(TeacherSubjectsViewModel vm) => Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-            color: Colors.redAccent.withOpacity(0.1),
-            border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
-            borderRadius: BorderRadius.circular(8)),
-        child: Row(children: [
-          const Icon(Icons.error_outline, color: Colors.redAccent, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-              child: Text(vm.errorMessage!,
-                  style:
-                      const TextStyle(color: Colors.redAccent, fontSize: 12))),
-        ]),
-      );
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    decoration: BoxDecoration(
+      color: Colors.redAccent.withOpacity(0.1),
+      border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.error_outline, color: Colors.redAccent, size: 18),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            vm.errorMessage!,
+            style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 // ── Card materia ──────────────────────────────────────────────────────────
@@ -504,77 +792,99 @@ class _SubjectCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isAssigned ? AppColors.primary.withOpacity(0.08) : Colors.white,
         border: Border.all(
-            color: isAssigned ? AppColors.primary : AppColors.divider,
-            width: 1.2),
+          color: isAssigned ? AppColors.primary : AppColors.divider,
+          width: 1.2,
+        ),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        ListTile(
-          leading: CircleAvatar(
-            backgroundColor:
-                isAssigned ? AppColors.primary : AppColors.inputFill,
-            child: Text(
-              subject.nombre.substring(0, 2).toUpperCase(),
-              style: TextStyle(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            leading: CircleAvatar(
+              backgroundColor: isAssigned
+                  ? AppColors.primary
+                  : AppColors.inputFill,
+              child: Text(
+                subject.nombre.substring(0, 2).toUpperCase(),
+                style: TextStyle(
                   color: isAssigned ? Colors.white : AppColors.textSecondary,
                   fontSize: 11,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-          title: Text(subject.nombre,
-              style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600)),
-          subtitle: Text(
-              '${subject.creditos} créditos  •  ${subject.horas} h',
-              style:
-                  TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-          trailing: isLoading
-              ? SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: AppColors.primary))
-              : OutlinedButton(
-                  onPressed: onToggle,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: isAssigned
-                        ? Colors.redAccent
-                        : AppColors.primary,
-                    side: BorderSide(
-                        color: isAssigned
-                            ? Colors.redAccent
-                            : AppColors.primary),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6)),
-                    minimumSize: const Size(76, 32),
-                  ),
-                  child: Text(isAssigned ? 'Quitar' : 'Asignar',
-                      style: const TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w600)),
+                  fontWeight: FontWeight.bold,
                 ),
-        ),
-        if (isAssigned && onAdjuntos != null)
-          Padding(
-            padding:
-                const EdgeInsets.only(left: 16, right: 16, bottom: 10),
-            child: OutlinedButton.icon(
-              onPressed: isLoading ? null : onAdjuntos,
-              icon: const Icon(Icons.attach_file_rounded, size: 16),
-              label: const Text('adjuntos', style: TextStyle(fontSize: 12)),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: BorderSide(color: AppColors.primary),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6)),
               ),
             ),
+            title: Text(
+              subject.nombre,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            subtitle: Text(
+              '${subject.creditos} créditos  •  ${subject.horas} h',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+            trailing: isLoading
+                ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  )
+                : OutlinedButton(
+                    onPressed: onToggle,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: isAssigned
+                          ? Colors.redAccent
+                          : AppColors.primary,
+                      side: BorderSide(
+                        color: isAssigned
+                            ? Colors.redAccent
+                            : AppColors.primary,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      minimumSize: const Size(76, 32),
+                    ),
+                    child: Text(
+                      isAssigned ? 'Quitar' : 'Asignar',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
           ),
-      ]),
+          if (isAssigned && onAdjuntos != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
+              child: OutlinedButton.icon(
+                onPressed: isLoading ? null : onAdjuntos,
+                icon: const Icon(Icons.attach_file_rounded, size: 16),
+                label: const Text('Adjuntos', style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -585,10 +895,11 @@ class _TeacherLinkCard extends StatelessWidget {
   final bool isBusy;
   final VoidCallback onRemove;
 
-  const _TeacherLinkCard(
-      {required this.link,
-      required this.isBusy,
-      required this.onRemove});
+  const _TeacherLinkCard({
+    required this.link,
+    required this.isBusy,
+    required this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -607,26 +918,39 @@ class _TeacherLinkCard extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: AppColors.primary,
-          child: Text(initials,
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold)),
+          child: Text(
+            initials,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
-        title: Text(link.teacherName,
-            style: TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600)),
-        subtitle: Text(link.teacherEmail,
-            style:
-                TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        title: Text(
+          link.teacherName,
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          link.teacherEmail,
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+        ),
         trailing: isBusy
             ? SizedBox(
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2, color: AppColors.primary))
+                  strokeWidth: 2,
+                  color: AppColors.primary,
+                ),
+              )
             : IconButton(
-                icon: const Icon(Icons.link_off_rounded,
-                    color: Colors.redAccent),
+                icon: const Icon(
+                  Icons.link_off_rounded,
+                  color: Colors.redAccent,
+                ),
                 tooltip: 'Quitar asignación',
                 onPressed: onRemove,
               ),
@@ -653,58 +977,76 @@ class _InfoHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: AppColors.divider),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 6,
-                offset: const Offset(0, 2))
-          ],
+    margin: const EdgeInsets.all(16),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: AppColors.divider),
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 6,
+          offset: const Offset(0, 2),
         ),
-        child: Row(children: [
-          CircleAvatar(
-            radius: 26,
-            backgroundColor: AppColors.primary,
-            child: Text(initials,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15)),
+      ],
+    ),
+    child: Row(
+      children: [
+        CircleAvatar(
+          radius: 26,
+          backgroundColor: AppColors.primary,
+          child: Text(
+            initials,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15)),
-                  if (subtitle.isNotEmpty)
-                    Text(subtitle,
-                        style: TextStyle(
-                            color: AppColors.textSecondary, fontSize: 11)),
-                  if (tag.isNotEmpty)
-                    Text(tag,
-                        style: TextStyle(
-                            color: AppColors.primary, fontSize: 11)),
-                ]),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              if (subtitle.isNotEmpty)
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+              if (tag.isNotEmpty)
+                Text(
+                  tag,
+                  style: TextStyle(color: AppColors.primary, fontSize: 11),
+                ),
+            ],
           ),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
             _Badge(label: badge1Label, value: badge1Value),
             if (badge2Label.isNotEmpty) ...[
               const SizedBox(height: 4),
               _Badge(label: badge2Label, value: badge2Value),
             ],
-          ]),
-        ]),
-      );
+          ],
+        ),
+      ],
+    ),
+  );
 }
 
 class _Badge extends StatelessWidget {
@@ -713,25 +1055,30 @@ class _Badge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-            color: AppColors.inputFill,
-            borderRadius: BorderRadius.circular(20)),
-        child: RichText(
-          text: TextSpan(children: [
-            TextSpan(
-                text: '$value ',
-                style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13)),
-            TextSpan(
-                text: label,
-                style: TextStyle(
-                    color: AppColors.textSecondary, fontSize: 11)),
-          ]),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: AppColors.inputFill,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: '$value ',
+            style: TextStyle(
+              color: AppColors.primary,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+          TextSpan(
+            text: label,
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 // ── Empty state ───────────────────────────────────────────────────────────
@@ -741,28 +1088,36 @@ class _EmptyState extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
 
-  const _EmptyState(
-      {required this.icon,
-      required this.message,
-      this.actionLabel,
-      this.onAction});
+  const _EmptyState({
+    required this.icon,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 60, color: AppColors.textSecondary),
-          const SizedBox(height: 12),
-          Text(message,
-              textAlign: TextAlign.center,
-              style:
-                  TextStyle(color: AppColors.textSecondary, fontSize: 14)),
-          if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: 16),
-            TextButton(
-                onPressed: onAction,
-                child: Text(actionLabel!,
-                    style: TextStyle(color: AppColors.primary))),
-          ],
-        ]),
-      );
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 60, color: AppColors.textSecondary),
+        const SizedBox(height: 12),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+        ),
+        if (actionLabel != null && onAction != null) ...[
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: onAction,
+            child: Text(
+              actionLabel!,
+              style: TextStyle(color: AppColors.primary),
+            ),
+          ),
+        ],
+      ],
+    ),
+  );
 }
