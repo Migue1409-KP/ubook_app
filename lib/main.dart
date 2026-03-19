@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
+import 'view/auth/profile_view.dart';
 import 'view/auth/register_view.dart';
 import 'view/pqrs/pqrs_page.dart';
 import 'view_model/pqrs/pqrs_viewmodel.dart';
@@ -32,6 +33,8 @@ class MyApp extends StatelessWidget {
         routes: {
           '/login': (context) => const LoginView(),
           '/register': (context) => const RegisterView(),
+          '/profile': (context) => const ProfileView(),
+          '/dashboard': (context) => const DashboardView(),
           '/pqrs': (context) => ChangeNotifierProvider(
             create: (_) => PQRSViewModel(),
             child: const PQRSPage(),
