@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../view_model/dashboard_view_model.dart';
+import '../../view_model/dashboard/dashboard_view_model.dart';
 import '../../widgets/dashboard_app_bar.dart';
 import '../../widgets/top_items_carousel.dart';
 import '../process/process_list_view.dart';
