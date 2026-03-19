@@ -563,7 +563,7 @@ class _SubjectCard extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: isLoading ? null : onAdjuntos,
               icon: const Icon(Icons.attach_file_rounded, size: 16),
-              label: const Text('Adjuntos', style: TextStyle(fontSize: 12)),
+              label: const Text('adjuntos', style: TextStyle(fontSize: 12)),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 side: BorderSide(color: AppColors.primary),
