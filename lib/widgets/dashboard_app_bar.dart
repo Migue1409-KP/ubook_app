@@ -29,7 +29,10 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.notifications_outlined,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () {
             // TODO: Show notifications
           },
@@ -45,7 +48,19 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
             child: Icon(Icons.person, size: 20, color: Colors.white),
           ),
           onSelected: (value) {
-            // TODO: Handle action
+            switch (value) {
+              case 'profile':
+                Navigator.pushNamed(context, '/profile');
+                break;
+              // TODO: Implementar navegación a administración de usuarios y PQRS
+              case 'logout':
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/login',
+                  (_) => false,
+                );
+                break;
+            }
           },
           itemBuilder: (BuildContext context) {
             return [
@@ -53,9 +68,16 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                 value: 'profile',
                 child: Row(
                   children: [
-                    Icon(Icons.person_outline, color: AppColors.primary, size: 20),
+                    Icon(
+                      Icons.person_outline,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
                     SizedBox(width: 12),
-                    Text('Mi Perfil', style: TextStyle(color: AppColors.textPrimary)),
+                    Text(
+                      'Mi Perfil',
+                      style: TextStyle(color: AppColors.textPrimary),
+                    ),
                   ],
                 ),
               ),
@@ -63,9 +85,16 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                 value: 'users',
                 child: Row(
                   children: [
-                    Icon(Icons.manage_accounts_outlined, color: AppColors.primary, size: 20),
+                    Icon(
+                      Icons.manage_accounts_outlined,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
                     SizedBox(width: 12),
-                    Text('Administrar Usuarios', style: TextStyle(color: AppColors.textPrimary)),
+                    Text(
+                      'Administrar Usuarios',
+                      style: TextStyle(color: AppColors.textPrimary),
+                    ),
                   ],
                 ),
               ),
@@ -73,9 +102,30 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                 value: 'pqrs',
                 child: Row(
                   children: [
-                    Icon(Icons.support_agent_outlined, color: AppColors.primary, size: 20),
+                    Icon(
+                      Icons.support_agent_outlined,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
                     SizedBox(width: 12),
-                    Text('PQRS', style: TextStyle(color: AppColors.textPrimary)),
+                    Text(
+                      'PQRS',
+                      style: TextStyle(color: AppColors.textPrimary),
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: AppColors.primary, size: 20),
+                    SizedBox(width: 12),
+                    Text(
+                      'Cerrar Sesión',
+                      style: TextStyle(color: AppColors.textPrimary),
+                    ),
                   ],
                 ),
               ),
@@ -101,7 +151,10 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                     decoration: InputDecoration(
                       hintText: 'Buscar en UBook...',
                       hintStyle: const TextStyle(color: AppColors.placeholder),
-                      prefixIcon: const Icon(Icons.search, color: AppColors.primary),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: AppColors.primary,
+                      ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -170,7 +223,10 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                 return RadioListTile<String>(
                   title: Text(
                     option,
-                    style: const TextStyle(fontSize: 16, color: AppColors.textPrimary),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   value: option,
                   groupValue: selectedFilter,

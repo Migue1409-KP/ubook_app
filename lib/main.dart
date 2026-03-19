@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
+import 'view/auth/profile_view.dart';
 import 'view/auth/register_view.dart';
 import 'view_model/auth/user_count_provider.dart';
 import 'view_model/teachers/teacher_count_provider.dart';
@@ -30,6 +31,8 @@ class MyApp extends StatelessWidget {
         routes: {
           '/login': (context) => const LoginView(),
           '/register': (context) => const RegisterView(),
+          '/profile': (context) => const ProfileView(),
+          '/dashboard': (context) => const DashboardView(),
         },
         home: const DashboardView(),
       ),

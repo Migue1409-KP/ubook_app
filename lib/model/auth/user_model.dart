@@ -8,11 +8,13 @@ class UserModel {
   final String id;
   final String email;
   final String name;
+  // TODO: Implementar funcionalidad de fecha de nacimiento
   final DateTime? birthDate;
   final String educationalCenter;
   final String career;
   final String city;
-  final String profileImageUrl;
+  // TODO: Implementar funcionalidad de imagen de perfil
+  final String? profileImageUrl;
   final AuthProvider authProvider;
   final bool isActive;
   final DateTime createdAt;
@@ -26,7 +28,7 @@ class UserModel {
     this.educationalCenter = '',
     this.career = '',
     this.city = '',
-    this.profileImageUrl = '',
+    this.profileImageUrl,
     this.authProvider = AuthProvider.emailPassword,
     this.isActive = true,
     required this.createdAt,
@@ -45,7 +47,7 @@ class UserModel {
       educationalCenter: json['educational_center'] as String? ?? '',
       career: json['career'] as String? ?? '',
       city: json['city'] as String? ?? '',
-      profileImageUrl: json['profile_image_url'] as String? ?? '',
+      profileImageUrl: json['profile_image_url'] as String?,
       authProvider: json['auth_provider'] != null
           ? AuthProvider.fromJson(json['auth_provider'] as String)
           : AuthProvider.emailPassword,
