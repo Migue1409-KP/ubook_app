@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../model/reviews/review.dart';
+import '../../repository/reviews/review_repository.dart';
+
 class CreateReviewViewModel extends ChangeNotifier {
+  CreateReviewViewModel({ReviewRepository? repository})
+    : _repository = repository ?? InMemoryReviewRepository.instance;
+
+  final ReviewRepository _repository;
+
   int _rating = 0;
   bool _isLoading = false;
 
@@ -23,13 +31,26 @@ class CreateReviewViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    // TODO: Implementar el llamado al repositorio para guardar la reseña
-    // Ej: await reviewRepository.createReview(Review(entityId: ..., rating: _rating ...))
-    
-    // Simulación de carga (solo visual)
-    await Future.delayed(const Duration(seconds: 2));
+    final now = DateTime.now();
 
-    _isLoading = false;
-    notifyListeners();
+    try {
+      final review = Review(
+        id: 'REV-${now.microsecondsSinceEpoch}',
+        entityId: entityId,
+        entityType: entityType,
+        userId: userId,
+        rating: _rating,
+        title: title,
+        content: content.isEmpty ? null : content,
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      // Este flujo ya usa repositorio en memoria y queda listo para backend.
+      await _repository.createReview(review);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }
