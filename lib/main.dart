@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
 import 'view/auth/register_view.dart';
+import 'view/pqrs/pqrs_page.dart';
+import 'view_model/pqrs/pqrs_viewmodel.dart';
+import 'view_model/auth/user_count_provider.dart';
+import 'view_model/teachers/teacher_count_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,18 +17,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'UBook',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-        useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserCountProvider()),
+        ChangeNotifierProvider(create: (_) => TeacherCountProvider()),
+      ],
+      child: MaterialApp(
+        title: 'UBook',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+          useMaterial3: true,
+        ),
+        routes: {
+          '/login': (context) => const LoginView(),
+          '/register': (context) => const RegisterView(),
+          '/pqrs': (context) => ChangeNotifierProvider(
+            create: (_) => PQRSViewModel(),
+            child: const PQRSPage(),
+          ),
+        },
+        home: const DashboardView(),
       ),
-      routes: {
-        '/login': (context) => const LoginView(),
-        '/register': (context) => const RegisterView(),
-      },
-      home: const DashboardView(),
     );
   }
 }

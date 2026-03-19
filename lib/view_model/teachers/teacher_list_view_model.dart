@@ -8,6 +8,8 @@ class TeacherListViewModel extends ChangeNotifier {
 
   List<Teacher> get filteredTeachers => _filteredTeachers;
   String get searchQuery => _searchQuery;
+  int get totalCount => _allTeachers.length;
+  int get activeCount => _allTeachers.where((t) => t.isActive).length;
 
   TeacherListViewModel() {
     _loadTeachers();

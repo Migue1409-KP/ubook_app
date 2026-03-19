@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class TopItemsCarousel extends StatelessWidget {
   final String title;
@@ -29,13 +30,13 @@ class TopItemsCarousel extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: AppColors.textPrimary,
                 ),
               ),
               TextButton(
                 onPressed: onSeeAll,
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.indigo,
+                  foregroundColor: AppColors.primary,
                 ),
                 child: const Text(
                   'Ver todos',
