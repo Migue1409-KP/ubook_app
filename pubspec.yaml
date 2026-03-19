@@ -42,6 +42,10 @@ dependencies:
   # Selector de archivos (imágenes y documentos) — módulo adjuntos
   file_picker: ^8.1.0
 
+  # Apertura de archivos con la aplicación predeterminada del sistema
+  path_provider: ^2.1.5
+  open_file: ^3.3.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
