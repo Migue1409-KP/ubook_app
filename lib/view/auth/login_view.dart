@@ -2,7 +2,6 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:ubook_app/theme/app_colors.dart';
 import 'package:provider/provider.dart';
-import 'package:ubook_app/view/dashboard/dashboard_view.dart';
 import 'package:ubook_app/view_model/auth/user_count_provider.dart';
 import 'package:ubook_app/view/auth/register_view.dart';
 import 'package:ubook_app/view_model/auth/login_view_model.dart';
