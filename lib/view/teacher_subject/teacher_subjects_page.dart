@@ -6,7 +6,11 @@ import '../../model/teachers/teacher.dart';
 import '../../model/subjects/subjects.dart';
 import '../../view_model/teacher_subject/teacher_subjects_view_model.dart';
 import '../../theme/app_colors.dart';
+import '../../view/attachments/attachments_view.dart';
 
+// ---------------------------------------------------------------------------
+// Entry point — crea el ViewModel y lo inyecta con ChangeNotifierProvider
+// ---------------------------------------------------------------------------
 class TeacherSubjectsPage extends StatelessWidget {
   final Teacher? teacher;
   final Subject? subject;
@@ -40,6 +44,9 @@ class TeacherSubjectsPage extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Vista — consume el ViewModel via Provider, sin addListener ni setState manual
+// ---------------------------------------------------------------------------
 class _TeacherSubjectsView extends StatefulWidget {
   final Teacher? teacher;
   final Subject? subject;
@@ -99,7 +106,7 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
           ),
           IconButton(
             icon: const Icon(Icons.add_link_rounded),
-            tooltip: 'Asignar nueva Materia Profesor',
+            tooltip: 'Asignar nueva relación',
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -289,18 +296,16 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
   }
 
   void _goToAdjuntos(TeacherSubjectsViewModel vm, String subjectId) {
-    final link = vm.subjectLinks
-        .where((l) =>
-            l.subjectId == subjectId && l.teacherId == widget.teacher?.id)
-        .firstOrNull;
-    final linkId = link?.id ?? 'sin-link';
-    // TODO: Navigator.push(context, MaterialPageRoute(builder: (_) => AdjuntosPage(linkId: linkId)));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('📎  Adjuntos — linkId: $linkId'),
-      backgroundColor: AppColors.primary,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-    ));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AttachmentsView(
+          subjectId:    subjectId,
+          teacherId:    widget.teacher?.id ?? '',
+          uploadedById: widget.teacher?.id ?? '',
+        ),
+      ),
+    );
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
