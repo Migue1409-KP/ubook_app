@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ubook_app/view/career/career_list_view.dart';
 import '../../view_model/dashboard_view_model.dart';
 import '../../widgets/dashboard_app_bar.dart';
 import '../../widgets/top_items_carousel.dart';
@@ -67,7 +68,7 @@ class _DashboardViewState extends State<DashboardView> {
               TopItemsCarousel(
                 title: 'Top 5 Carreras',
                 onSeeAll: () {
-                  // TODO: Navigate to all careers
+                  _navigateToCareer();
                 },
                 items: _viewModel.topCareers,
                 itemBuilder: (item) => _buildCard(
@@ -224,7 +225,14 @@ class _DashboardViewState extends State<DashboardView> {
       ),
     );
   }
-
+  void _navigateToCareer(){
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CareerListView(),
+      ),
+    );
+  }
   Widget _buildCard({
     required String title,
     required String subtitle,

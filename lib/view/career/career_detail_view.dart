@@ -1,91 +1,119 @@
 import 'package:flutter/material.dart';
-import 'package:ubook_app/model/career/career_model.dart';
-import 'package:ubook_app/theme/app_colors.dart';
+import '../../model/career/career_model.dart';
+import '../process/process_list_view.dart';
+import '../subjects/subjects_view.dart';
+import 'package:ubook_app/widgets/career/navigation_card.dart';
+
+// ⚠️ IMPORTANTE: Importar cuando el compañero tenga lista la vista de reviews
+// import '../reviews/review_list_view.dart';
 
 class CareerDetailView extends StatelessWidget {
-
   final Career career;
 
-  const CareerDetailView({
-    super.key,
-    required this.career,
-  });
+  const CareerDetailView({super.key, required this.career});
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(career.name),
       ),
-
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Column(
-
           crossAxisAlignment: CrossAxisAlignment.start,
-
           children: [
 
+            /// 🔷 HEADER
             Text(
               career.name,
               style: const TextStyle(
-                fontSize: 22,
+                fontSize: 26,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
               ),
             ),
 
             const SizedBox(height: 10),
 
-            Text(
-              "Semesters: ${career.semesters}",
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-              ),
-            ),
-
-            Text(
-              "Credits: ${career.credits}",
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-              ),
+            Row(
+              children: const [
+                Icon(Icons.star, color: Colors.amber),
+                SizedBox(width: 5),
+                Text("4.5"), // 🔥 MOCK TEMPORAL
+              ],
             ),
 
             const SizedBox(height: 30),
 
-            const Text(
-              "Subjects",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+            /// 📚 SUBJECTS
+            NavigationCard(
+              title: "Subjects",
+              subtitle: "View all subjects of this career",
+              icon: Icons.menu_book,
+              color: Colors.blue,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SubjectsView(),
+                  ),
+                );
+
+                /// ⚠️ PENDIENTE EQUIPO:
+                /// Aquí se debería enviar careerId cuando el view lo soporte
+                /// Ej: SubjectsView(careerId: career.id)
+              },
             ),
 
-            Text("${career.subjects.length} subjects"),
+            /// 📄 PROCESSES
+            NavigationCard(
+              title: "Processes",
+              subtitle: "Manage academic processes",
+              icon: Icons.description,
+              color: Colors.orange,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProcessListView(),
+                  ),
+                );
 
-            const SizedBox(height: 16),
-
-            const Text(
-              "Processes",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+                /// ⚠️ PENDIENTE EQUIPO:
+                /// Filtrar procesos por careerId usando:
+                /// process.relatedId == career.id
+              },
             ),
 
-            Text("${career.processes.length} processes"),
+            /// 💬 REVIEWS
+            NavigationCard(
+              title: "Reviews",
+              subtitle: "See student opinions",
+              icon: Icons.rate_review,
+              color: Colors.green,
+              onTap: () {
 
-            const SizedBox(height: 16),
+                /// ⚠️ PENDIENTE:
+                /// Falta vista de reviews del equipo
+                /// Cuando exista:
+                ///
+                /// Navigator.push(
+                ///   context,
+                ///   MaterialPageRoute(
+                ///     builder: (_) => ReviewListView(careerId: career.id),
+                ///   ),
+                /// );
 
-            const Text(
-              "Reviews",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Reviews module not ready yet"),
+                  ),
+                );
+              },
             ),
 
-            Text("${career.reviews.length} reviews"),
+            const SizedBox(height: 40),
           ],
         ),
       ),

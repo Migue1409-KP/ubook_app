@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ubook_app/model/career/career_model.dart';
-import 'package:ubook_app/view_model/career_view_model.dart';
+import 'package:ubook_app/view_model/career/career_view_model.dart';
 import 'package:ubook_app/widgets/career/app_button.dart';
 import 'package:ubook_app/widgets/career/app_text_file.dart';
 
@@ -58,6 +58,7 @@ class CareerCreateView extends StatelessWidget {
 
                 final career = Career(
                   id: DateTime.now().toString(),
+                  educationalCenterId: "2",
                   name: nameController.text,
                   semesters: int.parse(semestersController.text),
                   credits: int.parse(creditsController.text),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ubook_app/model/career/career_model.dart';
-import 'package:ubook_app/view_model/career_view_model.dart';
+import 'package:ubook_app/view_model/career/career_view_model.dart';
 
 class CareerDeleteDialog extends StatelessWidget {
 

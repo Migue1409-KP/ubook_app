@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ubook_app/dialog/career_delete_dialog.dart';
 import 'package:ubook_app/model/career/career_model.dart';
-import 'package:ubook_app/view_model/career_view_model.dart';
+import 'package:ubook_app/view_model/career/career_view_model.dart';
 import 'package:ubook_app/widgets/career/career_table.dart';
 import 'package:ubook_app/widgets/career/search_bar.dart';
 

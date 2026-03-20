@@ -2,6 +2,7 @@ class Career {
 
   final String id;
   final String name;
+  final String educationalCenterId;
   final int semesters;
   final int credits;
 
@@ -12,6 +13,7 @@ class Career {
   Career({
     required this.id,
     required this.name,
+    required this.educationalCenterId,
     required this.semesters,
     required this.credits,
     List<String>? subjects,
@@ -26,6 +28,7 @@ class Career {
     return Career(
       id: json['id'],
       name: json['name'],
+      educationalCenterId: json['educationalCenterId'],
       semesters: json['semesters'],
       credits: json['credits'],
       subjects: List<String>.from(json['subjects'] ?? []),
@@ -39,6 +42,7 @@ class Career {
     return {
       "id": id,
       "name": name,
+      "educationalCenterId": educationalCenterId,
       "semesters": semesters,
       "credits": credits,
       "subjects": subjects,
@@ -49,6 +53,7 @@ class Career {
 
   Career copyWith({
     String? name,
+    String? educationalCenterId,
     int? semesters,
     int? credits,
     List<String>? subjects,
@@ -59,6 +64,7 @@ class Career {
     return Career(
       id: id,
       name: name ?? this.name,
+      educationalCenterId: educationalCenterId ?? this.educationalCenterId,
       semesters: semesters ?? this.semesters,
       credits: credits ?? this.credits,
       subjects: subjects ?? this.subjects,

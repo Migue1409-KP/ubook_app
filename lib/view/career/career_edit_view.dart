@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ubook_app/model/career/career_model.dart';
-import 'package:ubook_app/view_model/career_view_model.dart';
+import 'package:ubook_app/view_model/career/career_view_model.dart';
 import 'package:ubook_app/widgets/career/app_button.dart';
 import 'package:ubook_app/widgets/career/app_text_file.dart';
 
