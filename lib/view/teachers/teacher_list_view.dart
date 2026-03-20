@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../model/teachers/teacher.dart';
+import '../../theme/app_colors.dart';
 import '../../view_model/teachers/teacher_list_view_model.dart';
+import '../../view_model/teachers/teacher_count_provider.dart';
+import '../../widgets/teachers/teacher_row_card.dart';
+import '../../widgets/teachers/teacher_delete_dialog.dart';
 import '../teacher_subject/teacher_subjects_page.dart';
 import 'teacher_form_view.dart';
 
@@ -21,6 +26,12 @@ class _TeacherListViewState extends State<TeacherListView> {
     _viewModel.addListener(() {
       setState(() {});
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TeacherCountProvider>().initialize(
+            total: _viewModel.totalCount,
+            active: _viewModel.activeCount,
+          );
+    });
   }
 
   @override
@@ -30,51 +41,39 @@ class _TeacherListViewState extends State<TeacherListView> {
     super.dispose();
   }
 
-   void _navigateToTeacherSubjects(Teacher teacher) {
-     Navigator.push(
-       context,
-       MaterialPageRoute(
-         builder: (_) => TeacherSubjectsPage(teacher: teacher),
-       ),
-     );
-   }
+  void _navigateToTeacherSubjects(Teacher teacher) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TeacherSubjectsPage(teacher: teacher),
+      ),
+    );
+  }
 
   void _onDeleteTeacher(Teacher teacher) {
-    showDialog(
+    TeacherDeleteDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
-        title: const Text('Eliminar profesor', style: TextStyle(color: Colors.white)),
-        content: Text(
-          '¿Estás seguro de que deseas eliminar a ${teacher.fullName}?',
-          style: const TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _viewModel.deleteTeacher(teacher.id);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+      teacherName: teacher.fullName,
+      onConfirm: () {
+        _viewModel.deleteTeacher(teacher.id);
+        context.read<TeacherCountProvider>().removeTeacher(
+              wasActive: teacher.isActive,
+            );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF161B22),
-        foregroundColor: Colors.white,
-        title: const Text('Profesores', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        title: const Text(
+          'Profesores',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -85,7 +84,7 @@ class _TeacherListViewState extends State<TeacherListView> {
           children: [
             _buildSearchAndCreateRow(),
             const SizedBox(height: 16),
-            Expanded(child: _buildTeacherTable()),
+            Expanded(child: _buildTeacherList()),
           ],
         ),
       ),
@@ -99,25 +98,26 @@ class _TeacherListViewState extends State<TeacherListView> {
           child: TextField(
             controller: _searchController,
             onChanged: _viewModel.search,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: AppColors.textPrimary),
             decoration: InputDecoration(
               hintText: 'Buscar...',
-              hintStyle: const TextStyle(color: Colors.white38),
-              prefixIcon: const Icon(Icons.search, color: Colors.white54),
+              hintStyle: const TextStyle(color: AppColors.placeholder),
+              prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
               filled: true,
-              fillColor: const Color(0xFF161B22),
-              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+              fillColor: AppColors.inputFill,
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF30363D)),
+                borderSide: const BorderSide(color: AppColors.divider),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF30363D)),
+                borderSide: const BorderSide(color: AppColors.divider),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF4A90D9), width: 2),
+                borderSide: const BorderSide(color: AppColors.primary, width: 2),
               ),
             ),
           ),
@@ -132,7 +132,9 @@ class _TeacherListViewState extends State<TeacherListView> {
               _viewModel.addTeacher(result);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Profesor creado exitosamente')),
+                  const SnackBar(
+                    content: Text('Profesor creado exitosamente'),
+                  ),
                 );
               }
             }
@@ -140,80 +142,48 @@ class _TeacherListViewState extends State<TeacherListView> {
           icon: const Icon(Icons.add),
           label: const Text('Crear'),
           style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF4A90D9),
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildTeacherTable() {
+  Widget _buildTeacherList() {
     final teachers = _viewModel.filteredTeachers;
 
     if (teachers.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.person_off_outlined, size: 64, color: Colors.white24),
-            const SizedBox(height: 16),
-            const Text(
+          children: const [
+            Icon(Icons.person_off_outlined,
+                size: 64, color: AppColors.textSecondary),
+            SizedBox(height: 16),
+            Text(
               'No se encontraron profesores',
-              style: TextStyle(fontSize: 16, color: Colors.white54),
+              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
             ),
           ],
         ),
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF30363D)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            headingRowColor: WidgetStateProperty.all(const Color(0xFF0D1117)),
-            columnSpacing: 24,
-            columns: const [
-              DataColumn(label: Text('Nombre', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-              DataColumn(label: Text('ID', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-              DataColumn(label: Text('Edad', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)), numeric: true),
-              DataColumn(label: Text('Acciones', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-            ],
-            rows: teachers.map((teacher) {
-              return DataRow(
-                cells: [
-                  DataCell(Text(teacher.fullName, style: const TextStyle(color: Colors.white))),
-                  DataCell(Text(teacher.id, style: const TextStyle(color: Colors.white70))),
-                  DataCell(Text(teacher.age.toString(), style: const TextStyle(color: Colors.white70))),
-                  DataCell(_buildActionButtons(teacher)),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(Teacher teacher) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-         TextButton(
-           onPressed: () => _navigateToTeacherSubjects(teacher),
-           child: const Text('Ver', style: TextStyle(color: Color(0xFF4A90D9), fontSize: 12)),
-         ),
-        TextButton(
-          onPressed: () async {
+    return ListView.separated(
+      itemCount: teachers.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final teacher = teachers[index];
+        return TeacherRowCard(
+          teacher: teacher,
+          onView: () => _navigateToTeacherSubjects(teacher),
+          onEdit: () async {
             final result = await Navigator.of(context).push<Teacher>(
               MaterialPageRoute(
                 builder: (_) => TeacherFormView(teacher: teacher),
@@ -223,14 +193,9 @@ class _TeacherListViewState extends State<TeacherListView> {
               _viewModel.updateTeacher(result);
             }
           },
-          child: const Text('Editar', style: TextStyle(color: Color(0xFF90CAF9), fontSize: 12)),
-        ),
-        TextButton(
-          onPressed: () => _onDeleteTeacher(teacher),
-          style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-          child: const Text('Eliminar', style: TextStyle(fontSize: 12)),
-        ),
-      ],
+          onDelete: () => _onDeleteTeacher(teacher),
+        );
+      },
     );
   }
 }

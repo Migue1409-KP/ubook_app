@@ -51,7 +51,7 @@ class LoginViewModel extends ChangeNotifier {
       final password = passwordController.text.trim();
 
       // Login exitoso Solo para pruebas
-      if (email == 'test@test.com' && password == '12345678') {
+      if (email == 'test@test.com' && password == 'test1234') {
         isLoading = false;
         notifyListeners();
         return true;
