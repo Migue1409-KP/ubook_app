@@ -7,6 +7,7 @@ import 'view/auth/register_view.dart';
 import 'view/pqrs/pqrs_page.dart';
 import 'view_model/pqrs/pqrs_viewmodel.dart';
 import 'view_model/auth/user_count_provider.dart';
+import 'view_model/educational_center/educational_center_count_provider.dart';
 import 'view_model/teachers/teacher_count_provider.dart';
 
 void main() {
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => UserCountProvider()),
         ChangeNotifierProvider(create: (_) => TeacherCountProvider()),
+        ChangeNotifierProvider(create: (_) => EducationalCenterCountProvider()),
       ],
       child: MaterialApp(
         title: 'UBook',

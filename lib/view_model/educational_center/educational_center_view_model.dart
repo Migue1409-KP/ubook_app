@@ -1,4 +1,4 @@
-import '../model/educational_center/educational_center_model.dart';
+import '../../model/educational_center/educational_center_model.dart';
 
 class EducationalCenterViewModel {
   final List<EducationalCenter> centers = [
