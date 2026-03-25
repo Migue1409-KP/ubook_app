@@ -1,6 +1,5 @@
 import 'subjects.dart';
 
-/// Datos dummy completamente aislados para pruebas locales del módulo de materias.
 class SubjectDummyData {
   SubjectDummyData._();
 
@@ -12,7 +11,7 @@ class SubjectDummyData {
         horas: 4,
         creditos: 5,
         prerrequisitos: ['Ing Software 3'],
-        contenido: 'no aplica',
+        contenido: 'No aplica',
       ),
       Subject(
         id: 'subject-2',

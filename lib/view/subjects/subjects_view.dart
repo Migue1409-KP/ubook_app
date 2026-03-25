@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../../model/subjects/subjects.dart';
 import '../../theme/app_colors.dart';
 import '../../view_model/subjects/subjects_view_model.dart';
+import 'subject_delete_dialog.dart';
 import 'subject_detail_dialog.dart';
+import 'subject_form_dialog.dart';
 
 class SubjectsView extends StatefulWidget {
   const SubjectsView({super.key});
@@ -18,16 +20,21 @@ class _SubjectsViewState extends State<SubjectsView> {
   @override
   void initState() {
     super.initState();
-    _viewModel.addListener(() {
-      if (mounted) setState(() {});
-    });
+    _viewModel.addListener(_refresh);
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _viewModel.removeListener(_refresh);
     _viewModel.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  void _refresh() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -64,12 +71,8 @@ class _SubjectsViewState extends State<SubjectsView> {
                         return _SubjectRowCard(
                           subject: subject,
                           onView: () => _openDetail(subject),
-                          onEdit: () {
-                            // conecta aquí tu modal de editar
-                          },
-                          onDelete: () {
-                            _viewModel.removeSubject(subject.id);
-                          },
+                          onEdit: () => _openFormModal(subject: subject),
+                          onDelete: () => _openDeleteModal(subject),
                         );
                       },
                     ),
@@ -89,14 +92,17 @@ class _SubjectsViewState extends State<SubjectsView> {
             onChanged: _viewModel.search,
             style: const TextStyle(color: AppColors.textPrimary),
             decoration: InputDecoration(
-              hintText: 'Buscar materia...',
+              hintText: 'Buscar...',
               hintStyle: const TextStyle(color: AppColors.placeholder),
-              prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+              prefixIcon: const Icon(
+                Icons.search,
+                color: AppColors.textSecondary,
+              ),
               filled: true,
               fillColor: AppColors.inputFill,
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
                 vertical: 0,
+                horizontal: 16,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -118,15 +124,16 @@ class _SubjectsViewState extends State<SubjectsView> {
         ),
         const SizedBox(width: 12),
         FilledButton.icon(
-          onPressed: () {
-            // conecta aquí tu modal de crear
-          },
+          onPressed: _openFormModal,
           icon: const Icon(Icons.add),
           label: const Text('Crear'),
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 14,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -159,20 +166,63 @@ class _SubjectsViewState extends State<SubjectsView> {
     );
   }
 
-  void _openDetail(Subject subject) {
-    showDialog(
+  Future<void> _openFormModal({Subject? subject}) async {
+    await showDialog<void>(
       context: context,
-      builder: (_) => SubjectDetailDialog(subject: subject),
+      builder: (_) => SubjectFormDialog(
+        subject: subject,
+        onSave: ({
+          required String nombre,
+          required int horas,
+          required int creditos,
+          required String prerrequisitosText,
+          required String contenido,
+        }) {
+          if (subject == null) {
+            _viewModel.addSubject(
+              nombre: nombre,
+              horas: horas,
+              creditos: creditos,
+              prerrequisitosText: prerrequisitosText,
+              contenido: contenido,
+            );
+          } else {
+            _viewModel.updateSubject(
+              id: subject.id,
+              nombre: nombre,
+              horas: horas,
+              creditos: creditos,
+              prerrequisitosText: prerrequisitosText,
+              contenido: contenido,
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _openDetail(Subject subject) async {
+    await showDialog<void>(
+      context: context,
+      builder: (_) => SubjectDetailDialog(
+        subject: subject,
+        onEdit: () => _openFormModal(subject: subject),
+      ),
+    );
+  }
+
+  Future<void> _openDeleteModal(Subject subject) async {
+    await showDialog<void>(
+      context: context,
+      builder: (_) => SubjectDeleteDialog(
+        subjectName: subject.nombre,
+        onConfirm: () => _viewModel.removeSubject(subject.id),
+      ),
     );
   }
 }
 
 class _SubjectRowCard extends StatelessWidget {
-  final Subject subject;
-  final VoidCallback onView;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
   const _SubjectRowCard({
     required this.subject,
     required this.onView,
@@ -180,17 +230,22 @@ class _SubjectRowCard extends StatelessWidget {
     required this.onDelete,
   });
 
+  final Subject subject;
+  final VoidCallback onView;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
   @override
   Widget build(BuildContext context) {
-    final initials = subject.nombre.isNotEmpty
-        ? subject.nombre
+    final initials = subject.nombre.trim().isEmpty
+        ? '?'
+        : subject.nombre
             .trim()
             .split(' ')
             .take(2)
-            .map((e) => e[0])
+            .map((e) => e.isNotEmpty ? e[0] : '')
             .join()
-            .toUpperCase()
-        : '?';
+            .toUpperCase();
 
     return Card(
       margin: EdgeInsets.zero,
@@ -206,13 +261,12 @@ class _SubjectRowCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 22,
-              backgroundColor: AppColors.primary.withOpacity(0.12),
+              backgroundColor: AppColors.primary.withOpacity(0.10),
               child: Text(
                 initials,
                 style: const TextStyle(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
                 ),
               ),
             ),
@@ -226,14 +280,14 @@ class _SubjectRowCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w600,
                       fontSize: 15,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
-                    '${subject.horas} horas  •  ${subject.creditos} créditos',
+                    '${subject.horas} horas • ${subject.creditos} créditos',
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
@@ -245,23 +299,20 @@ class _SubjectRowCard extends StatelessWidget {
             IconButton(
               onPressed: onView,
               icon: const Icon(Icons.visibility_outlined),
-              tooltip: 'Ver',
               color: AppColors.primary,
-              splashRadius: 22,
+              tooltip: 'Ver',
             ),
             IconButton(
               onPressed: onEdit,
               icon: const Icon(Icons.edit_outlined),
+              color: AppColors.processSubject,
               tooltip: 'Editar',
-              color: AppColors.primary,
-              splashRadius: 22,
             ),
             IconButton(
               onPressed: onDelete,
               icon: const Icon(Icons.delete_outline),
-              tooltip: 'Eliminar',
               color: AppColors.processDanger,
-              splashRadius: 22,
+              tooltip: 'Eliminar',
             ),
           ],
         ),
