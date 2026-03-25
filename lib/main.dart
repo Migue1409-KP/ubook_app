@@ -41,6 +41,7 @@ class MyApp extends StatelessWidget {
             create: (_) => PQRSViewModel(),
             child: const PQRSPage(),
           ),
+          '/subjects': (context) => const SubjectsView(),
         },
         home: const DashboardView(),
       ),
