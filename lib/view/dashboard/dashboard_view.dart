@@ -260,7 +260,7 @@ class _DashboardViewContent extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => SubjectDetailDialog(subject: dummySubject),
+      builder: (context) => SubjectDetailDialog(subject: dummySubject, onEdit:() {}),
     );
   }
 
