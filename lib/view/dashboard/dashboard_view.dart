@@ -5,6 +5,7 @@ import '../../view_model/dashboard/dashboard_view_model.dart';
 import '../../widgets/dashboard_app_bar.dart';
 import '../../widgets/top_items_carousel.dart';
 import '../process/process_list_view.dart';
+import '../subjects/subject_detail_view.dart';
 import '../teacher_subject/teacher_subjects_page.dart';
 import '../teachers/teacher_list_view.dart';
 import '../../model/career/career_model.dart';
@@ -13,7 +14,6 @@ import '../../model/teachers/teacher.dart';
 import '../career/career_detail_view.dart';
 import '../educational_center/educational_center_detail_screen.dart';
 import '../educational_center/educational_center_screen.dart';
-import '../subjects/subject_detail_dialog.dart';
 import '../subjects/subjects_view.dart';
 import '../../model/subjects/subjects.dart';
 import '../../theme/app_colors.dart';
@@ -310,8 +310,10 @@ class _DashboardViewContent extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) =>
-          SubjectDetailDialog(subject: dummySubject, onEdit: () {}),
+      builder: (context) => SubjectDetailView(
+       subject: dummySubject,
+        onEdit: () {},
+        ),
     );
   }
 

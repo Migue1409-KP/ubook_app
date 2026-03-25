@@ -3,8 +3,8 @@ import '../../model/subjects/subjects.dart';
 import '../../theme/app_colors.dart';
 import '../../view_model/subjects/subjects_view_model.dart';
 import 'subject_delete_dialog.dart';
-import 'subject_detail_dialog.dart';
-import 'subject_form_dialog.dart';
+import 'subject_detail_view.dart';
+import 'subject_form_view.dart';
 
 class SubjectsView extends StatefulWidget {
   const SubjectsView({super.key});
@@ -70,8 +70,8 @@ class _SubjectsViewState extends State<SubjectsView> {
                         final subject = subjects[index];
                         return _SubjectRowCard(
                           subject: subject,
-                          onView: () => _openDetail(subject),
-                          onEdit: () => _openFormModal(subject: subject),
+                          onView: () => _openDetailView(subject),
+                          onEdit: () => _openFormView(subject: subject),
                           onDelete: () => _openDeleteModal(subject),
                         );
                       },
@@ -124,7 +124,7 @@ class _SubjectsViewState extends State<SubjectsView> {
         ),
         const SizedBox(width: 12),
         FilledButton.icon(
-          onPressed: _openFormModal,
+          onPressed: _openFormView,
           icon: const Icon(Icons.add),
           label: const Text('Crear'),
           style: FilledButton.styleFrom(
@@ -166,52 +166,34 @@ class _SubjectsViewState extends State<SubjectsView> {
     );
   }
 
-  Future<void> _openFormModal({Subject? subject}) async {
-    await showDialog<void>(
-      context: context,
-      builder: (_) => SubjectFormDialog(
-        subject: subject,
-        onSave: ({
-          required String nombre,
-          required int horas,
-          required int creditos,
-          required String prerrequisitosText,
-          required String contenido,
-        }) {
-          if (subject == null) {
-            _viewModel.addSubject(
-              nombre: nombre,
-              horas: horas,
-              creditos: creditos,
-              prerrequisitosText: prerrequisitosText,
-              contenido: contenido,
-            );
-          } else {
-            _viewModel.updateSubject(
-              id: subject.id,
-              nombre: nombre,
-              horas: horas,
-              creditos: creditos,
-              prerrequisitosText: prerrequisitosText,
-              contenido: contenido,
-            );
-          }
-        },
+  Future<void> _openFormView({Subject? subject}) async {
+    final result = await Navigator.of(context).push<Subject>(
+      MaterialPageRoute(
+        builder: (_) => SubjectFormView(subject: subject),
+      ),
+    );
+
+    if (result == null) return;
+
+    if (subject == null) {
+      _viewModel.addExistingSubject(result);
+    } else {
+      _viewModel.updateExistingSubject(result);
+    }
+  }
+
+  Future<void> _openDetailView(Subject subject) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SubjectDetailView(
+          subject: subject,
+          onEdit: () => _openFormView(subject: subject),
+          onTeachersTap: () {},
+          onReviewsTap: () {},
+        ),
       ),
     );
   }
-
-  Future<void> _openDetail(Subject subject) async {
-  await showDialog<void>(
-    context: context,
-    builder: (_) => SubjectDetailDialog(
-      subject: subject,
-      onEdit: () => _openFormModal(subject: subject),
-      onTeachersTap: () {},
-      onReviewsTap: () {},
-    ),
-  );
-}
 
   Future<void> _openDeleteModal(Subject subject) async {
     await showDialog<void>(

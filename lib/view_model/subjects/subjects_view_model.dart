@@ -33,45 +33,16 @@ class SubjectsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addSubject({
-    required String nombre,
-    required int horas,
-    required int creditos,
-    required String prerrequisitosText,
-    required String contenido,
-  }) {
-    final subject = Subject(
-      id: 'subject-${DateTime.now().microsecondsSinceEpoch}',
-      nombre: nombre.trim(),
-      horas: horas,
-      creditos: creditos,
-      prerrequisitos: _mapPrerequisites(prerrequisitosText),
-      contenido: contenido.trim(),
-    );
-
+  void addExistingSubject(Subject subject) {
     _subjects.insert(0, subject);
     notifyListeners();
   }
 
-  void updateSubject({
-    required String id,
-    required String nombre,
-    required int horas,
-    required int creditos,
-    required String prerrequisitosText,
-    required String contenido,
-  }) {
-    final index = _subjects.indexWhere((subject) => subject.id == id);
+  void updateExistingSubject(Subject updatedSubject) {
+    final index = _subjects.indexWhere((item) => item.id == updatedSubject.id);
     if (index == -1) return;
 
-    _subjects[index] = _subjects[index].copyWith(
-      nombre: nombre.trim(),
-      horas: horas,
-      creditos: creditos,
-      prerrequisitos: _mapPrerequisites(prerrequisitosText),
-      contenido: contenido.trim(),
-    );
-
+    _subjects[index] = updatedSubject;
     notifyListeners();
   }
 
@@ -83,13 +54,5 @@ class SubjectsViewModel extends ChangeNotifier {
   String serializePrerequisites(List<String> items) {
     if (items.isEmpty) return '';
     return items.join(', ');
-  }
-
-  List<String> _mapPrerequisites(String rawValue) {
-    return rawValue
-        .split(',')
-        .map((item) => item.trim())
-        .where((item) => item.isNotEmpty)
-        .toList();
   }
 }
