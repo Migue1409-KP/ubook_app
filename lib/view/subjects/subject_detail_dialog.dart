@@ -7,10 +7,14 @@ class SubjectDetailDialog extends StatelessWidget {
     super.key,
     required this.subject,
     required this.onEdit,
+    this.onTeachersTap,
+    this.onReviewsTap,
   });
 
   final Subject subject;
   final VoidCallback onEdit;
+  final VoidCallback? onTeachersTap;
+  final VoidCallback? onReviewsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +24,9 @@ class SubjectDetailDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
+      titlePadding: const EdgeInsets.fromLTRB(24, 20, 16, 8),
+      contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
       title: Row(
         children: [
           Expanded(
@@ -45,7 +52,7 @@ class SubjectDetailDialog extends StatelessWidget {
         ],
       ),
       content: SizedBox(
-        width: 500,
+        width: 520,
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,11 +111,46 @@ class SubjectDetailDialog extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onTeachersTap ?? () {},
+                      icon: const Icon(Icons.person_outline),
+                      label: const Text('Profesores'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onReviewsTap ?? () {},
+                      icon: const Icon(Icons.rate_review_outlined),
+                      label: const Text('Reseñas'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),

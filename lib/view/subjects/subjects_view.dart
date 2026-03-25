@@ -202,14 +202,16 @@ class _SubjectsViewState extends State<SubjectsView> {
   }
 
   Future<void> _openDetail(Subject subject) async {
-    await showDialog<void>(
-      context: context,
-      builder: (_) => SubjectDetailDialog(
-        subject: subject,
-        onEdit: () => _openFormModal(subject: subject),
-      ),
-    );
-  }
+  await showDialog<void>(
+    context: context,
+    builder: (_) => SubjectDetailDialog(
+      subject: subject,
+      onEdit: () => _openFormModal(subject: subject),
+      onTeachersTap: () {},
+      onReviewsTap: () {},
+    ),
+  );
+}
 
   Future<void> _openDeleteModal(Subject subject) async {
     await showDialog<void>(
