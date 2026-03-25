@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ubook_app/view/subjects/subjects_view.dart';
 import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
 import 'view/auth/profile_view.dart';
@@ -41,7 +42,7 @@ class MyApp extends StatelessWidget {
             create: (_) => PQRSViewModel(),
             child: const PQRSPage(),
           ),
-          '/subjects': (context) => const SubjectsView(),
+          '/subjects': (context) => SubjectsView(),
         },
         home: const DashboardView(),
       ),
