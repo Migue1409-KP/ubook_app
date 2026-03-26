@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ubook_app/view/subjects/subjects_view.dart';
 import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
 import 'view/auth/profile_view.dart';
@@ -7,6 +8,7 @@ import 'view/auth/register_view.dart';
 import 'view/pqrs/pqrs_page.dart';
 import 'view_model/pqrs/pqrs_viewmodel.dart';
 import 'view_model/auth/user_count_provider.dart';
+import 'view_model/educational_center/educational_center_count_provider.dart';
 import 'view_model/teachers/teacher_count_provider.dart';
 import 'view/admin_user/admin_users_view.dart';
 import 'view_model/admin_user/admin_users_view_model.dart';
@@ -24,6 +26,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => UserCountProvider()),
         ChangeNotifierProvider(create: (_) => TeacherCountProvider()),
+        ChangeNotifierProvider(create: (_) => EducationalCenterCountProvider()),
       ],
       child: MaterialApp(
         title: 'UBook',
@@ -42,6 +45,7 @@ class MyApp extends StatelessWidget {
             child: const PQRSPage(),
           ),
           '/admin_user': (context) => const AdminUsersView(),
+          '/subjects': (context) => SubjectsView(),
         },
         home: const DashboardView(),
       ),

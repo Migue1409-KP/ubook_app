@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ubook_app/view/career/career_list_view.dart';
 import '../../view_model/dashboard/dashboard_view_model.dart';
 import '../../widgets/dashboard_app_bar.dart';
 import '../../widgets/top_items_carousel.dart';
 import '../process/process_list_view.dart';
+import '../subjects/subject_detail_view.dart';
 import '../teacher_subject/teacher_subjects_page.dart';
 import '../teachers/teacher_list_view.dart';
 import '../../model/teachers/teacher.dart';
 import '../educational_center/educational_center_screen.dart';
-import '../subjects/subject_detail_dialog.dart';
 import '../subjects/subjects_view.dart';
 import '../../model/subjects/subjects.dart';
 import '../../theme/app_colors.dart';
@@ -62,9 +63,25 @@ class _DashboardViewContent extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
 
+              // Top Carreras
+              TopItemsCarousel(
+                title: 'Top 5 Carreras',
+                onSeeAll: () {
+                  _navigateToCareer(context);
+                },
+                items: viewModel.topCareers,
+                itemBuilder: (item) => _buildCard(
+                  title: item['name'],
+                  subtitle: item['faculty'],
+                  rating: item['rating'],
+                  icon: Icons.school,
+                  color: Colors.orange,
+                ),
+              ),
+              const SizedBox(height: 28),
                   // Top Carreras
                   TopItemsCarousel(
-                    title: 'Top 5 Carreras',
+                    title: 'Top 5 Materias',
                     onSeeAll: () {
                       _navigateToSubjects(context);
                     },
@@ -222,7 +239,14 @@ class _DashboardViewContent extends StatelessWidget {
       MaterialPageRoute(builder: (context) => const SubjectsView()),
     );
   }
-
+   void _navigateToCareer(BuildContext context){
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CareerListView(),
+      ),
+    );
+  }
   void _showSubjectDetail(BuildContext context, Map<String, dynamic> item) {
     final dummySubject = Subject(
       id: 'DUMMY-SUB',
@@ -236,7 +260,10 @@ class _DashboardViewContent extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => SubjectDetailDialog(subject: dummySubject),
+      builder: (context) => SubjectDetailView(
+       subject: dummySubject,
+        onEdit: () {},
+        ),
     );
   }
 
