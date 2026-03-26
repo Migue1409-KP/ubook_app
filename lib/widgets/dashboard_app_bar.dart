@@ -55,7 +55,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
               // TODO: Implementar navegación a administración de usuarios y PQRS
               // TODO: Navegar a perfil
               case 'users':
-                // TODO: Navegar a administrar usuarios
+                Navigator.pushNamed(context, '/admin_user');
                 break;
               case 'pqrs':
                 Navigator.pushNamed(context, '/pqrs');
