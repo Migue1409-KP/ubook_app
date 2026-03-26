@@ -8,6 +8,8 @@ import 'view/pqrs/pqrs_page.dart';
 import 'view_model/pqrs/pqrs_viewmodel.dart';
 import 'view_model/auth/user_count_provider.dart';
 import 'view_model/teachers/teacher_count_provider.dart';
+import 'view/admin_user/admin_users_view.dart';
+import 'view_model/admin_user/admin_users_view_model.dart';
 
 void main() {
   runApp(const MyApp());
@@ -39,6 +41,7 @@ class MyApp extends StatelessWidget {
             create: (_) => PQRSViewModel(),
             child: const PQRSPage(),
           ),
+          '/admin_user': (context) => const AdminUsersView(),
         },
         home: const DashboardView(),
       ),
