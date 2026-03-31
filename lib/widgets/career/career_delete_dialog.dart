@@ -18,15 +18,15 @@ class CareerDeleteDialog extends StatelessWidget {
 
     return AlertDialog(
 
-      title: const Text("Are you sure?"),
+      title: const Text("Estas seguro?"),
 
-      content: Text("Delete ${career.name}?"),
+      content: Text("Eliminar ${career.name}?"),
 
       actions: [
 
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text("Cancel"),
+          child: const Text("Cancelar"),
         ),
 
         ElevatedButton(
@@ -36,7 +36,7 @@ class CareerDeleteDialog extends StatelessWidget {
 
             Navigator.pop(context);
           },
-          child: const Text("Delete"),
+          child: const Text("Eliminar"),
         )
       ],
     );

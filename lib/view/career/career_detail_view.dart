@@ -88,7 +88,7 @@ class _CareerDetailContent extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    "(${vm.reviews.length} reviews)",
+                    "(${vm.reviews.length} reseñas)",
                     style: const TextStyle(
                       color: AppColors.textSecondary,
                     ),

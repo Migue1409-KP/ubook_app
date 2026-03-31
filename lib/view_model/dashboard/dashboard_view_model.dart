@@ -13,11 +13,11 @@ class DashboardViewModel extends ChangeNotifier {
   
   // Dummy data for Top 5 Careers
   final List<Map<String, dynamic>> topCareers = [
-    {'name': 'Ingeniería de Sistemas', 'semesters': 10, 'credits':130, 'rating': 4.9},
-    {'name': 'Medicina', 'semesters': 12, 'credits':168, 'rating': 4.8},
-    {'name': 'Derecho', 'semesters': 9, 'credits':118, 'rating': 4.7},
-    {'name': 'Administración de Empresas', 'semesters':8, 'credits':105, 'rating': 4.6},
-    {'name': 'Psicología', 'semesters': 10, 'credits':148, 'rating': 4.8},
+    {'educationalCenterId':'1', 'name': 'Ingeniería de Sistemas', 'semesters': 10, 'credits':130, 'rating': 4.9},
+    {'educationalCenterId':'1', 'name': 'Medicina', 'semesters': 12, 'credits':168, 'rating': 4.8},
+    {'educationalCenterId':'1', 'name': 'Derecho', 'semesters': 9, 'credits':118, 'rating': 4.7},
+    {'educationalCenterId':'1', 'name': 'Administración de Empresas', 'semesters':8, 'credits':105, 'rating': 4.6},
+    {'educationalCenterId':'1', 'name': 'Psicología', 'semesters': 10, 'credits':148, 'rating': 4.8},
   ];
 
   // Dummy data for Top 5 Teachers

@@ -246,7 +246,7 @@ class _DashboardViewContent extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const CareerListView(educationalCenterId:""),
+        builder: (context) => const CareerListView(educationalCenterId: "1"),
       ),
     );
   }
@@ -274,7 +274,7 @@ class _DashboardViewContent extends StatelessWidget {
       id: 'DUMMY-${item['name'] ?? 'career'}',
       name: item['name'] ?? 'Carrera desconocida',
       semesters: item['semesters'] ?? 10, 
-      educationalCenterId: 'DUMMY-CENTER',
+      educationalCenterId: item['educationalCenterId']?? "1",
       credits: item['credits'] ?? 180, 
     );
 
