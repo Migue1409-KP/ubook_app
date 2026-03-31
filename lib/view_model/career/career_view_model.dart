@@ -5,22 +5,26 @@ class CareerViewModel extends ChangeNotifier {
 
   final List<Career> _careers = [];
 
-  String searchQuery = "";
+  String _searchQuery = '';
 
-  List<Career> get careers {
+  List<Career> get careers => _careers;
 
-    if (searchQuery.isEmpty) {
-      return _careers;
-    }
+  List<Career> getFilteredCareersByCenter(String centerId) {
 
-    return _careers
-        .where((career) =>
-            career.name.toLowerCase().contains(searchQuery.toLowerCase()))
+    final filteredByCenter = _careers
+        .where((c) => c.educationalCenterId == centerId)
+        .toList();
+
+    if (_searchQuery.isEmpty) return filteredByCenter;
+
+    return filteredByCenter
+        .where((c) =>
+            c.name.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
   }
 
   void setSearch(String value) {
-    searchQuery = value;
+    _searchQuery = value;
     notifyListeners();
   }
 
@@ -30,7 +34,6 @@ class CareerViewModel extends ChangeNotifier {
   }
 
   void updateCareer(Career updatedCareer) {
-
     final index = _careers.indexWhere((c) => c.id == updatedCareer.id);
 
     if (index != -1) {

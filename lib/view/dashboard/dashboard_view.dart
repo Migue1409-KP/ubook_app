@@ -243,7 +243,7 @@ class _DashboardViewContent extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const CareerListView(),
+        builder: (context) => const CareerListView(educationalCenterId: "2"),
       ),
     );
   }
