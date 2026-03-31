@@ -102,8 +102,8 @@ class _CareerDetailContent extends StatelessWidget {
 
 
           NavigationCard(
-            title: "Subjects",
-            subtitle: "View subjects of this career",
+            title: "Materias",
+            subtitle: "Ver materias de esta carrera",
             icon: Icons.menu_book,
             color: Colors.blue,
             onTap: () {
@@ -124,8 +124,8 @@ class _CareerDetailContent extends StatelessWidget {
 
           /// 📄 PROCESSES
           NavigationCard(
-            title: "Processes",
-            subtitle: "Manage academic processes",
+            title: "Procesos",
+            subtitle: "Administrar Procesos Academicos de esta carrera",
             icon: Icons.description,
             color: Colors.orange,
             onTap: () {
@@ -146,8 +146,8 @@ class _CareerDetailContent extends StatelessWidget {
 
           /// 💬 CREATE REVIEW
           NavigationCard(
-            title: "Write Review",
-            subtitle: "Share your experience",
+            title: "Escribir una reseña",
+            subtitle: "Comparte tu experiencia",
             icon: Icons.rate_review,
             color: Colors.green,
             onTap: () async {
@@ -157,7 +157,7 @@ class _CareerDetailContent extends StatelessWidget {
                   builder: (_) => CreateReviewView(
                     entityId: career.id,
                     entityType: "career",
-                    userId: "1", // ⚠️ MOCK
+                    userId: "1", //  MOCK
                   ),
                 ),
               );

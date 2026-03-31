@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ubook_app/dialog/career_delete_dialog.dart';
+import 'package:ubook_app/widgets/career/career_delete_dialog.dart';
 import 'package:ubook_app/model/career/career_model.dart';
 import 'package:ubook_app/view_model/career/career_view_model.dart';
 import 'package:ubook_app/widgets/career/career_table.dart';
@@ -14,7 +14,7 @@ class CareerListView extends StatefulWidget {
 
   const CareerListView({
     super.key,
-    required this.educationalCenterId,
+    this.educationalCenterId,
   });
 
   @override
@@ -41,6 +41,7 @@ class _CareerListViewState extends State<CareerListView> {
 
   @override
   Widget build(BuildContext context) {
+
     final careers =
         vm.getFilteredCareersByCenter(widget.educationalCenterId);
 
@@ -56,24 +57,36 @@ class _CareerListViewState extends State<CareerListView> {
             /// 🔍 SEARCH
             SearchBarWidget(
               onSearch: (value) {
-                vm.setSearch(value); 
+                vm.setSearch(value);
               },
             ),
 
             const SizedBox(height: 20),
-
+            
             Align(
               alignment: Alignment.centerRight,
               child: ElevatedButton(
                 child: const Text("Add Career"),
                 onPressed: () {
+
+                  if (widget.educationalCenterId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          "Debes entrar desde un centro educativo para crear una carrera",
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => CareerCreateView(
                         vm: vm,
                         educationalCenterId:
-                            widget.educationalCenterId,
+                            widget.educationalCenterId!, 
                       ),
                     ),
                   );
@@ -87,7 +100,7 @@ class _CareerListViewState extends State<CareerListView> {
               child: careers.isEmpty
                   ? const Center(
                       child: Text(
-                        "No careers found for this educational center",
+                        "No Se encontraron carreras",
                         style: TextStyle(fontSize: 16),
                       ),
                     )

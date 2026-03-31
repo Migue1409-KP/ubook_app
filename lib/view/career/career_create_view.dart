@@ -27,7 +27,7 @@ class CareerCreateView extends StatelessWidget {
     if (name.isEmpty || semesters == null || credits == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Please fill all fields correctly"),
+          content: Text("Por favor ingrese los campos correctamente"),
         ),
       );
       return;
@@ -60,28 +60,28 @@ class CareerCreateView extends StatelessWidget {
         child: Column(
           children: [
             AppTextField(
-              label: "Career Name",
+              label: "Nombre De La Carrera",
               controller: nameController,
             ),
 
             const SizedBox(height: 16),
 
             AppTextField(
-              label: "Semesters",
+              label: "Semestres",
               controller: semestersController,
             ),
 
             const SizedBox(height: 16),
 
             AppTextField(
-              label: "Credits",
+              label: "Creditos",
               controller: creditsController,
             ),
 
             const SizedBox(height: 30),
 
             AppButton(
-              text: "Save Career",
+              text: "Guardar Carrera",
               onPressed: () => _save(context),
             ),
           ],

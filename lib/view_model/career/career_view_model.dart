@@ -9,20 +9,6 @@ class CareerViewModel extends ChangeNotifier {
 
   List<Career> get careers => _careers;
 
-  List<Career> getFilteredCareersByCenter(String centerId) {
-
-    final filteredByCenter = _careers
-        .where((c) => c.educationalCenterId == centerId)
-        .toList();
-
-    if (_searchQuery.isEmpty) return filteredByCenter;
-
-    return filteredByCenter
-        .where((c) =>
-            c.name.toLowerCase().contains(_searchQuery.toLowerCase()))
-        .toList();
-  }
-
   void setSearch(String value) {
     _searchQuery = value;
     notifyListeners();
@@ -45,5 +31,27 @@ class CareerViewModel extends ChangeNotifier {
   void deleteCareer(String id) {
     _careers.removeWhere((career) => career.id == id);
     notifyListeners();
+  }
+
+  List<Career> getFilteredCareersByCenter(String? centerId) {
+
+    List<Career> filtered = _careers;
+
+    if (centerId != null) {
+      filtered = filtered
+          .where((c) => c.educationalCenterId == centerId)
+          .toList();
+    }
+
+    // 🔍 filtro por búsqueda
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered
+          .where((c) => c.name
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()))
+          .toList();
+    }
+
+    return filtered;
   }
 }

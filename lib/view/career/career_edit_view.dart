@@ -30,7 +30,7 @@ class CareerEditView extends StatelessWidget {
     return Scaffold(
 
       appBar: AppBar(
-        title: const Text("Edit Career"),
+        title: const Text("Editar Carrera"),
       ),
 
       body: Padding(
@@ -41,21 +41,21 @@ class CareerEditView extends StatelessWidget {
           children: [
 
             AppTextField(
-              label: "Career Name",
+              label: "Nombre de la carrera",
               controller: nameController,
             ),
 
             const SizedBox(height: 16),
 
             AppTextField(
-              label: "Semesters",
+              label: "Semestres",
               controller: semestersController,
             ),
 
             const SizedBox(height: 16),
 
             AppTextField(
-              label: "Credits",
+              label: "Creditos",
               controller: creditsController,
             ),
 
@@ -63,7 +63,7 @@ class CareerEditView extends StatelessWidget {
 
             AppButton(
 
-              text: "Update Career",
+              text: "Guardar carrera",
 
               onPressed: () {
 
