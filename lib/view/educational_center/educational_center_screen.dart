@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../model/educational_center/educational_center_model.dart';
-import '../../view_model/educational_center_view_model.dart';
-import '../../widgets/educational_center_row.dart';
-import '../../widgets/educational_center_form.dart';
+import '../../theme/app_colors.dart';
+import '../../view_model/educational_center/educational_center_count_provider.dart';
+import '../../view_model/educational_center/educational_center_view_model.dart';
+import 'educational_center_detail_screen.dart';
+import '../../widgets/educationel_center/educational_center_row.dart';
+import '../../widgets/educationel_center/educational_center_form.dart';
 
 class EducationalCenterScreen extends StatefulWidget {
   const EducationalCenterScreen({super.key});
@@ -21,6 +25,9 @@ class _EducationalCenterScreenState extends State<EducationalCenterScreen> {
   void initState() {
     super.initState();
     filteredCenters = viewModel.centers;
+    context.read<EducationalCenterCountProvider>().initialize(
+      total: viewModel.centers.length,
+    );
   }
 
   void _search(String query) {
@@ -32,15 +39,16 @@ class _EducationalCenterScreenState extends State<EducationalCenterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: AppColors.onPrimary,
+        foregroundColor: AppColors.textPrimary,
         title: const Text(
           'Centros educativos',
           style: TextStyle(
             fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
           ),
         ),
         centerTitle: true,
@@ -55,16 +63,63 @@ class _EducationalCenterScreenState extends State<EducationalCenterScreen> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              'Explora, busca y administra los centros educativos',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-              ),
+            Consumer<EducationalCenterCountProvider>(
+              builder: (context, counter, _) {
+                return Text(
+                  'Explora, busca y administra los centros educativos',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 14),
+            Consumer<EducationalCenterCountProvider>(
+              builder: (context, counter, _) {
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.onPrimary,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.account_balance_outlined,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'Total de centros educativos',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${counter.total}',
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 20),
             Row(
@@ -73,25 +128,25 @@ class _EducationalCenterScreenState extends State<EducationalCenterScreen> {
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Buscar centro educativo',
-                      prefixIcon: const Icon(Icons.search),
+                      hintStyle: const TextStyle(color: AppColors.placeholder),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: AppColors.primary,
+                      ),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: AppColors.inputFill,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: Colors.grey.shade300,
-                        ),
+                        borderSide: const BorderSide(color: AppColors.divider),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: Colors.grey.shade300,
-                        ),
+                        borderSide: const BorderSide(color: AppColors.divider),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: Colors.indigo.shade400,
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
                           width: 1.5,
                         ),
                       ),
@@ -102,8 +157,8 @@ class _EducationalCenterScreenState extends State<EducationalCenterScreen> {
                 const SizedBox(width: 12),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo,
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.onPrimary,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 14,
@@ -142,12 +197,25 @@ class _EducationalCenterScreenState extends State<EducationalCenterScreen> {
               child: ListView.builder(
                 itemCount: filteredCenters.length,
                 itemBuilder: (context, index) {
-                  return EducationalCenterRow(center: filteredCenters[index]);
+                  final center = filteredCenters[index];
+                  return EducationalCenterRow(
+                    center: center,
+                    onView: () => _openCenterDetail(center),
+                  );
                 },
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _openCenterDetail(EducationalCenter center) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EducationalCenterDetailScreen(center: center),
       ),
     );
   }
