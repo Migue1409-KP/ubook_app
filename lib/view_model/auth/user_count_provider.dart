@@ -18,7 +18,7 @@ class UserCountProvider extends ChangeNotifier {
 
   // Simulación de actualización del contador (en una app real, esto vendría del backend)
   void _startSimulation() {
-    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+    _timer = Timer.periodic(const Duration(seconds: 15), (_) {
       _userCount++;
       notifyListeners();
     });

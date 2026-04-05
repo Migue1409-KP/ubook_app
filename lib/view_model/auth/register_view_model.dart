@@ -11,6 +11,7 @@ class RegisterViewModel extends ChangeNotifier {
 
   bool isLoading = false;
   bool submitted = false;
+  bool showPassword = false;
   String? errorMessage;
 
   final formKey = GlobalKey<FormState>();

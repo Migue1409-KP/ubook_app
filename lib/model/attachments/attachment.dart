@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-class Adjunto {
+class Attachment {
   final String? id;
   final String fileName;
   final String fileType;
@@ -12,7 +12,7 @@ class Adjunto {
 
   final DateTime uploadedAt;
 
-  const Adjunto({
+  const Attachment({
     this.id,
     required this.fileName,
     required this.fileType,
@@ -24,8 +24,8 @@ class Adjunto {
     required this.uploadedAt,
   });
 
-  factory Adjunto.fromJson(Map<String, dynamic> json) {
-    return Adjunto(
+  factory Attachment.fromJson(Map<String, dynamic> json) {
+    return Attachment(
       id: json['id'] as String?,
       fileName: json['file_name'] as String,
       fileType: json['file_type'] as String,
@@ -50,7 +50,7 @@ class Adjunto {
     };
   }
 
-  Adjunto copyWith({
+  Attachment copyWith({
     String? id,
     String? fileName,
     String? fileType,
@@ -61,7 +61,7 @@ class Adjunto {
     int? fileSize,
     DateTime? uploadedAt,
   }) {
-    return Adjunto(
+    return Attachment(
       id: id ?? this.id,
       fileName: fileName ?? this.fileName,
       fileType: fileType ?? this.fileType,
@@ -90,7 +90,7 @@ class Adjunto {
 
   @override
   String toString() {
-    return 'Adjunto(id: $id, fileName: $fileName, fileType: $fileType, '
+    return 'Attachment(id: $id, fileName: $fileName, fileType: $fileType, '
         'uploadedById: $uploadedById, subjectId: $subjectId, '
         'teacherId: $teacherId, fileSize: $fileSizeFormatted)';
   }
@@ -98,7 +98,7 @@ class Adjunto {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Adjunto && other.id == id;
+    return other is Attachment && other.id == id;
   }
 
   @override

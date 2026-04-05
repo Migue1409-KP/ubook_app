@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../view_model/create_review_view_model.dart';
+import '../../view_model/reviews/create_review_view_model.dart';
 import '../../theme/app_colors.dart';
 
 class CreateReviewView extends StatelessWidget {
@@ -41,7 +41,8 @@ class _CreateReviewViewContent extends StatefulWidget {
   });
 
   @override
-  State<_CreateReviewViewContent> createState() => _CreateReviewViewContentState();
+  State<_CreateReviewViewContent> createState() =>
+      _CreateReviewViewContentState();
 }
 
 class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
@@ -59,35 +60,41 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
     // Validaciones básicas de mockup
     if (viewModel.rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, selecciona una calificación (estrellas).')),
+        const SnackBar(
+          content: Text('Por favor, selecciona una calificación (estrellas).'),
+        ),
       );
       return;
     }
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, ingresa un título para la reseña.')),
+        const SnackBar(
+          content: Text('Por favor, ingresa un título para la reseña.'),
+        ),
       );
       return;
     }
 
-    viewModel.submitReview(
-      entityId: widget.entityId,
-      entityType: widget.entityType,
-      userId: widget.userId,
-      title: _titleController.text.trim(),
-      content: _contentController.text.trim(),
-    ).then((_) {
-      // Mockup de éxito y regresar
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Reseña publicada con éxito!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context);
-      }
-    });
+    viewModel
+        .submitReview(
+          entityId: widget.entityId,
+          entityType: widget.entityType,
+          userId: widget.userId,
+          title: _titleController.text.trim(),
+          content: _contentController.text.trim(),
+        )
+        .then((_) {
+          // Mockup de éxito y regresar
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('¡Reseña publicada con éxito!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pop(context);
+          }
+        });
   }
 
   @override
@@ -168,7 +175,10 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
+                          width: 2,
+                        ),
                       ),
                     ),
                     textCapitalization: TextCapitalization.sentences,
@@ -203,7 +213,10 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
+                          width: 2,
+                        ),
                       ),
                     ),
                     textCapitalization: TextCapitalization.sentences,
@@ -215,7 +228,9 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
                     width: double.infinity,
                     height: 54,
                     child: ElevatedButton(
-                      onPressed: viewModel.isLoading ? null : () => _onSubmit(context, viewModel),
+                      onPressed: viewModel.isLoading
+                          ? null
+                          : () => _onSubmit(context, viewModel),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
