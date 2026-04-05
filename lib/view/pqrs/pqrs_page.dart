@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../model/pqrs/pqrs.dart';
 import '../../view_model/pqrs/pqrs_viewmodel.dart';
+import '../../widgets/pqrs/pqrs_detail_sheet.dart';
 import '../../widgets/pqrs/pqrs_form_sheet.dart';
 
 class PQRSPage extends StatelessWidget {
@@ -84,6 +85,44 @@ class PQRSPage extends StatelessWidget {
     );
   }
 
+  void _openEditModal(BuildContext context, PQRS pqrs, int index) {
+    final viewModel = context.read<PQRSViewModel>();
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: false,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (context) => ChangeNotifierProvider.value(
+            value: viewModel,
+            child: PQRSFormSheet(initial: pqrs, index: index),
+          ),
+    );
+  }
+
+  void _openDetailModal(BuildContext context, PQRS pqrs, int index) {
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: false,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (sheetContext) => PQRSDetailSheet(
+            pqrs: pqrs,
+            onEdit: () {
+              Navigator.pop(sheetContext);
+              _openEditModal(context, pqrs, index);
+            },
+          ),
+    );
+  }
+
   Widget _buildEmptyState() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -133,76 +172,85 @@ class PQRSPage extends StatelessWidget {
     final typeColor = _typeColor(pqrs.tipo);
     final statusColor = _statusColor(pqrs.estado);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: typeColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
+    return InkWell(
+      onTap: () => _openDetailModal(context, pqrs, index),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
-            child: Icon(_typeIcon(pqrs.tipo), color: typeColor, size: 26),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  pqrs.tipo,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  pqrs.descripcion,
-                  style: TextStyle(color: Colors.grey[700], fontSize: 13),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    _buildStatusChip(pqrs.estado, statusColor),
-                    const SizedBox(width: 10),
-                    Text(
-                      _formatDate(pqrs.fecha),
-                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: typeColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(_typeIcon(pqrs.tipo), color: typeColor, size: 26),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    pqrs.tipo,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black87,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    pqrs.descripcion,
+                    style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Usuario: ${pqrs.userName}',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _buildStatusChip(pqrs.estado, statusColor),
+                      const SizedBox(width: 10),
+                      Text(
+                        _formatDate(pqrs.fecha),
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: Colors.black45),
+              onSelected: (value) =>
+                  context.read<PQRSViewModel>().updateEstado(index, value),
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'Abierta', child: Text('Abierta')),
+                PopupMenuItem(value: 'En proceso', child: Text('En proceso')),
+                PopupMenuItem(value: 'Cerrada', child: Text('Cerrada')),
               ],
             ),
-          ),
-          const SizedBox(width: 8),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.black45),
-            onSelected: (value) =>
-                context.read<PQRSViewModel>().updateEstado(index, value),
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'Abierta', child: Text('Abierta')),
-              PopupMenuItem(value: 'En proceso', child: Text('En proceso')),
-              PopupMenuItem(value: 'Cerrada', child: Text('Cerrada')),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
