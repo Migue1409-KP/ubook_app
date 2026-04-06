@@ -83,7 +83,8 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
         title: _titleController.text.trim(),
         content: _contentController.text.trim(),
       );
-    } catch (_) {
+    } catch (e, stackTrace) {
+      debugPrint('Error al publicar reseña: $e\n$stackTrace');
       if (!mounted) {
         return;
       }

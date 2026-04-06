@@ -76,11 +76,12 @@ class DashboardViewModel extends ChangeNotifier {
 
   // Dummy data for Top 5 Subjects
   final List<Map<String, dynamic>> topSubjects = [
-    {'name': 'Cálculo Diferencial', 'faculty': 'Ingeniería', 'rating': 4.9},
-    {'name': 'Programación I', 'faculty': 'Ingeniería', 'rating': 4.8},
-    {'name': 'Bases de Datos', 'faculty': 'Sistemas', 'rating': 4.7},
-    {'name': 'Derecho Constitucional', 'faculty': 'Derecho', 'rating': 4.6},
+    {'id': 'sub-1', 'name': 'Cálculo Diferencial', 'faculty': 'Ingeniería', 'rating': 4.9},
+    {'id': 'sub-2', 'name': 'Programación I', 'faculty': 'Ingeniería', 'rating': 4.8},
+    {'id': 'sub-3', 'name': 'Bases de Datos', 'faculty': 'Sistemas', 'rating': 4.7},
+    {'id': 'sub-4', 'name': 'Derecho Constitucional', 'faculty': 'Derecho', 'rating': 4.6},
     {
+      'id': 'sub-5',
       'name': 'Psicología General',
       'faculty': 'Ciencias Sociales',
       'rating': 4.8,
