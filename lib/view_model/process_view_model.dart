@@ -7,6 +7,8 @@ class ProcessViewModel extends ChangeNotifier {
     ProcessRepository? repository,
     this.educationalCenterId,
     this.educationalCenterName,
+    this.careerId,
+    this.careerName,
     this.subjectId,
     this.subjectName,
   }) : _repository = repository ?? InMemoryProcessRepository() {
@@ -16,6 +18,8 @@ class ProcessViewModel extends ChangeNotifier {
   final ProcessRepository _repository;
   final String? educationalCenterId;
   final String? educationalCenterName;
+  final String? careerId;
+  final String? careerName;
   final String? subjectId;
   final String? subjectName;
   bool _disposed = false;
@@ -39,10 +43,14 @@ class ProcessViewModel extends ChangeNotifier {
   String get selectedFilter => _selectedFilter;
   bool get isLoading => _isLoading;
   bool get isEducationalCenterScoped => educationalCenterId != null;
+  bool get isCareerScoped => careerId != null;
   bool get isSubjectScoped => subjectId != null;
   List<String> get filterOptions {
     if (isEducationalCenterScoped) {
       return const ['Todos', 'Centro educativo', 'Activos', 'Inactivos'];
+    }
+    if (isCareerScoped) {
+      return const ['Todos', 'Carrera', 'Activos', 'Inactivos'];
     }
     if (isSubjectScoped) {
       return const ['Todos', 'Materia', 'Activos', 'Inactivos'];
@@ -70,6 +78,13 @@ class ProcessViewModel extends ChangeNotifier {
             (p) =>
                 p.processType == ProcessType.educationalCenter &&
                 p.relatedId == educationalCenterId,
+          )
+          .toList();
+    } else if (isCareerScoped) {
+      _processes = processes
+          .where(
+            (p) =>
+                p.processType == ProcessType.career && p.relatedId == careerId,
           )
           .toList();
     } else if (isSubjectScoped) {
@@ -130,6 +145,8 @@ class ProcessViewModel extends ChangeNotifier {
             processType: ProcessType.educationalCenter,
             relatedId: educationalCenterId,
           )
+        : isCareerScoped
+        ? process.copyWith(processType: ProcessType.career, relatedId: careerId)
         : isSubjectScoped
         ? process.copyWith(
             processType: ProcessType.subject,
@@ -155,6 +172,8 @@ class ProcessViewModel extends ChangeNotifier {
             processType: ProcessType.educationalCenter,
             relatedId: educationalCenterId,
           )
+        : isCareerScoped
+        ? process.copyWith(processType: ProcessType.career, relatedId: careerId)
         : isSubjectScoped
         ? process.copyWith(
             processType: ProcessType.subject,

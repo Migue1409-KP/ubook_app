@@ -12,12 +12,16 @@ class ProcessListView extends StatelessWidget {
     super.key,
     this.educationalCenterId,
     this.educationalCenterName,
+    this.careerId,
+    this.careerName,
     this.subjectId,
     this.subjectName,
   });
 
   final String? educationalCenterId;
   final String? educationalCenterName;
+  final String? careerId;
+  final String? careerName;
   final String? subjectId;
   final String? subjectName;
 
@@ -27,6 +31,8 @@ class ProcessListView extends StatelessWidget {
       create: (_) => ProcessViewModel(
         educationalCenterId: educationalCenterId,
         educationalCenterName: educationalCenterName,
+        careerId: careerId,
+        careerName: careerName,
         subjectId: subjectId,
         subjectName: subjectName,
       ),
@@ -36,9 +42,11 @@ class ProcessListView extends StatelessWidget {
           appBar: AppBar(
             title: Text(
               educationalCenterName == null
-                  ? (subjectName == null
-                        ? 'Gestión de Procesos'
-                        : 'Procesos de $subjectName')
+                  ? (careerName == null
+                        ? (subjectName == null
+                              ? 'Gestión de Procesos'
+                              : 'Procesos de $subjectName')
+                        : 'Procesos de $careerName')
                   : 'Procesos de $educationalCenterName',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
             ),
@@ -92,9 +100,11 @@ class ProcessListView extends StatelessWidget {
               : viewModel.processes.isEmpty
               ? ProcessEmptyState(
                   message: educationalCenterName == null
-                      ? (subjectName == null
-                            ? 'No hay procesos'
-                            : 'No hay procesos para $subjectName')
+                      ? (careerName == null
+                            ? (subjectName == null
+                                  ? 'No hay procesos'
+                                  : 'No hay procesos para $subjectName')
+                            : 'No hay procesos para $careerName')
                       : 'No hay procesos para $educationalCenterName',
                 )
               : _buildProcessList(context, viewModel),
@@ -138,14 +148,20 @@ class ProcessListView extends StatelessWidget {
       viewModel: viewModel,
       lockedType: viewModel.isEducationalCenterScoped
           ? ProcessType.educationalCenter
+          : viewModel.isCareerScoped
+          ? ProcessType.career
           : viewModel.isSubjectScoped
           ? ProcessType.subject
           : null,
       lockedRelatedId: viewModel.isEducationalCenterScoped
           ? viewModel.educationalCenterId
+          : viewModel.isCareerScoped
+          ? viewModel.careerId
           : viewModel.subjectId,
       scopeLabel: viewModel.isEducationalCenterScoped
           ? viewModel.educationalCenterName
+          : viewModel.isCareerScoped
+          ? viewModel.careerName
           : viewModel.subjectName,
     );
   }
@@ -161,14 +177,20 @@ class ProcessListView extends StatelessWidget {
       process: process,
       lockedType: viewModel.isEducationalCenterScoped
           ? ProcessType.educationalCenter
+          : viewModel.isCareerScoped
+          ? ProcessType.career
           : viewModel.isSubjectScoped
           ? ProcessType.subject
           : null,
       lockedRelatedId: viewModel.isEducationalCenterScoped
           ? viewModel.educationalCenterId
+          : viewModel.isCareerScoped
+          ? viewModel.careerId
           : viewModel.subjectId,
       scopeLabel: viewModel.isEducationalCenterScoped
           ? viewModel.educationalCenterName
+          : viewModel.isCareerScoped
+          ? viewModel.careerName
           : viewModel.subjectName,
     );
   }

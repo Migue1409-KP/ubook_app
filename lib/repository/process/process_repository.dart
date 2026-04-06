@@ -266,6 +266,68 @@ class InMemoryProcessRepository implements ProcessRepository {
       relatedId: 'subject-3',
       isActive: true,
     ),
+    ProcessModel(
+      id: 'proc_car_001',
+      name: 'Inscripción Inicial de Carrera',
+      description:
+          'Proceso para formalizar el ingreso a Ingeniería de Sistemas.',
+      requiredDocuments: [
+        'Documento de identidad',
+        'Acta de grado',
+        'Formulario de inscripción',
+      ],
+      processType: ProcessType.career,
+      relatedId: 'DUMMY-Ingeniería de Sistemas',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_car_002',
+      name: 'Homologación de Asignaturas',
+      description:
+          'Permite homologar asignaturas previas para Ingeniería de Sistemas.',
+      requiredDocuments: ['Certificados de notas', 'Contenidos programáticos'],
+      processType: ProcessType.career,
+      relatedId: 'DUMMY-Ingeniería de Sistemas',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_car_003',
+      name: 'Internado Rotatorio',
+      description:
+          'Asignación y gestión de internado para estudiantes de Medicina.',
+      requiredDocuments: ['Historial académico', 'Póliza vigente'],
+      processType: ProcessType.career,
+      relatedId: 'DUMMY-Medicina',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_car_004',
+      name: 'Práctica Jurídica',
+      description: 'Proceso para inscripción de práctica jurídica en Derecho.',
+      requiredDocuments: ['Solicitud de práctica', 'Carta de aceptación'],
+      processType: ProcessType.career,
+      relatedId: 'DUMMY-Derecho',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_car_005',
+      name: 'Proyecto de Grado',
+      description:
+          'Registro y seguimiento del proyecto de grado de Administración de Empresas.',
+      requiredDocuments: ['Anteproyecto', 'Cronograma'],
+      processType: ProcessType.career,
+      relatedId: 'DUMMY-Administración de Empresas',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_car_006',
+      name: 'Práctica Profesional Supervisada',
+      description: 'Trámite para práctica profesional de Psicología.',
+      requiredDocuments: ['Carta de solicitud', 'Afiliación a ARL'],
+      processType: ProcessType.career,
+      relatedId: 'DUMMY-Psicología',
+      isActive: true,
+    ),
   ];
 
   @override
