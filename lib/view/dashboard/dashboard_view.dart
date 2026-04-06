@@ -10,7 +10,9 @@ import '../process/process_list_view.dart';
 import '../subjects/subject_detail_view.dart';
 import '../teacher_subject/teacher_subjects_page.dart';
 import '../teachers/teacher_list_view.dart';
+import '../../model/educational_center/educational_center_model.dart';
 import '../../model/teachers/teacher.dart';
+import '../educational_center/educational_center_detail_screen.dart';
 import '../educational_center/educational_center_screen.dart';
 import '../subjects/subjects_view.dart';
 import '../../model/subjects/subjects.dart';
@@ -60,39 +62,42 @@ class _DashboardViewContent extends StatelessWidget {
                       rating: item['rating'],
                       icon: Icons.account_balance,
                       color: Colors.blue,
-                      onTap: () => _navigateToEducationalCenters(context),
+                      onTap: () =>
+                          _navigateToEducationalCenterDetail(context, item),
                     ),
                   ),
                   const SizedBox(height: 28),
 
-              // Top Carreras
-              TopItemsCarousel(
-                title: 'Top 5 Carreras',
-                onSeeAll: () {
-                  _navigateToCareer(context);
-                },
-                items: viewModel.topCareers,
-                itemBuilder: (item) => _buildCard(
-                  title: item['name'],
-                  subtitle: '${item['semesters']} semestres', 
-                  rating: item['rating'],
-                  icon: Icons.school,
-                  color: Colors.orange,
-                  onTap: () => _showCareerDetail(context, item),
-                ),
-              ),
-              const SizedBox(height: 28),
+                  // Top Carreras
+                  TopItemsCarousel(
+                    title: 'Top 5 Carreras',
+                    onSeeAll: () {
+                      _navigateToCareer(context);
+                    },
+                    items: viewModel.topCareers,
+                    itemBuilder: (item) => _buildCard(
+                      title: item['name'],
+                      subtitle: '${item['semesters']} semestres',
+                      rating: item['rating'],
+                      icon: Icons.school,
+                      color: Colors.orange,
+                      onTap: () => _showCareerDetail(context, item),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
                   // Top Carreras
                   TopItemsCarousel(
                     title: 'Top 5 Materias',
                     onSeeAll: () {
                       _navigateToSubjects(context);
                     },
-                    items: viewModel.topCareers,
+                    items: viewModel.topSubjects,
                     itemBuilder: (item) => _buildCard(
-                      title: item['name'],
-                      subtitle: item['faculty'],
-                      rating: item['rating'],
+                      title: item['name'] as String? ?? 'Materia',
+                      subtitle:
+                          item['faculty'] as String? ??
+                          'Facultad no disponible',
+                      rating: (item['rating'] as num?)?.toDouble() ?? 0.0,
                       icon: Icons.school,
                       color: Colors.orange,
                       onTap: () => _showSubjectDetail(context, item),
@@ -236,6 +241,23 @@ class _DashboardViewContent extends StatelessWidget {
     );
   }
 
+  void _navigateToEducationalCenterDetail(
+    BuildContext context,
+    Map<String, dynamic> item,
+  ) {
+    final center = EducationalCenter(
+      id: item['id'] as String? ?? '0',
+      name: item['name'] as String? ?? 'Centro educativo',
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EducationalCenterDetailScreen(center: center),
+      ),
+    );
+  }
+
   void _navigateToSubjects(BuildContext context) {
     Navigator.push(
       context,
@@ -243,23 +265,37 @@ class _DashboardViewContent extends StatelessWidget {
     );
   }
 
+  void _navigateToCareerDetail(
+    BuildContext context,
+    Map<String, dynamic> item,
+    int index,
+  ) {
+    final career = Career(
+      id: 'career-${index + 1}',
+      name: item['name'] as String? ?? 'Carrera',
+      educationalCenterId: '1',
+      semesters: 10,
+      credits: 160,
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => CareerDetailView(career: career)),
+    );
+  }
+
   void _navigateToCareer(BuildContext context) {
     Navigator.push(
       context,
-<<<<<<< HEAD
-      MaterialPageRoute(builder: (context) => const CareerListView()),
-=======
       MaterialPageRoute(
         builder: (context) => const CareerListView(educationalCenterId: "1"),
       ),
->>>>>>> develop
     );
   }
 
   void _showSubjectDetail(BuildContext context, Map<String, dynamic> item) {
-    final subjectId = (item['id'] as String?) ?? 'subject-1';
     final dummySubject = Subject(
-      id: subjectId,
+      id: 'DUMMY-SUB',
       nombre: item['name'] as String? ?? 'Desconocida',
       horas: 48,
       creditos: 3,
@@ -267,52 +303,27 @@ class _DashboardViewContent extends StatelessWidget {
       contenido:
           'Materia enfocada en el desarrollo y la lógica correspondiente del área de ${item['faculty'] ?? 'estudio'}.',
     );
-<<<<<<< HEAD
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SubjectDetailView(
-          subject: dummySubject,
-          onEdit: () {},
-          onProcessesTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ProcessListView(
-                  subjectId: dummySubject.id,
-                  subjectName: dummySubject.nombre,
-                ),
-              ),
-            );
-          },
-=======
-  
     showDialog(
       context: context,
-      builder: (context) => SubjectDetailView(
-       subject: dummySubject,
-        onEdit: () {},
->>>>>>> develop
-        ),
-      ),
+      builder: (context) =>
+          SubjectDetailView(subject: dummySubject, onEdit: () {}),
     );
   }
+
   void _showCareerDetail(BuildContext context, Map<String, dynamic> item) {
     final dummyCareer = Career(
       id: 'DUMMY-${item['name'] ?? 'career'}',
       name: item['name'] ?? 'Carrera desconocida',
-      semesters: item['semesters'] ?? 10, 
-      educationalCenterId: item['educationalCenterId']?? "1",
-      credits: item['credits'] ?? 180, 
+      semesters: item['semesters'] ?? 10,
+      educationalCenterId: item['educationalCenterId'] ?? "1",
+      credits: item['credits'] ?? 180,
     );
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CareerDetailView(
-          career: dummyCareer,
-        ),
+        builder: (context) => CareerDetailView(career: dummyCareer),
       ),
     );
   }

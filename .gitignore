@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+/.scannerwork/
+analysis_options.yaml.sonar
 
 # Symbolication related
 app.*.symbols
