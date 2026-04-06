@@ -75,13 +75,27 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
       return;
     }
 
-    await viewModel.submitReview(
-      entityId: widget.entityId,
-      entityType: widget.entityType,
-      userId: widget.userId,
-      title: _titleController.text.trim(),
-      content: _contentController.text.trim(),
-    );
+    try {
+      await viewModel.submitReview(
+        entityId: widget.entityId,
+        entityType: widget.entityType,
+        userId: widget.userId,
+        title: _titleController.text.trim(),
+        content: _contentController.text.trim(),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo publicar la reseña. Inténtalo de nuevo.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     // Evita usar context si el widget fue desmontado.
     if (!mounted) {
