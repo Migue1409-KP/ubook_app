@@ -8,12 +8,14 @@ class SubjectDetailView extends StatelessWidget {
     required this.subject,
     required this.onEdit,
     this.onTeachersTap,
+    this.onProcessesTap,
     this.onReviewsTap,
   });
 
   final Subject subject;
   final VoidCallback onEdit;
   final VoidCallback? onTeachersTap;
+  final VoidCallback? onProcessesTap;
   final VoidCallback? onReviewsTap;
 
   @override
@@ -65,12 +67,12 @@ class SubjectDetailView extends StatelessWidget {
     final initials = subject.nombre.trim().isEmpty
         ? '?'
         : subject.nombre
-            .trim()
-            .split(' ')
-            .take(2)
-            .map((e) => e.isNotEmpty ? e[0] : '')
-            .join()
-            .toUpperCase();
+              .trim()
+              .split(' ')
+              .take(2)
+              .map((e) => e.isNotEmpty ? e[0] : '')
+              .join()
+              .toUpperCase();
 
     return Container(
       width: double.infinity,
@@ -197,9 +199,7 @@ class SubjectDetailView extends StatelessWidget {
             ),
             child: Text(
               subject.contenido,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-              ),
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
           ),
         ],
@@ -208,29 +208,50 @@ class SubjectDetailView extends StatelessWidget {
   }
 
   Widget _buildActionButtons() {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: onTeachersTap ?? () {},
-            icon: const Icon(Icons.person_outline),
-            label: const Text('Profesores'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primary,
-              side: const BorderSide(color: AppColors.primary),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onTeachersTap ?? () {},
+                icon: const Icon(Icons.person_outline),
+                label: const Text('Profesores'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onReviewsTap ?? () {},
+                icon: const Icon(Icons.rate_review_outlined),
+                label: const Text('Reseñas'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: onReviewsTap ?? () {},
-            icon: const Icon(Icons.rate_review_outlined),
-            label: const Text('Reseñas'),
+            onPressed: onProcessesTap ?? () {},
+            icon: const Icon(Icons.description_outlined),
+            label: const Text('Procesos'),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.primary,
               side: const BorderSide(color: AppColors.primary),
@@ -255,10 +276,7 @@ class SubjectDetailView extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: AppColors.textPrimary,
-          fontSize: 13,
-        ),
+        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
       ),
     );
   }
@@ -298,9 +316,7 @@ class _InfoTile extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-              ),
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
           ),
         ],

@@ -8,18 +8,46 @@ import '../../widgets/process/process_dialogs.dart';
 import '../../widgets/process/process_empty_state.dart';
 
 class ProcessListView extends StatelessWidget {
-  const ProcessListView({super.key});
+  const ProcessListView({
+    super.key,
+    this.educationalCenterId,
+    this.educationalCenterName,
+    this.careerId,
+    this.careerName,
+    this.subjectId,
+    this.subjectName,
+  });
+
+  final String? educationalCenterId;
+  final String? educationalCenterName;
+  final String? careerId;
+  final String? careerName;
+  final String? subjectId;
+  final String? subjectName;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ProcessViewModel(),
+      create: (_) => ProcessViewModel(
+        educationalCenterId: educationalCenterId,
+        educationalCenterName: educationalCenterName,
+        careerId: careerId,
+        careerName: careerName,
+        subjectId: subjectId,
+        subjectName: subjectName,
+      ),
       child: Consumer<ProcessViewModel>(
         builder: (context, viewModel, _) => Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
-            title: const Text(
-              'Gestión de Procesos',
+            title: Text(
+              educationalCenterName == null
+                  ? (careerName == null
+                        ? (subjectName == null
+                              ? 'Gestión de Procesos'
+                              : 'Procesos de $subjectName')
+                        : 'Procesos de $careerName')
+                  : 'Procesos de $educationalCenterName',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
             ),
             centerTitle: true,
@@ -70,7 +98,15 @@ class ProcessListView extends StatelessWidget {
           body: viewModel.isLoading && viewModel.processes.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : viewModel.processes.isEmpty
-              ? const ProcessEmptyState()
+              ? ProcessEmptyState(
+                  message: educationalCenterName == null
+                      ? (careerName == null
+                            ? (subjectName == null
+                                  ? 'No hay procesos'
+                                  : 'No hay procesos para $subjectName')
+                            : 'No hay procesos para $careerName')
+                      : 'No hay procesos para $educationalCenterName',
+                )
               : _buildProcessList(context, viewModel),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _handleAddProcess(context, viewModel),
@@ -107,7 +143,27 @@ class ProcessListView extends StatelessWidget {
   }
 
   void _handleAddProcess(BuildContext context, ProcessViewModel viewModel) {
-    showProcessFormDialog(context: context, viewModel: viewModel);
+    showProcessFormDialog(
+      context: context,
+      viewModel: viewModel,
+      lockedType: viewModel.isEducationalCenterScoped
+          ? ProcessType.educationalCenter
+          : viewModel.isCareerScoped
+          ? ProcessType.career
+          : viewModel.isSubjectScoped
+          ? ProcessType.subject
+          : null,
+      lockedRelatedId: viewModel.isEducationalCenterScoped
+          ? viewModel.educationalCenterId
+          : viewModel.isCareerScoped
+          ? viewModel.careerId
+          : viewModel.subjectId,
+      scopeLabel: viewModel.isEducationalCenterScoped
+          ? viewModel.educationalCenterName
+          : viewModel.isCareerScoped
+          ? viewModel.careerName
+          : viewModel.subjectName,
+    );
   }
 
   void _handleEditProcess(
@@ -119,6 +175,23 @@ class ProcessListView extends StatelessWidget {
       context: context,
       viewModel: viewModel,
       process: process,
+      lockedType: viewModel.isEducationalCenterScoped
+          ? ProcessType.educationalCenter
+          : viewModel.isCareerScoped
+          ? ProcessType.career
+          : viewModel.isSubjectScoped
+          ? ProcessType.subject
+          : null,
+      lockedRelatedId: viewModel.isEducationalCenterScoped
+          ? viewModel.educationalCenterId
+          : viewModel.isCareerScoped
+          ? viewModel.careerId
+          : viewModel.subjectId,
+      scopeLabel: viewModel.isEducationalCenterScoped
+          ? viewModel.educationalCenterName
+          : viewModel.isCareerScoped
+          ? viewModel.careerName
+          : viewModel.subjectName,
     );
   }
 

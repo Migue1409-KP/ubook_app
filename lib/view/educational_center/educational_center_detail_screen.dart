@@ -5,6 +5,7 @@ import '../../model/educational_center/educational_center_model.dart';
 import '../../model/reviews/review.dart';
 import '../../model/reviews/review_entity_types.dart';
 import '../../theme/app_colors.dart';
+import '../process/process_list_view.dart';
 import '../../view_model/reviews/reviews_view_model.dart';
 
 class EducationalCenterDetailScreen extends StatelessWidget {
@@ -58,7 +59,7 @@ class _EducationalCenterDetailContent extends StatelessWidget {
             const SizedBox(height: 18),
             _WebsitePreviewCard(website: detail.website),
             const SizedBox(height: 16),
-            _ActionButtonsBar(),
+            _ActionButtonsBar(center: center),
             const SizedBox(height: 20),
             _ReviewsSection(entityName: center.name),
           ],
@@ -180,7 +181,10 @@ class _WebsitePreviewCard extends StatelessWidget {
       context: context,
       builder: (_) {
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 80, vertical: 60),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 80,
+            vertical: 60,
+          ),
           backgroundColor: AppColors.onPrimary,
           child: Container(
             constraints: const BoxConstraints(maxWidth: 900, maxHeight: 540),
@@ -246,6 +250,10 @@ class _WebsitePreviewCard extends StatelessWidget {
 }
 
 class _ActionButtonsBar extends StatelessWidget {
+  final EducationalCenter center;
+
+  const _ActionButtonsBar({required this.center});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -271,7 +279,17 @@ class _ActionButtonsBar extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: OutlinedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProcessListView(
+                      educationalCenterId: center.id,
+                      educationalCenterName: center.name,
+                    ),
+                  ),
+                );
+              },
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 side: const BorderSide(color: AppColors.primary),
@@ -429,4 +447,3 @@ class _InfoRow extends StatelessWidget {
     );
   }
 }
-

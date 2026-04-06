@@ -7,6 +7,9 @@ Future<void> showProcessFormDialog({
   required BuildContext context,
   required ProcessViewModel viewModel,
   ProcessModel? process,
+  ProcessType? lockedType,
+  String? lockedRelatedId,
+  String? scopeLabel,
 }) async {
   final isEditing = process != null;
   final nameController = TextEditingController(text: process?.name ?? '');
@@ -16,7 +19,8 @@ Future<void> showProcessFormDialog({
   final documentsController = TextEditingController(
     text: process?.requiredDocuments.join(', ') ?? '',
   );
-  ProcessType selectedType = process?.processType ?? ProcessType.career;
+  ProcessType selectedType =
+      lockedType ?? process?.processType ?? ProcessType.career;
   bool isActive = process?.isActive ?? true;
 
   await showDialog(
@@ -55,23 +59,72 @@ Future<void> showProcessFormDialog({
                 'Tipo:',
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
-              Row(
-                children: [
-                  Radio<ProcessType>(
-                    value: ProcessType.career,
-                    groupValue: selectedType,
-                    onChanged: (v) => setDialogState(() => selectedType = v!),
+              if (lockedType != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    _processTypeLabel(lockedType),
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                  const Text('Carrera'),
-                  const SizedBox(width: 16),
-                  Radio<ProcessType>(
-                    value: ProcessType.subject,
-                    groupValue: selectedType,
-                    onChanged: (v) => setDialogState(() => selectedType = v!),
+                )
+              else
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Radio<ProcessType>(
+                          value: ProcessType.career,
+                          groupValue: selectedType,
+                          onChanged: (v) =>
+                              setDialogState(() => selectedType = v!),
+                        ),
+                        const Text('Carrera'),
+                      ],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Radio<ProcessType>(
+                          value: ProcessType.subject,
+                          groupValue: selectedType,
+                          onChanged: (v) =>
+                              setDialogState(() => selectedType = v!),
+                        ),
+                        const Text('Materia'),
+                      ],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Radio<ProcessType>(
+                          value: ProcessType.educationalCenter,
+                          groupValue: selectedType,
+                          onChanged: (v) =>
+                              setDialogState(() => selectedType = v!),
+                        ),
+                        const Text('Centro educativo'),
+                      ],
+                    ),
+                  ],
+                ),
+              if (scopeLabel != null && scopeLabel.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Contexto: $scopeLabel',
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
                   ),
-                  const Text('Materia'),
-                ],
-              ),
+                ),
               Row(
                 children: [
                   Checkbox(
@@ -100,6 +153,8 @@ Future<void> showProcessFormDialog({
                   .map((d) => d.trim())
                   .where((d) => d.isNotEmpty)
                   .toList();
+              final processType = lockedType ?? selectedType;
+              final relatedId = lockedRelatedId ?? process?.relatedId;
 
               Navigator.pop(context);
 
@@ -109,7 +164,8 @@ Future<void> showProcessFormDialog({
                     name: name,
                     description: descriptionController.text.trim(),
                     requiredDocuments: docs,
-                    processType: selectedType,
+                    processType: processType,
+                    relatedId: relatedId,
                     isActive: isActive,
                   ),
                 );
@@ -120,7 +176,8 @@ Future<void> showProcessFormDialog({
                     name: name,
                     description: descriptionController.text.trim(),
                     requiredDocuments: docs,
-                    processType: selectedType,
+                    processType: processType,
+                    relatedId: relatedId,
                     isActive: isActive,
                   ),
                 );
@@ -173,7 +230,7 @@ Future<void> showProcessDetailsDialog({
             ),
             const SizedBox(height: 16),
             Text(
-              'Tipo: ${process.processType == ProcessType.career ? "Carrera" : "Materia"}',
+              'Tipo: ${_processTypeLabel(process.processType)}',
               style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 4),
@@ -192,6 +249,17 @@ Future<void> showProcessDetailsDialog({
       ],
     ),
   );
+}
+
+String _processTypeLabel(ProcessType type) {
+  switch (type) {
+    case ProcessType.career:
+      return 'Carrera';
+    case ProcessType.subject:
+      return 'Materia';
+    case ProcessType.educationalCenter:
+      return 'Centro educativo';
+  }
 }
 
 Future<void> showDeleteProcessDialog({
@@ -228,9 +296,7 @@ Future<void> showDeleteProcessDialog({
               ),
             );
           },
-          style: TextButton.styleFrom(
-            foregroundColor: AppColors.processDanger,
-          ),
+          style: TextButton.styleFrom(foregroundColor: AppColors.processDanger),
           child: const Text('Eliminar'),
         ),
       ],

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 
 class ProcessEmptyState extends StatelessWidget {
-  const ProcessEmptyState({super.key});
+  const ProcessEmptyState({super.key, this.message = 'No hay procesos'});
+
+  final String message;
 
   @override
   Widget build(BuildContext context) {
@@ -12,8 +14,8 @@ class ProcessEmptyState extends StatelessWidget {
         children: [
           Icon(Icons.inbox_outlined, size: 100, color: AppColors.divider),
           const SizedBox(height: 16),
-          const Text(
-            'No hay procesos',
+          Text(
+            message,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,

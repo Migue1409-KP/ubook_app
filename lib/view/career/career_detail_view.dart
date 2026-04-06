@@ -8,7 +8,6 @@ import '../process/process_list_view.dart';
 import '../reviews/create_review_view.dart';
 import '../../view_model/reviews/reviews_view_model.dart';
 
-
 class CareerDetailView extends StatelessWidget {
   final Career career;
 
@@ -17,11 +16,9 @@ class CareerDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ReviewsViewModel()
-        ..loadReviews(
-          entityId: career.id,
-          entityType: "career",
-        ),
+      create: (_) =>
+          ReviewsViewModel()
+            ..loadReviews(entityId: career.id, entityType: "career"),
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
@@ -89,9 +86,7 @@ class _CareerDetailContent extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     "(${vm.reviews.length} reseñas)",
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                    ),
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 ],
               );
@@ -99,7 +94,6 @@ class _CareerDetailContent extends StatelessWidget {
           ),
 
           const SizedBox(height: 30),
-
 
           NavigationCard(
             title: "Materias",
@@ -109,9 +103,7 @@ class _CareerDetailContent extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const SubjectsView(),
-                ),
+                MaterialPageRoute(builder: (_) => const SubjectsView()),
               );
 
               /// ⚠️ PENDIENTE EQUIPO:
@@ -132,13 +124,12 @@ class _CareerDetailContent extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const ProcessListView(),
+                  builder: (_) => ProcessListView(
+                    careerId: career.id,
+                    careerName: career.name,
+                  ),
                 ),
               );
-
-              /// ⚠️ PENDIENTE EQUIPO:
-              /// Filtrar por:
-              /// process.relatedId == career.id
             },
           ),
 
