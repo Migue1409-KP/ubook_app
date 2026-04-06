@@ -18,13 +18,9 @@ class ProcessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color iconColor = process.processType == ProcessType.career
-        ? AppColors.primary
-        : AppColors.processSubject;
-
-    final IconData iconData = process.processType == ProcessType.career
-        ? Icons.school
-        : Icons.book;
+    final ({Color color, IconData icon, String label}) visual = _visualByType(
+      process.processType,
+    );
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -44,10 +40,10 @@ class ProcessCard extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: iconColor.withOpacity(0.15),
+                      color: visual.color.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(iconData, color: iconColor, size: 26),
+                    child: Icon(visual.icon, color: visual.color, size: 26),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -66,12 +62,10 @@ class ProcessCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          process.processType == ProcessType.career
-                              ? 'Proceso de Carrera'
-                              : 'Proceso de Materia',
+                          visual.label,
                           style: TextStyle(
                             fontSize: 12,
-                            color: iconColor,
+                            color: visual.color,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -172,5 +166,28 @@ class ProcessCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  ({Color color, IconData icon, String label}) _visualByType(ProcessType type) {
+    switch (type) {
+      case ProcessType.career:
+        return (
+          color: AppColors.primary,
+          icon: Icons.school,
+          label: 'Proceso de Carrera',
+        );
+      case ProcessType.subject:
+        return (
+          color: AppColors.processSubject,
+          icon: Icons.book,
+          label: 'Proceso de Materia',
+        );
+      case ProcessType.educationalCenter:
+        return (
+          color: Colors.teal,
+          icon: Icons.account_balance,
+          label: 'Proceso de Centro Educativo',
+        );
+    }
   }
 }

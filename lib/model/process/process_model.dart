@@ -1,6 +1,7 @@
 enum ProcessType {
   career, // Procesos de carrera
   subject, // Procesos de materia
+  educationalCenter, // Procesos de centro educativo
 }
 
 class ProcessModel {
@@ -27,14 +28,19 @@ class ProcessModel {
   });
 
   factory ProcessModel.fromJson(Map<String, dynamic> json) {
+    final typeRaw = json['process_type'] as String?;
+    final parsedType = switch (typeRaw) {
+      'career' => ProcessType.career,
+      'educationalCenter' => ProcessType.educationalCenter,
+      _ => ProcessType.subject,
+    };
+
     return ProcessModel(
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String,
       requiredDocuments: List<String>.from(json['required_documents'] ?? []),
-      processType: json['process_type'] == 'career'
-          ? ProcessType.career
-          : ProcessType.subject,
+      processType: parsedType,
       relatedId: json['related_id'] as String?,
       isActive: json['is_active'] as bool? ?? true,
       createdAt: json['created_at'] != null

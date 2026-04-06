@@ -118,6 +118,154 @@ class InMemoryProcessRepository implements ProcessRepository {
       relatedId: 'subject_001',
       isActive: false,
     ),
+    ProcessModel(
+      id: 'proc_ec_001',
+      name: 'Homologación de Estudios Externos',
+      description:
+          'Proceso institucional para validar y homologar estudios realizados en otra institución educativa.',
+      requiredDocuments: [
+        'Documento de identidad',
+        'Certificados de notas originales',
+        'Syllabus oficial de asignaturas',
+        'Formulario de homologación',
+      ],
+      processType: ProcessType.educationalCenter,
+      relatedId: '1',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_ec_002',
+      name: 'Solicitud de Beca Institucional',
+      description:
+          'Permite aplicar a becas internas para estudiantes de alto rendimiento o con necesidad económica.',
+      requiredDocuments: [
+        'Documento de identidad',
+        'Certificado de ingresos familiares',
+        'Historial académico',
+        'Carta de motivación',
+      ],
+      processType: ProcessType.educationalCenter,
+      relatedId: '1',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_ec_003',
+      name: 'Reingreso Estudiantil',
+      description:
+          'Proceso para que estudiantes retirados puedan reactivar su matrícula en periodos posteriores.',
+      requiredDocuments: [
+        'Documento de identidad',
+        'Solicitud de reingreso',
+        'Paz y salvo financiero',
+      ],
+      processType: ProcessType.educationalCenter,
+      relatedId: '2',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_ec_004',
+      name: 'Actualización de Datos Institucionales',
+      description:
+          'Trámite para actualizar información personal y académica en el sistema del centro educativo.',
+      requiredDocuments: [
+        'Documento de identidad',
+        'Formulario de actualización',
+      ],
+      processType: ProcessType.educationalCenter,
+      relatedId: '2',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_ec_005',
+      name: 'Certificado de Matrícula Vigente',
+      description:
+          'Expedición de constancia oficial de matrícula activa para trámites externos.',
+      requiredDocuments: [
+        'Documento de identidad',
+        'Comprobante de pago del semestre',
+      ],
+      processType: ProcessType.educationalCenter,
+      relatedId: '3',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_ec_006',
+      name: 'Cambio de Jornada Académica',
+      description:
+          'Solicitud para cambiar de jornada (diurna/nocturna) según disponibilidad institucional.',
+      requiredDocuments: [
+        'Documento de identidad',
+        'Carta de solicitud',
+        'Soportes laborales o personales',
+      ],
+      processType: ProcessType.educationalCenter,
+      relatedId: '3',
+      isActive: false,
+    ),
+    ProcessModel(
+      id: 'proc_sub_001',
+      name: 'Validación de Prerrequisitos',
+      description:
+          'Verifica cumplimiento de prerrequisitos antes de habilitar matrícula en Ing Software 4.',
+      requiredDocuments: ['Historial académico', 'Solicitud de validación'],
+      processType: ProcessType.subject,
+      relatedId: 'subject-1',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_sub_002',
+      name: 'Inscripción de Proyecto de Curso',
+      description:
+          'Registra el proyecto semestral y asigna docente guía para la materia Ing Software 4.',
+      requiredDocuments: ['Formato de propuesta', 'Cronograma de trabajo'],
+      processType: ProcessType.subject,
+      relatedId: 'subject-1',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_sub_003',
+      name: 'Solicitud de Habilitación',
+      description:
+          'Permite solicitar evaluación de habilitación para Bases de Datos según reglamento.',
+      requiredDocuments: [
+        'Documento de identidad',
+        'Comprobante de pago',
+        'Formulario de solicitud',
+      ],
+      processType: ProcessType.subject,
+      relatedId: 'subject-2',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_sub_004',
+      name: 'Revisión de Nota Final',
+      description:
+          'Proceso para revisión formal de nota final en Bases de Datos.',
+      requiredDocuments: ['Solicitud firmada', 'Soporte de evaluación'],
+      processType: ProcessType.subject,
+      relatedId: 'subject-2',
+      isActive: false,
+    ),
+    ProcessModel(
+      id: 'proc_sub_005',
+      name: 'Cambio de Grupo',
+      description:
+          'Solicitud de cambio de grupo para Redes de Datos por cruce de horario.',
+      requiredDocuments: ['Carta de solicitud', 'Horario actual'],
+      processType: ProcessType.subject,
+      relatedId: 'subject-3',
+      isActive: true,
+    ),
+    ProcessModel(
+      id: 'proc_sub_006',
+      name: 'Tutoría Académica',
+      description:
+          'Permite solicitar acompañamiento adicional en temas críticos de Redes de Datos.',
+      requiredDocuments: ['Formato de tutoría'],
+      processType: ProcessType.subject,
+      relatedId: 'subject-3',
+      isActive: true,
+    ),
   ];
 
   @override

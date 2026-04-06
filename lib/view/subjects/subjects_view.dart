@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../model/subjects/subjects.dart';
 import '../../theme/app_colors.dart';
 import '../../view_model/subjects/subjects_view_model.dart';
+import '../process/process_list_view.dart';
 import 'subject_delete_dialog.dart';
 import 'subject_detail_view.dart';
 import 'subject_form_view.dart';
@@ -130,10 +131,7 @@ class _SubjectsViewState extends State<SubjectsView> {
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 14,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -156,10 +154,7 @@ class _SubjectsViewState extends State<SubjectsView> {
           SizedBox(height: 16),
           Text(
             'No se encontraron materias',
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -168,9 +163,7 @@ class _SubjectsViewState extends State<SubjectsView> {
 
   Future<void> _openFormView({Subject? subject}) async {
     final result = await Navigator.of(context).push<Subject>(
-      MaterialPageRoute(
-        builder: (_) => SubjectFormView(subject: subject),
-      ),
+      MaterialPageRoute(builder: (_) => SubjectFormView(subject: subject)),
     );
 
     if (result == null) return;
@@ -190,6 +183,16 @@ class _SubjectsViewState extends State<SubjectsView> {
           onEdit: () => _openFormView(subject: subject),
           onTeachersTap: () {},
           onReviewsTap: () {},
+          onProcessesTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ProcessListView(
+                  subjectId: subject.id,
+                  subjectName: subject.nombre,
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -224,12 +227,12 @@ class _SubjectRowCard extends StatelessWidget {
     final initials = subject.nombre.trim().isEmpty
         ? '?'
         : subject.nombre
-            .trim()
-            .split(' ')
-            .take(2)
-            .map((e) => e.isNotEmpty ? e[0] : '')
-            .join()
-            .toUpperCase();
+              .trim()
+              .split(' ')
+              .take(2)
+              .map((e) => e.isNotEmpty ? e[0] : '')
+              .join()
+              .toUpperCase();
 
     return Card(
       margin: EdgeInsets.zero,

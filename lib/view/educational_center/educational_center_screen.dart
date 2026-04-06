@@ -25,9 +25,12 @@ class _EducationalCenterScreenState extends State<EducationalCenterScreen> {
   void initState() {
     super.initState();
     filteredCenters = viewModel.centers;
-    context.read<EducationalCenterCountProvider>().initialize(
-      total: viewModel.centers.length,
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<EducationalCenterCountProvider>().initialize(
+        total: viewModel.centers.length,
+      );
+    });
   }
 
   void _search(String query) {
@@ -183,9 +186,7 @@ class _EducationalCenterScreenState extends State<EducationalCenterScreen> {
                       SizedBox(width: 6),
                       Text(
                         'Nuevo',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
