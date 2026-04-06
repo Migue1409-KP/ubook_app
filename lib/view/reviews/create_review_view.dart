@@ -56,7 +56,7 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
     super.dispose();
   }
 
-  void _onSubmit(BuildContext context, CreateReviewViewModel viewModel) {
+  Future<void> _onSubmit(CreateReviewViewModel viewModel) async {
     // Validaciones básicas de mockup
     if (viewModel.rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -75,26 +75,26 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
       return;
     }
 
-    viewModel
-        .submitReview(
-          entityId: widget.entityId,
-          entityType: widget.entityType,
-          userId: widget.userId,
-          title: _titleController.text.trim(),
-          content: _contentController.text.trim(),
-        )
-        .then((_) {
-          // Mockup de éxito y regresar
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('¡Reseña publicada con éxito!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            Navigator.pop(context);
-          }
-        });
+    await viewModel.submitReview(
+      entityId: widget.entityId,
+      entityType: widget.entityType,
+      userId: widget.userId,
+      title: _titleController.text.trim(),
+      content: _contentController.text.trim(),
+    );
+
+    // Evita usar context si el widget fue desmontado.
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('¡Reseña publicada con éxito!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+    Navigator.pop(context);
   }
 
   @override
@@ -230,7 +230,7 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
                     child: ElevatedButton(
                       onPressed: viewModel.isLoading
                           ? null
-                          : () => _onSubmit(context, viewModel),
+                          : () => _onSubmit(viewModel),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,

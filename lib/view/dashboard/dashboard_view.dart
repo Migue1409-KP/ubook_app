@@ -10,7 +10,9 @@ import '../process/process_list_view.dart';
 import '../subjects/subject_detail_view.dart';
 import '../teacher_subject/teacher_subjects_page.dart';
 import '../teachers/teacher_list_view.dart';
+import '../../model/educational_center/educational_center_model.dart';
 import '../../model/teachers/teacher.dart';
+import '../educational_center/educational_center_detail_screen.dart';
 import '../educational_center/educational_center_screen.dart';
 import '../subjects/subjects_view.dart';
 import '../../model/subjects/subjects.dart';
@@ -60,7 +62,11 @@ class _DashboardViewContent extends StatelessWidget {
                       rating: item['rating'],
                       icon: Icons.account_balance,
                       color: Colors.blue,
-                      onTap: () => _navigateToEducationalCenters(context),
+                      onTap: () => _navigateToEducationalCenterDetail(
+                        context,
+                        item,
+                        viewModel.topCenters.indexOf(item),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -236,13 +242,51 @@ class _DashboardViewContent extends StatelessWidget {
     );
   }
 
+  void _navigateToEducationalCenterDetail(
+    BuildContext context,
+    Map<String, dynamic> item,
+    int index,
+  ) {
+    final center = EducationalCenter(
+      id: (index + 1).toString(),
+      name: item['name'] as String? ?? 'Centro educativo',
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EducationalCenterDetailScreen(center: center),
+      ),
+    );
+  }
+
   void _navigateToSubjects(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const SubjectsView()),
     );
   }
-   void _navigateToCareer(BuildContext context){
+
+  void _navigateToCareerDetail(
+    BuildContext context,
+    Map<String, dynamic> item,
+    int index,
+  ) {
+    final career = Career(
+      id: 'career-${index + 1}',
+      name: item['name'] as String? ?? 'Carrera',
+      educationalCenterId: '1',
+      semesters: 10,
+      credits: 160,
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => CareerDetailView(career: career)),
+    );
+  }
+
+  void _navigateToCareer(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -250,6 +294,7 @@ class _DashboardViewContent extends StatelessWidget {
       ),
     );
   }
+
   void _showSubjectDetail(BuildContext context, Map<String, dynamic> item) {
     final dummySubject = Subject(
       id: 'DUMMY-SUB',
