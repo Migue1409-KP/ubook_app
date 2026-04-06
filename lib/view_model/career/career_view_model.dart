@@ -5,22 +5,12 @@ class CareerViewModel extends ChangeNotifier {
 
   final List<Career> _careers = [];
 
-  String searchQuery = "";
+  String _searchQuery = '';
 
-  List<Career> get careers {
-
-    if (searchQuery.isEmpty) {
-      return _careers;
-    }
-
-    return _careers
-        .where((career) =>
-            career.name.toLowerCase().contains(searchQuery.toLowerCase()))
-        .toList();
-  }
+  List<Career> get careers => _careers;
 
   void setSearch(String value) {
-    searchQuery = value;
+    _searchQuery = value;
     notifyListeners();
   }
 
@@ -30,7 +20,6 @@ class CareerViewModel extends ChangeNotifier {
   }
 
   void updateCareer(Career updatedCareer) {
-
     final index = _careers.indexWhere((c) => c.id == updatedCareer.id);
 
     if (index != -1) {
@@ -42,5 +31,27 @@ class CareerViewModel extends ChangeNotifier {
   void deleteCareer(String id) {
     _careers.removeWhere((career) => career.id == id);
     notifyListeners();
+  }
+
+  List<Career> getFilteredCareersByCenter(String? centerId) {
+
+    List<Career> filtered = _careers;
+
+    if (centerId != null) {
+      filtered = filtered
+          .where((c) => c.educationalCenterId == centerId)
+          .toList();
+    }
+
+    // 🔍 filtro por búsqueda
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered
+          .where((c) => c.name
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()))
+          .toList();
+    }
+
+    return filtered;
   }
 }
