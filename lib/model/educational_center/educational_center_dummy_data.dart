@@ -14,21 +14,33 @@ EducationalCenterDummyData educationalCenterDummyById(String centerId) {
   switch (centerId) {
     case '1':
       return const EducationalCenterDummyData(
-        address: 'Medellín, Colombia',
+        address: 'Bogotá, Colombia',
         type: 'Pública',
         website: 'https://unal.edu.co',
       );
     case '2':
       return const EducationalCenterDummyData(
-        address: 'Medellín, Colombia',
-        type: 'Pública',
-        website: 'https://www.itm.edu.co',
+        address: 'Bogotá, Colombia',
+        type: 'Privada',
+        website: 'https://uniandes.edu.co',
       );
     case '3':
       return const EducationalCenterDummyData(
+        address: 'Medellín, Colombia',
+        type: 'Pública',
+        website: 'https://www.udea.edu.co',
+      );
+    case '4':
+      return const EducationalCenterDummyData(
+        address: 'Cali, Colombia',
+        type: 'Pública',
+        website: 'https://www.univalle.edu.co',
+      );
+    case '5':
+      return const EducationalCenterDummyData(
         address: 'Bogotá, Colombia',
         type: 'Privada',
-        website: 'https://www.colombiaaprende.edu.co',
+        website: 'https://www.javeriana.edu.co',
       );
     default:
       return const EducationalCenterDummyData(
