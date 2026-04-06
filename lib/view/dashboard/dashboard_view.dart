@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ubook_app/model/career/career_model.dart';
+import 'package:ubook_app/view/career/career_detail_view.dart';
 import 'package:ubook_app/view/career/career_list_view.dart';
 import '../../view_model/dashboard/dashboard_view_model.dart';
 import '../../widgets/dashboard_app_bar.dart';
@@ -72,10 +74,11 @@ class _DashboardViewContent extends StatelessWidget {
                 items: viewModel.topCareers,
                 itemBuilder: (item) => _buildCard(
                   title: item['name'],
-                  subtitle: item['faculty'],
+                  subtitle: '${item['semesters']} semestres', 
                   rating: item['rating'],
                   icon: Icons.school,
                   color: Colors.orange,
+                  onTap: () => _showCareerDetail(context, item),
                 ),
               ),
               const SizedBox(height: 28),
@@ -243,7 +246,7 @@ class _DashboardViewContent extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const CareerListView(),
+        builder: (context) => const CareerListView(educationalCenterId: "1"),
       ),
     );
   }
@@ -257,13 +260,31 @@ class _DashboardViewContent extends StatelessWidget {
       contenido:
           'Materia enfocada en el desarrollo y la lógica correspondiente del área de ${item['faculty'] ?? 'estudio'}.',
     );
-
+  
     showDialog(
       context: context,
       builder: (context) => SubjectDetailView(
        subject: dummySubject,
         onEdit: () {},
         ),
+    );
+  }
+  void _showCareerDetail(BuildContext context, Map<String, dynamic> item) {
+    final dummyCareer = Career(
+      id: 'DUMMY-${item['name'] ?? 'career'}',
+      name: item['name'] ?? 'Carrera desconocida',
+      semesters: item['semesters'] ?? 10, 
+      educationalCenterId: item['educationalCenterId']?? "1",
+      credits: item['credits'] ?? 180, 
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CareerDetailView(
+          career: dummyCareer,
+        ),
+      ),
     );
   }
 
