@@ -294,8 +294,9 @@ class _DashboardViewContent extends StatelessWidget {
   }
 
   void _showSubjectDetail(BuildContext context, Map<String, dynamic> item) {
+    final subjectId = (item['id'] as String?) ?? 'subject-1';
     final dummySubject = Subject(
-      id: 'DUMMY-SUB',
+      id: subjectId,
       nombre: item['name'] as String? ?? 'Desconocida',
       horas: 48,
       creditos: 3,
@@ -304,10 +305,25 @@ class _DashboardViewContent extends StatelessWidget {
           'Materia enfocada en el desarrollo y la lógica correspondiente del área de ${item['faculty'] ?? 'estudio'}.',
     );
 
-    showDialog(
-      context: context,
-      builder: (context) =>
-          SubjectDetailView(subject: dummySubject, onEdit: () {}),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SubjectDetailView(
+          subject: dummySubject,
+          onEdit: () {},
+          onProcessesTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProcessListView(
+                  subjectId: dummySubject.id,
+                  subjectName: dummySubject.nombre,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
