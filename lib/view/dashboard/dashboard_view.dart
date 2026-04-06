@@ -245,8 +245,17 @@ class _DashboardViewContent extends StatelessWidget {
     BuildContext context,
     Map<String, dynamic> item,
   ) {
+  final rawId = item['id'];
+  if (rawId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('No se pudo abrir el centro educativo.'),
+      ),
+    );
+    return;
+  }
     final center = EducationalCenter(
-      id: item['id'] as String? ?? '0',
+      id: rawId.toString(),
       name: item['name'] as String? ?? 'Centro educativo',
     );
 
