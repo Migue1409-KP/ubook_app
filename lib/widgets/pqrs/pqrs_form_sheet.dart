@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../model/pqrs/pqrs.dart';
 import '../../view_model/pqrs/pqrs_viewmodel.dart';
 
 class PQRSFormSheet extends StatefulWidget {
-  const PQRSFormSheet({super.key});
+  final PQRS? initial;
+  final int? index;
+
+  const PQRSFormSheet({
+    super.key,
+    this.initial,
+    this.index,
+  });
 
   @override
   State<PQRSFormSheet> createState() => _PQRSFormSheetState();
@@ -13,6 +21,18 @@ class _PQRSFormSheetState extends State<PQRSFormSheet> {
   final _formKey = GlobalKey<FormState>();
   final _descripcionController = TextEditingController();
   String _tipo = 'Peticion';
+  String _estado = 'Abierta';
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initial;
+    if (initial != null) {
+      _tipo = initial.tipo;
+      _estado = initial.estado;
+      _descripcionController.text = initial.descripcion;
+    }
+  }
 
   @override
   void dispose() {
@@ -23,6 +43,7 @@ class _PQRSFormSheetState extends State<PQRSFormSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isEdit = widget.initial != null && widget.index != null;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottomInset),
@@ -32,9 +53,9 @@ class _PQRSFormSheetState extends State<PQRSFormSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Nueva PQRS',
-              style: TextStyle(
+            Text(
+              isEdit ? 'Editar PQRS' : 'Nueva PQRS',
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
@@ -73,6 +94,28 @@ class _PQRSFormSheetState extends State<PQRSFormSheet> {
                 return null;
               },
             ),
+            if (isEdit) ...[
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _estado,
+                decoration: const InputDecoration(
+                  labelText: 'Estado',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'Abierta', child: Text('Abierta')),
+                  DropdownMenuItem(
+                    value: 'En proceso',
+                    child: Text('En proceso'),
+                  ),
+                  DropdownMenuItem(value: 'Cerrada', child: Text('Cerrada')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _estado = value);
+                },
+              ),
+            ],
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -82,7 +125,7 @@ class _PQRSFormSheetState extends State<PQRSFormSheet> {
                   backgroundColor: Colors.blue.shade700,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Crear'),
+                child: Text(isEdit ? 'Guardar' : 'Crear'),
               ),
             ),
           ],
@@ -93,10 +136,22 @@ class _PQRSFormSheetState extends State<PQRSFormSheet> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    context.read<PQRSViewModel>().addPQRS(
-          tipo: _tipo,
-          descripcion: _descripcionController.text.trim(),
-        );
+    final viewModel = context.read<PQRSViewModel>();
+    final isEdit = widget.initial != null && widget.index != null;
+    if (isEdit) {
+      viewModel.updatePQRS(
+        index: widget.index!,
+        tipo: _tipo,
+        descripcion: _descripcionController.text.trim(),
+        estado: _estado,
+      );
+    } else {
+      viewModel.addPQRS(
+        tipo: _tipo,
+        descripcion: _descripcionController.text.trim(),
+        estado: _estado,
+      );
+    }
     Navigator.pop(context);
   }
 }
