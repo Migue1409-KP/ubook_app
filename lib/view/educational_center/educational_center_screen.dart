@@ -5,8 +5,8 @@ import '../../theme/app_colors.dart';
 import '../../view_model/educational_center/educational_center_count_provider.dart';
 import '../../view_model/educational_center/educational_center_view_model.dart';
 import 'educational_center_detail_screen.dart';
-import '../../widgets/educationel_center/educational_center_row.dart';
-import '../../widgets/educationel_center/educational_center_form.dart';
+import '../../widgets/educational_center/educational_center_row.dart';
+import '../../widgets/educational_center/educational_center_form.dart';
 
 class EducationalCenterScreen extends StatefulWidget {
   const EducationalCenterScreen({super.key});
@@ -70,16 +70,9 @@ class _EducationalCenterScreenState extends State<EducationalCenterScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            Consumer<EducationalCenterCountProvider>(
-              builder: (context, counter, _) {
-                return Text(
-                  'Explora, busca y administra los centros educativos',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                );
-              },
+            const Text(
+              'Explora, busca y administra los centros educativos',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 14),
             Consumer<EducationalCenterCountProvider>(
