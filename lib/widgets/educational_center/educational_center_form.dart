@@ -7,11 +7,7 @@ class EducationalCenterForm extends StatefulWidget {
   final bool isEditing;
   final EducationalCenter? center;
 
-  const EducationalCenterForm({
-    super.key,
-    this.isEditing = false,
-    this.center,
-  });
+  const EducationalCenterForm({super.key, this.isEditing = false, this.center});
 
   @override
   State<EducationalCenterForm> createState() => _EducationalCenterFormState();
@@ -42,6 +38,14 @@ class _EducationalCenterFormState extends State<EducationalCenterForm> {
   }
 
   @override
+  void dispose() {
+    nameController.dispose();
+    addressController.dispose();
+    websiteController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final inputDecoration = InputDecoration(
       filled: true,
@@ -56,9 +60,7 @@ class _EducationalCenterFormState extends State<EducationalCenterForm> {
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
       ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
     );
 
     return AlertDialog(
@@ -94,7 +96,7 @@ class _EducationalCenterFormState extends State<EducationalCenterForm> {
 
             // Tipo
             DropdownButtonFormField<String>(
-              value: type,
+              initialValue: type,
               decoration: inputDecoration.copyWith(labelText: "Tipo"),
               dropdownColor: AppColors.onPrimary,
               items: const [
