@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'notification/notification_bell.dart';
 
 class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String selectedFilter;
@@ -28,15 +29,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
-        IconButton(
-          icon: const Icon(
-            Icons.notifications_outlined,
-            color: AppColors.textPrimary,
-          ),
-          onPressed: () {
-            // TODO: Show notifications
-          },
-        ),
+        const NotificationBell(),
         PopupMenuButton<String>(
           offset: const Offset(0, 45),
           shape: RoundedRectangleBorder(
