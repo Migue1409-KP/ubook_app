@@ -5,45 +5,40 @@ import '../../theme/app_colors.dart';
 import '../../view_model/notification/notification_view_model.dart';
 
 class NotificationView extends StatelessWidget {
-  const NotificationView({super.key});
+  final VoidCallback? onClose;
+
+  const NotificationView({super.key, this.onClose});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<NotificationViewModel>(
       builder: (context, viewModel, _) {
         return Container(
-          decoration: const BoxDecoration(
+          width: 360,
+          decoration: BoxDecoration(
             color: AppColors.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildHandle(),
               _buildHeader(context, viewModel),
               const Divider(height: 1, color: AppColors.divider),
               viewModel.allNotifications.isEmpty
                   ? _buildEmptyState()
                   : _buildNotificationList(viewModel),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
             ],
           ),
         );
       },
-    );
-  }
-
-  Widget _buildHandle() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: Container(
-        width: 40,
-        height: 4,
-        decoration: BoxDecoration(
-          color: AppColors.divider,
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
     );
   }
 
@@ -89,7 +84,7 @@ class NotificationView extends StatelessWidget {
             ),
           IconButton(
             icon: const Icon(Icons.close, color: AppColors.textPrimary),
-            onPressed: () => Navigator.pop(context),
+            onPressed: onClose ?? () => Navigator.pop(context),
           ),
         ],
       ),
