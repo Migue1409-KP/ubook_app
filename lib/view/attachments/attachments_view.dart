@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../model/attachments/attachment.dart';
 import '../../view_model/attachments/attachments_view_model.dart';
 import '../../widgets/file_picker_widget.dart';
+import '../../theme/app_colors.dart';
 
 class AttachmentsView extends StatefulWidget {
   final String subjectId;
@@ -83,13 +84,12 @@ class _AttachmentsViewState extends State<AttachmentsView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Adjuntos'),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.onPrimary,
         elevation: 0,
       ),
       body: ListenableBuilder(
@@ -112,6 +112,8 @@ class _AttachmentsViewState extends State<AttachmentsView> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openForm,
         icon: const Icon(Icons.upload_file),
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.onPrimary,
         label: const Text('Subir archivo'),
       ),
     );
@@ -186,7 +188,7 @@ class _AttachmentFormState extends State<_AttachmentForm> {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.dialogBackgroundColor,
+        color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(20, 24, 20, 24 + bottom),
@@ -300,20 +302,7 @@ class _AttachmentCard extends StatelessWidget {
   }
 
   Color _color(ColorScheme colorScheme) {
-    switch (attachment.fileType.toUpperCase()) {
-      case 'PDF':  return colorScheme.error;
-      case 'DOCX':
-      case 'DOC':  return colorScheme.primary;
-      case 'PPTX':
-      case 'PPT':  return colorScheme.tertiary;
-      case 'XLSX':
-      case 'XLS':  return colorScheme.secondary;
-      case 'JPG':
-      case 'JPEG':
-      case 'PNG':  return colorScheme.primary.withValues(alpha: 0.8);
-      case 'ZIP':  return colorScheme.outline;
-      default:     return colorScheme.outlineVariant;
-    }
+    return AppColors.primary;
   }
 
   String _formatDate(DateTime dt) =>
@@ -328,6 +317,7 @@ class _AttachmentCard extends StatelessWidget {
     
     return Card(
       elevation: 2,
+      color: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -384,8 +374,8 @@ class _AttachmentCard extends StatelessWidget {
                           ? Icons.download_outlined
                           : Icons.cloud_off,
                       color: attachment.fileBytes != null
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outlineVariant,
+                          ? AppColors.primary
+                                    : Theme.of(context).colorScheme.outlineVariant,
                     ),
                     tooltip: attachment.fileBytes != null
                         ? 'Ver / Descargar'
@@ -475,20 +465,20 @@ class _EmptyScreen extends StatelessWidget {
           Icon(
             Icons.folder_open,
             size: 90,
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            color: AppColors.divider,
           ),
           const SizedBox(height: 16),
           Text(
             'Sin adjuntos todavía',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Toca el botón para subir el primer archivo',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.outlineVariant,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],

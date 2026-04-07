@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 /// ### Example — profile image (only JPG/PNG)
 /// ```dart
@@ -46,12 +47,14 @@ class FilePickerWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSelected = fileName != null;
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
-    
-    final activeColor = isSelected ? colorScheme.secondary : colorScheme.primary;
-    final backgroundColor = activeColor.withValues(alpha: 0.08);
-    final borderColor = activeColor.withValues(alpha: 0.24);
+    final activeColor = AppColors.primary;
+    final backgroundColor = isSelected
+      ? AppColors.primary.withValues(alpha: 0.08)
+      : AppColors.primary.withValues(alpha: 0.05);
+    final borderColor = isSelected
+      ? AppColors.primary.withValues(alpha: 0.22)
+      : AppColors.divider;
 
     return GestureDetector(
       onTap: isLoading ? null : onSelect,
@@ -106,14 +109,14 @@ class FilePickerWidget extends StatelessWidget {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: activeColor.withValues(alpha: 0.16),
+                                    color: AppColors.primary.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
                                     detectedType!,
                                     style: textTheme.labelSmall?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      color: activeColor,
+                                      color: AppColors.primary,
                                     ),
                                   ),
                                 ),
@@ -122,7 +125,7 @@ class FilePickerWidget extends StatelessWidget {
                               Text(
                                 size!,
                                 style: textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
+                                  color: theme.colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
