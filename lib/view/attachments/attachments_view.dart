@@ -317,7 +317,7 @@ class _AttachmentCard extends StatelessWidget {
     
     return Card(
       elevation: 2,
-      color: Colors.white,
+      color: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
