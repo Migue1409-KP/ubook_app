@@ -32,7 +32,7 @@ class TeacherActiveSwitch extends StatelessWidget {
           const Spacer(),
           Switch(
             value: value,
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
             onChanged: onChanged,
           ),
         ],

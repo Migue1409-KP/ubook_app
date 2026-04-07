@@ -91,7 +91,7 @@ class _TeacherFormViewState extends State<TeacherFormView> {
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: (isActiveNow ? Colors.green : Colors.red)
-                                .withOpacity(0.1),
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -173,7 +173,7 @@ class _TeacherFormViewState extends State<TeacherFormView> {
                     ? null
                     : () async {
                         final Teacher? saved = await _vm.submit();
-                        if (saved != null && mounted) {
+                        if (saved != null && context.mounted) {
                           if (!_vm.isEditing) {
                             context.read<TeacherCountProvider>().addTeacher(
                                   isActive: saved.isActive,
