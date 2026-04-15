@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../model/computer_lab/computer_lab.dart';
 import '../model/computer_lab/computer_lab_repository.dart';
 
 class ComputerLabFormViewModel extends ChangeNotifier {
-  ComputerLabFormViewModel({
-    ComputerLabRepository? repository,
-  }) : _repository = repository ?? InMemoryComputerLabRepository.instance;
+  static const String _labCountKey = 'computer_lab_count';
+
+  ComputerLabFormViewModel({ComputerLabRepository? repository})
+    : _repository = repository ?? InMemoryComputerLabRepository.instance;
 
   final ComputerLabRepository _repository;
 
@@ -20,6 +22,7 @@ class ComputerLabFormViewModel extends ChangeNotifier {
   bool available = true;
   bool isSaving = false;
   bool isLoadingLabs = false;
+  int storedLabCount = 0;
   List<ComputerLab> savedLabs = const [];
 
   final formKey = GlobalKey<FormState>();
@@ -28,7 +31,13 @@ class ComputerLabFormViewModel extends ChangeNotifier {
     isLoadingLabs = true;
     notifyListeners();
 
+    final preferences = await SharedPreferences.getInstance();
+    storedLabCount = preferences.getInt(_labCountKey) ?? 0;
     savedLabs = await _repository.getAll();
+    if (savedLabs.length > storedLabCount) {
+      storedLabCount = savedLabs.length;
+      await preferences.setInt(_labCountKey, storedLabCount);
+    }
 
     isLoadingLabs = false;
     notifyListeners();
@@ -44,7 +53,8 @@ class ComputerLabFormViewModel extends ChangeNotifier {
   String? validatePositiveInt(String? value, {String field = 'Capacity'}) {
     if (value == null || value.trim().isEmpty) return '$field is required';
     final parsed = int.tryParse(value);
-    if (parsed == null || parsed <= 0) return '$field must be a positive number';
+    if (parsed == null || parsed <= 0)
+      return '$field must be a positive number';
     return null;
   }
 
@@ -72,6 +82,9 @@ class ComputerLabFormViewModel extends ChangeNotifier {
 
     final saved = await _repository.save(lab);
     savedLabs = await _repository.getAll();
+    storedLabCount = savedLabs.length;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setInt(_labCountKey, storedLabCount);
 
     isSaving = false;
     notifyListeners();

@@ -31,9 +31,7 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Computer Lab Form'),
-      ),
+      appBar: AppBar(title: const Text('Computer Lab Form')),
       body: Form(
         key: _vm.formKey,
         child: SingleChildScrollView(
@@ -41,6 +39,23 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Card(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.meeting_room),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Total laboratorios: ${_vm.storedLabCount}',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               // Counter visible in the view using Provider
               Consumer<ComputerCountProvider>(
                 builder: (context, counter, _) => Card(
@@ -83,9 +98,7 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                       final lab = _vm.savedLabs[index];
                       return Card(
                         child: ListTile(
-                          leading: CircleAvatar(
-                            child: Text('${index + 1}'),
-                          ),
+                          leading: CircleAvatar(child: Text('${index + 1}')),
                           title: Text(lab.name),
                           subtitle: Text(
                             '${lab.building} - ${lab.roomNumber}\n${lab.capacity} computadoras',
@@ -141,7 +154,8 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                   labelText: 'Número de computadoras',
                   hintText: 'p. ej., 30',
                 ),
-                validator: (v) => _vm.validatePositiveInt(v, field: 'Número de computadoras'),
+                validator: (v) =>
+                    _vm.validatePositiveInt(v, field: 'Número de computadoras'),
               ),
               const SizedBox(height: 12),
               Row(
@@ -168,9 +182,7 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _vm.notesController,
-                decoration: const InputDecoration(
-                  labelText: 'Notes',
-                ),
+                decoration: const InputDecoration(labelText: 'Notes'),
                 maxLines: 3,
               ),
               const SizedBox(height: 24),
@@ -181,7 +193,9 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                         final ComputerLab? saved = await _vm.submit();
                         if (saved != null && mounted) {
                           // Add the number of computers to the counter
-                          context.read<ComputerCountProvider>().addComputers(saved.capacity);
+                          context.read<ComputerCountProvider>().addComputers(
+                            saved.capacity,
+                          );
                           _vm.clearForm();
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Computer Lab saved')),
