@@ -4,7 +4,7 @@ import '../../model/subjectteacher/subjectteacher.dart';
 import '../../model/subjects/subjects.dart';
 
 class _FakeApi {
-  //cuando no llegan de afuera
+  // Fallback teachers cuando no llegan de afuera
   static final List<Teacher> _defaultTeachers = [
     Teacher(id: 'TCH-001', firstName: 'Juan',   lastName: 'Pablo',  email: 'juan.pablo@uco.edu',   phone: '809-555-0101', age: 25, department: 'Ingeniería de Sistemas', specialty: 'Desarrollo Móvil',       subjects: [], profileImageUrl: '', isActive: true, createdAt: DateTime(2024,1,15),  updatedAt: DateTime(2024,6,10)),
     Teacher(id: 'TCH-002', firstName: 'Maria',  lastName: 'Lopez',  email: 'maria.lopez@uco.edu',  phone: '809-555-0102', age: 34, department: 'Ingeniería de Sistemas', specialty: 'Inteligencia Artificial', subjects: [], profileImageUrl: '', isActive: true, createdAt: DateTime(2023,8,20),  updatedAt: DateTime(2024,5,5)),
@@ -12,6 +12,7 @@ class _FakeApi {
     Teacher(id: 'TCH-004', firstName: 'Ana',    lastName: 'Rivera', email: 'ana.rivera@uco.edu',   phone: '809-555-0104', age: 39, department: 'Ingeniería de Sistemas', specialty: 'Desarrollo Web',          subjects: [], profileImageUrl: '', isActive: true, createdAt: DateTime(2023,1,10),  updatedAt: DateTime(2024,7,22)),
   ];
 
+  // Fallback subjects cuando no llegan de afuera
   static final List<Subject> _defaultSubjects = [
     Subject(id: '1', nombre: 'Ingeniería de Sistemas', horas: 60, creditos: 4, prerrequisitos: [], contenido: 'Fundamentos de arquitectura de software.'),
     Subject(id: '2', nombre: 'Cálculo Diferencial',    horas: 64, creditos: 3, prerrequisitos: [], contenido: 'Límites y derivadas.'),
