@@ -38,6 +38,7 @@ dependencies:
 
   # State management
   provider: ^6.1.2
+  shared_preferences: ^2.5.3
 
   # Selector de archivos (imágenes y documentos) — módulo adjuntos
   file_picker: ^8.1.0
