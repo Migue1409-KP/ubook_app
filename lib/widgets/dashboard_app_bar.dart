@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:ubook_app/repository/auth/auth_local_storage.dart';
 import '../theme/app_colors.dart';
 import 'notification/notification_bell.dart';
 
@@ -54,13 +57,11 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                 Navigator.pushNamed(context, '/pqrs');
                 break;
               case 'logout':
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/login',
-                  (_) => false,
-                );
+                unawaited(_logout(context));
+                break;
             }
           },
+
           itemBuilder: (BuildContext context) {
             return [
               const PopupMenuItem(
@@ -184,6 +185,18 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    await AuthLocalStorage().setHasActiveSession(false);
+
+    if (!context.mounted) return;
+
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/login',
+      (_) => false,
     );
   }
 
