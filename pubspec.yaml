@@ -46,6 +46,9 @@ dependencies:
   path_provider: ^2.1.5
   open_file: ^3.3.2
 
+  # Persistencia local de datos
+  shared_preferences: ^2.5.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

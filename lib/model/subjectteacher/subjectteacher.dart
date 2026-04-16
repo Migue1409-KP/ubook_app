@@ -1,15 +1,13 @@
 class SubjectTeacher {
   final String id;
-  // campos de Subject (denormalizados para mostrar sin join)
   final String subjectId;
   final String subjectNombre;
   final int subjectCreditos;
   final int subjectHoras;
-  // campos de Teacher
   final String teacherId;
   final String teacherName;
   final String teacherEmail;
-
+  
   final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -57,15 +55,4 @@ class SubjectTeacher {
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt.toIso8601String(),
       };
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) || other is SubjectTeacher && other.id == id;
-
-  @override
-  int get hashCode => id.hashCode;
-
-  @override
-  String toString() =>
-      'SubjectTeacher(id: $id, teacher: $teacherName, subject: $subjectNombre)';
 }
