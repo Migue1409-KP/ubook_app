@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:ubook_app/repository/auth/auth_local_storage.dart';
 
 class RegisterViewModel extends ChangeNotifier {
+  final AuthLocalStorage _localStorage;
+
   final name = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -15,6 +20,65 @@ class RegisterViewModel extends ChangeNotifier {
   String? errorMessage;
 
   final formKey = GlobalKey<FormState>();
+  Timer? _draftDebounce;
+
+  RegisterViewModel({AuthLocalStorage? localStorage})
+      : _localStorage = localStorage ?? AuthLocalStorage() {
+    _restoreRegisterDraft();
+    _attachDraftListeners();
+  }
+
+  void _attachDraftListeners() {
+    name.addListener(_onDraftChanged);
+    emailController.addListener(_onDraftChanged);
+    educationalCenter.addListener(_onDraftChanged);
+    career.addListener(_onDraftChanged);
+    city.addListener(_onDraftChanged);
+  }
+
+  void _removeDraftListeners() {
+    name.removeListener(_onDraftChanged);
+    emailController.removeListener(_onDraftChanged);
+    educationalCenter.removeListener(_onDraftChanged);
+    career.removeListener(_onDraftChanged);
+    city.removeListener(_onDraftChanged);
+  }
+
+  void _onDraftChanged() {
+    _draftDebounce?.cancel();
+    _draftDebounce = Timer(const Duration(milliseconds: 300), () async {
+      await _localStorage.saveRegisterDraft(
+        name: name.text.trim(),
+        email: emailController.text.trim(),
+        educationalCenter: educationalCenter.text.trim(),
+        career: career.text.trim(),
+        city: city.text.trim(),
+      );
+    });
+  }
+
+  Future<void> _restoreRegisterDraft() async {
+    final draft = await _localStorage.getRegisterDraft();
+    if (draft.isEmpty) return;
+
+    if (name.text.isEmpty) {
+      name.text = draft['name'] ?? '';
+    }
+    if (emailController.text.isEmpty) {
+      emailController.text = draft['email'] ?? '';
+    }
+    if (educationalCenter.text.isEmpty) {
+      educationalCenter.text = draft['educationalCenter'] ?? '';
+    }
+    if (career.text.isEmpty) {
+      career.text = draft['career'] ?? '';
+    }
+    if (city.text.isEmpty) {
+      city.text = draft['city'] ?? '';
+    }
+
+    notifyListeners();
+  }
 
   String? validateName(String? value) {
     if (!submitted) return null;
@@ -73,6 +137,14 @@ class RegisterViewModel extends ChangeNotifier {
     submitted = true;
     notifyListeners();
 
+    await _localStorage.saveRegisterDraft(
+      name: name.text.trim(),
+      email: emailController.text.trim(),
+      educationalCenter: educationalCenter.text.trim(),
+      career: career.text.trim(),
+      city: city.text.trim(),
+    );
+
     if (!(formKey.currentState?.validate() ?? false)) {
       return false;
     }
@@ -82,6 +154,9 @@ class RegisterViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      await _localStorage.saveLastLoginEmail(emailController.text.trim());
+      await _localStorage.clearRegisterDraft();
+
       isLoading = false;
       notifyListeners();
       return true;
@@ -95,6 +170,9 @@ class RegisterViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _draftDebounce?.cancel();
+    _removeDraftListeners();
+
     name.dispose();
     emailController.dispose();
     passwordController.dispose();

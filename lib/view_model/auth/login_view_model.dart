@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:ubook_app/repository/auth/auth_local_storage.dart';
 
 class LoginViewModel extends ChangeNotifier {
+  final AuthLocalStorage _localStorage;
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
@@ -9,6 +11,20 @@ class LoginViewModel extends ChangeNotifier {
   String? errorMessage;
 
   final formKey = GlobalKey<FormState>();
+
+  LoginViewModel({AuthLocalStorage? localStorage})
+      : _localStorage = localStorage ?? AuthLocalStorage() {
+    _restoreLastLoginEmail();
+  }
+
+  Future<void> _restoreLastLoginEmail() async {
+    final lastEmail = await _localStorage.getLastLoginEmail();
+    if (lastEmail == null || lastEmail.isEmpty) return;
+    if (emailController.text.isNotEmpty) return;
+
+    emailController.text = lastEmail;
+    notifyListeners();
+  }
 
   String? validateEmail(String? value, {String field = 'Correo'}) {
     if (!submitted) return null;
@@ -52,10 +68,16 @@ class LoginViewModel extends ChangeNotifier {
 
       // Login exitoso Solo para pruebas
       if (email == 'test@test.com' && password == 'test1234') {
+        await _localStorage.saveLastLoginEmail(email);
+        await _localStorage.saveLastLoginAt(DateTime.now());
+        await _localStorage.setHasActiveSession(true);
+
         isLoading = false;
         notifyListeners();
         return true;
       } else {
+        await _localStorage.setHasActiveSession(false);
+
         errorMessage = 'Credenciales incorrectas';
         isLoading = false;
         notifyListeners();
