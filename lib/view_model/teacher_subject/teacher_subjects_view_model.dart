@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../model/teachers/teacher.dart';
 import '../../model/subjectteacher/subjectteacher.dart';
 import '../../model/subjects/subjects.dart';
+import '../../repository/teacher_subject/teacher_subject_local_storage.dart';
 
 // ---------------------------------------------------------------------------
 // FakeApi — simula backend. Incluye materias por defecto cuando no se inyectan.
@@ -16,6 +17,15 @@ class _FakeApi {
   ];
 
   static final List<SubjectTeacher> _links = [];
+
+  /// Inserta links desde caché sin duplicar por id. Permite que el fake api
+  /// actúe como fuente única de verdad aun después de reiniciar la app.
+  static void hydrateLinks(List<SubjectTeacher> cached) {
+    final existing = _links.map((l) => l.id).toSet();
+    for (final link in cached) {
+      if (!existing.contains(link.id)) _links.add(link);
+    }
+  }
 
   static Future<List<Subject>> fetchSubjects() async {
     await Future.delayed(const Duration(milliseconds: 400));
@@ -69,23 +79,33 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
   final Subject? subject;
   final List<Subject> allSubjects;
   final List<Teacher> allTeachers;
+  final TeacherSubjectLocalStorage _localStorage;
 
   TeacherSubjectsViewModel({
     this.teacher,
     this.subject,
     this.allSubjects = const [],
     this.allTeachers = const [],
-  }) : assert(teacher != null || subject != null) {
+    TeacherSubjectLocalStorage? localStorage,
+  })  : _localStorage = localStorage ?? TeacherSubjectLocalStorage(),
+        assert(teacher != null || subject != null) {
     _load();
   }
 
   List<SubjectTeacher> _links = [];
-  List<Subject> _subjects = []; // se usa internamente
+  List<Subject> _subjects = [];
 
   bool isInitialLoading = true;
   bool isBusy = false;
   String? errorMessage;
   String _searchQuery = '';
+
+  int get storedLinkCount => _links.length;
+
+  String get _ownerId => isTeacherMode ? teacher!.id : subject!.id;
+
+  TeacherSubjectOwner get _ownerKind =>
+      isTeacherMode ? TeacherSubjectOwner.teacher : TeacherSubjectOwner.subject;
 
   String get searchQuery => _searchQuery;
   bool get isTeacherMode => teacher != null;
@@ -135,13 +155,22 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
     try {
-      // Si no llegaron materias de afuera, las carga internamente
       if (allSubjects.isEmpty) {
         _subjects = await _FakeApi.fetchSubjects();
       }
+
+      // Rehidratamos el fake api desde la caché local antes de consultar,
+      // porque _FakeApi._links es estático y se pierde al reiniciar la app.
+      // Sin esto, un fetch posterior devolvería solo lo creado en la sesión
+      // actual y sobreescribiría lo persistido.
+      final cached = await _localStorage.getLinks(_ownerKind, _ownerId);
+      _FakeApi.hydrateLinks(cached);
+
       _links = isTeacherMode
           ? await _FakeApi.fetchLinksByTeacher(teacher!.id)
           : await _FakeApi.fetchLinksBySubject(subject!.id);
+
+      await _persistState();
     } catch (_) {
       errorMessage = 'No se pudo cargar la información. Intenta de nuevo.';
     } finally {
@@ -157,6 +186,10 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
     await _load();
   }
 
+  Future<void> _persistState() async {
+    await _localStorage.saveLinks(_ownerKind, _ownerId, _links);
+  }
+
   // ── asignar / quitar (modo profesor) ─────────────────────────────────────
   Future<bool> assignSubject(Subject subject) async {
     isBusy = true;
@@ -169,6 +202,7 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
         subject: subject,
       );
       _links.add(link);
+      await _persistState();
       errorMessage = null;
       return true;
     } catch (_) {
@@ -189,6 +223,7 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
       );
       await _FakeApi.removeLink(link.id);
       _links.remove(link);
+      await _persistState();
       errorMessage = null;
       return true;
     } catch (_) {
@@ -207,6 +242,7 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
     try {
       await _FakeApi.removeLink(link.id);
       _links.remove(link);
+      await _persistState();
       errorMessage = null;
       return true;
     } catch (_) {
