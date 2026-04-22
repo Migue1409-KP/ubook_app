@@ -1,4 +1,5 @@
 import 'computer_lab.dart';
+import 'computer_lab_dao.dart';
 
 /// Repository contract for Computer Labs.
 abstract class ComputerLabRepository {
@@ -6,25 +7,17 @@ abstract class ComputerLabRepository {
   Future<List<ComputerLab>> getAll();
 }
 
-/// Simple in-memory implementation.
-class InMemoryComputerLabRepository implements ComputerLabRepository {
-  InMemoryComputerLabRepository._internal();
-  static final InMemoryComputerLabRepository instance =
-      InMemoryComputerLabRepository._internal();
+class FloorComputerLabRepository implements ComputerLabRepository {
+  FloorComputerLabRepository(this._dao);
 
-  final List<ComputerLab> _items = [];
+  final ComputerLabDao _dao;
 
   @override
   Future<ComputerLab> save(ComputerLab lab) async {
-    final index = _items.indexWhere((e) => e.id == lab.id);
-    if (index >= 0) {
-      _items[index] = lab;
-    } else {
-      _items.add(lab);
-    }
+    await _dao.upsertLab(lab);
     return lab;
   }
 
   @override
-  Future<List<ComputerLab>> getAll() async => List.unmodifiable(_items);
+  Future<List<ComputerLab>> getAll() => _dao.findAllLabs();
 }

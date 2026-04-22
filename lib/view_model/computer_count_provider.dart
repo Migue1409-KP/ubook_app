@@ -11,9 +11,13 @@ class ComputerCountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setTotalComputers(int count) {
+    _totalComputers = count < 0 ? 0 : count;
+    notifyListeners();
+  }
+
   void reset() {
     _totalComputers = 0;
     notifyListeners();
   }
 }
-

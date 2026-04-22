@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../view_model/computer_lab_form_view_model.dart';
 import '../../model/computer_lab/computer_lab.dart';
+import '../../model/computer_lab/computer_lab_repository.dart';
 import '../../view_model/computer_count_provider.dart';
 
 class ComputerLabFormView extends StatefulWidget {
@@ -12,28 +13,66 @@ class ComputerLabFormView extends StatefulWidget {
 }
 
 class _ComputerLabFormViewState extends State<ComputerLabFormView> {
-  late final ComputerLabFormViewModel _vm;
+  ComputerLabFormViewModel? _vm;
+  bool _didInitialize = false;
 
   @override
-  void initState() {
-    super.initState();
-    _vm = ComputerLabFormViewModel();
-    _vm.addListener(() => setState(() {}));
-    _vm.loadSavedLabs();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didInitialize) {
+      return;
+    }
+
+    final repository = context.read<ComputerLabRepository>();
+    final viewModel = ComputerLabFormViewModel(repository: repository);
+    viewModel.addListener(_handleViewModelChange);
+    _vm = viewModel;
+    _didInitialize = true;
+    _loadSavedLabs();
+  }
+
+  Future<void> _loadSavedLabs() async {
+    final viewModel = _vm;
+    if (viewModel == null) {
+      return;
+    }
+
+    await viewModel.loadSavedLabs();
+    if (!mounted) {
+      return;
+    }
+
+    final totalComputers = viewModel.savedLabs.fold<int>(
+      0,
+      (sum, lab) => sum + lab.capacity,
+    );
+    context.read<ComputerCountProvider>().setTotalComputers(totalComputers);
+  }
+
+  void _handleViewModelChange() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
-    _vm.dispose();
+    _vm?.removeListener(_handleViewModelChange);
+    _vm?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final vm = _vm;
+    if (vm == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Computer Lab Form')),
       body: Form(
-        key: _vm.formKey,
+        key: vm.formKey,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -48,7 +87,7 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                       const Icon(Icons.meeting_room),
                       const SizedBox(width: 8),
                       Text(
-                        'Total laboratorios: ${_vm.storedLabCount}',
+                        'Total laboratorios: ${vm.storedLabCount}',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ],
@@ -76,14 +115,14 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                 ),
               ),
               const SizedBox(height: 12),
-              if (_vm.isLoadingLabs)
+              if (vm.isLoadingLabs)
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     child: CircularProgressIndicator(),
                   ),
                 )
-              else if (_vm.savedLabs.isNotEmpty) ...[
+              else if (vm.savedLabs.isNotEmpty) ...[
                 Text(
                   'Computers almacenados',
                   style: Theme.of(context).textTheme.titleMedium,
@@ -92,10 +131,10 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                 SizedBox(
                   height: 220,
                   child: ListView.separated(
-                    itemCount: _vm.savedLabs.length,
+                    itemCount: vm.savedLabs.length,
                     shrinkWrap: true,
                     itemBuilder: (context, index) {
-                      final lab = _vm.savedLabs[index];
+                      final lab = vm.savedLabs[index];
                       return Card(
                         child: ListTile(
                           leading: CircleAvatar(child: Text('${index + 1}')),
@@ -111,43 +150,43 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                         ),
                       );
                     },
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, index) => const SizedBox(height: 8),
                   ),
                 ),
                 const SizedBox(height: 16),
               ],
               TextFormField(
-                controller: _vm.nameController,
+                controller: vm.nameController,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: 'Name',
                   hintText: 'e.g., Lab A',
                 ),
-                validator: (v) => _vm.validateRequired(v, field: 'Name'),
+                validator: (v) => vm.validateRequired(v, field: 'Name'),
               ),
               const SizedBox(height: 12),
               TextFormField(
-                controller: _vm.buildingController,
+                controller: vm.buildingController,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: 'Building',
                   hintText: 'e.g., Main Building',
                 ),
-                validator: (v) => _vm.validateRequired(v, field: 'Building'),
+                validator: (v) => vm.validateRequired(v, field: 'Building'),
               ),
               const SizedBox(height: 12),
               TextFormField(
-                controller: _vm.roomNumberController,
+                controller: vm.roomNumberController,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: 'Room Number',
                   hintText: 'e.g., 204B',
                 ),
-                validator: (v) => _vm.validateRequired(v, field: 'Room Number'),
+                validator: (v) => vm.validateRequired(v, field: 'Room Number'),
               ),
               const SizedBox(height: 12),
               TextFormField(
-                controller: _vm.capacityController,
+                controller: vm.capacityController,
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
@@ -155,7 +194,7 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                   hintText: 'p. ej., 30',
                 ),
                 validator: (v) =>
-                    _vm.validatePositiveInt(v, field: 'Número de computadoras'),
+                    vm.validatePositiveInt(v, field: 'Número de computadoras'),
               ),
               const SizedBox(height: 12),
               Row(
@@ -163,16 +202,16 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                   const Text('Available'),
                   const SizedBox(width: 8),
                   Switch(
-                    value: _vm.available,
+                    value: vm.available,
                     onChanged: (val) {
-                      setState(() => _vm.available = val);
+                      setState(() => vm.available = val);
                     },
                   ),
                 ],
               ),
               const SizedBox(height: 12),
               TextFormField(
-                controller: _vm.equipmentController,
+                controller: vm.equipmentController,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: 'Equipment (comma separated)',
@@ -181,35 +220,35 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
               ),
               const SizedBox(height: 12),
               TextFormField(
-                controller: _vm.notesController,
+                controller: vm.notesController,
                 decoration: const InputDecoration(labelText: 'Notes'),
                 maxLines: 3,
               ),
               const SizedBox(height: 24),
               FilledButton.icon(
-                onPressed: _vm.isSaving
+                onPressed: vm.isSaving
                     ? null
                     : () async {
-                        final ComputerLab? saved = await _vm.submit();
+                        final counter = context.read<ComputerCountProvider>();
+                        final messenger = ScaffoldMessenger.of(context);
+                        final ComputerLab? saved = await vm.submit();
                         if (saved != null && mounted) {
                           // Add the number of computers to the counter
-                          context.read<ComputerCountProvider>().addComputers(
-                            saved.capacity,
-                          );
-                          _vm.clearForm();
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          counter.addComputers(saved.capacity);
+                          vm.clearForm();
+                          messenger.showSnackBar(
                             const SnackBar(content: Text('Computer Lab saved')),
                           );
                         }
                       },
-                icon: _vm.isSaving
+                icon: vm.isSaving
                     ? const SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.save),
-                label: Text(_vm.isSaving ? 'Saving...' : 'Save'),
+                label: Text(vm.isSaving ? 'Saving...' : 'Save'),
               ),
             ],
           ),

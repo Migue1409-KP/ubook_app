@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../model/computer_lab/computer_lab.dart';
 import '../model/computer_lab/computer_lab_repository.dart';
 
 class ComputerLabFormViewModel extends ChangeNotifier {
-  static const String _labCountKey = 'computer_lab_count';
-
   ComputerLabFormViewModel({ComputerLabRepository? repository})
-    : _repository = repository ?? InMemoryComputerLabRepository.instance;
+    : _repository = repository;
 
-  final ComputerLabRepository _repository;
+  final ComputerLabRepository? _repository;
 
   // Controllers
   final nameController = TextEditingController();
@@ -28,16 +25,18 @@ class ComputerLabFormViewModel extends ChangeNotifier {
   final formKey = GlobalKey<FormState>();
 
   Future<void> loadSavedLabs() async {
+    final repository = _repository;
+    if (repository == null) {
+      throw StateError(
+        'ComputerLabFormViewModel requiere un ComputerLabRepository configurado.',
+      );
+    }
+
     isLoadingLabs = true;
     notifyListeners();
 
-    final preferences = await SharedPreferences.getInstance();
-    storedLabCount = preferences.getInt(_labCountKey) ?? 0;
-    savedLabs = await _repository.getAll();
-    if (savedLabs.length > storedLabCount) {
-      storedLabCount = savedLabs.length;
-      await preferences.setInt(_labCountKey, storedLabCount);
-    }
+    savedLabs = await repository.getAll();
+    storedLabCount = savedLabs.length;
 
     isLoadingLabs = false;
     notifyListeners();
@@ -51,14 +50,24 @@ class ComputerLabFormViewModel extends ChangeNotifier {
   }
 
   String? validatePositiveInt(String? value, {String field = 'Capacity'}) {
-    if (value == null || value.trim().isEmpty) return '$field is required';
+    if (value == null || value.trim().isEmpty) {
+      return '$field is required';
+    }
     final parsed = int.tryParse(value);
-    if (parsed == null || parsed <= 0)
+    if (parsed == null || parsed <= 0) {
       return '$field must be a positive number';
+    }
     return null;
   }
 
   Future<ComputerLab?> submit() async {
+    final repository = _repository;
+    if (repository == null) {
+      throw StateError(
+        'ComputerLabFormViewModel requiere un ComputerLabRepository configurado.',
+      );
+    }
+
     if (!(formKey.currentState?.validate() ?? false)) return null;
     isSaving = true;
     notifyListeners();
@@ -80,11 +89,9 @@ class ComputerLabFormViewModel extends ChangeNotifier {
       notes: notesController.text.trim(),
     );
 
-    final saved = await _repository.save(lab);
-    savedLabs = await _repository.getAll();
+    final saved = await repository.save(lab);
+    savedLabs = await repository.getAll();
     storedLabCount = savedLabs.length;
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setInt(_labCountKey, storedLabCount);
 
     isSaving = false;
     notifyListeners();
