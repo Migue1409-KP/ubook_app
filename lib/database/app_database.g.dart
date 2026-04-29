@@ -74,13 +74,15 @@ class _$AppDatabase extends AppDatabase {
 
   UserDao? _userDaoInstance;
 
+  ReviewDao? _reviewDaoInstance;
+
   Future<sqflite.Database> open(
     String path,
     List<Migration> migrations, [
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 1,
+      version: 2,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -98,6 +100,8 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `users` (`id` TEXT NOT NULL, `email` TEXT NOT NULL, `name` TEXT NOT NULL, `password` TEXT NOT NULL, `birthDate` INTEGER, `educationalCenter` TEXT NOT NULL, `career` TEXT NOT NULL, `city` TEXT NOT NULL, `profileImageUrl` TEXT, `authProvider` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
+            'CREATE TABLE IF NOT EXISTS `reviews` (`id` TEXT NOT NULL, `entityId` TEXT NOT NULL, `entityType` TEXT NOT NULL, `userId` TEXT NOT NULL, `rating` INTEGER NOT NULL, `title` TEXT NOT NULL, `content` TEXT, `createdAtMs` INTEGER, `updatedAtMs` INTEGER, `metadataJson` TEXT, PRIMARY KEY (`id`))');
+        await database.execute(
             'CREATE UNIQUE INDEX `index_users_email` ON `users` (`email`)');
 
         await callback?.onCreate?.call(database, version);
@@ -109,6 +113,11 @@ class _$AppDatabase extends AppDatabase {
   @override
   UserDao get userDao {
     return _userDaoInstance ??= _$UserDao(database, changeListener);
+  }
+
+  @override
+  ReviewDao get reviewDao {
+    return _reviewDaoInstance ??= _$ReviewDao(database, changeListener);
   }
 }
 
@@ -277,6 +286,127 @@ class _$UserDao extends UserDao {
   @override
   Future<int> deleteUser(UserModel user) {
     return _userModelDeletionAdapter.deleteAndReturnChangedRows(user);
+  }
+}
+
+class _$ReviewDao extends ReviewDao {
+  _$ReviewDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _reviewInsertionAdapter = InsertionAdapter(
+            database,
+            'reviews',
+            (Review item) => <String, Object?>{
+                  'id': item.id,
+                  'entityId': item.entityId,
+                  'entityType': item.entityType,
+                  'userId': item.userId,
+                  'rating': item.rating,
+                  'title': item.title,
+                  'content': item.content,
+                  'createdAtMs': item.createdAtMs,
+                  'updatedAtMs': item.updatedAtMs,
+                  'metadataJson': item.metadataJson
+                }),
+        _reviewUpdateAdapter = UpdateAdapter(
+            database,
+            'reviews',
+            ['id'],
+            (Review item) => <String, Object?>{
+                  'id': item.id,
+                  'entityId': item.entityId,
+                  'entityType': item.entityType,
+                  'userId': item.userId,
+                  'rating': item.rating,
+                  'title': item.title,
+                  'content': item.content,
+                  'createdAtMs': item.createdAtMs,
+                  'updatedAtMs': item.updatedAtMs,
+                  'metadataJson': item.metadataJson
+                }),
+        _reviewDeletionAdapter = DeletionAdapter(
+            database,
+            'reviews',
+            ['id'],
+            (Review item) => <String, Object?>{
+                  'id': item.id,
+                  'entityId': item.entityId,
+                  'entityType': item.entityType,
+                  'userId': item.userId,
+                  'rating': item.rating,
+                  'title': item.title,
+                  'content': item.content,
+                  'createdAtMs': item.createdAtMs,
+                  'updatedAtMs': item.updatedAtMs,
+                  'metadataJson': item.metadataJson
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<Review> _reviewInsertionAdapter;
+
+  final UpdateAdapter<Review> _reviewUpdateAdapter;
+
+  final DeletionAdapter<Review> _reviewDeletionAdapter;
+
+  @override
+  Future<List<Review>> findByEntity(
+    String entityId,
+    String entityType,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM reviews WHERE entityId = ?1 AND entityType = ?2 ORDER BY createdAtMs DESC',
+        mapper: (Map<String, Object?> row) => Review(id: row['id'] as String, entityId: row['entityId'] as String, entityType: row['entityType'] as String, userId: row['userId'] as String, rating: row['rating'] as int, title: row['title'] as String, content: row['content'] as String?, createdAtMs: row['createdAtMs'] as int?, updatedAtMs: row['updatedAtMs'] as int?, metadataJson: row['metadataJson'] as String?),
+        arguments: [entityId, entityType]);
+  }
+
+  @override
+  Future<Review?> findById(String id) async {
+    return _queryAdapter.query('SELECT * FROM reviews WHERE id = ?1 LIMIT 1',
+        mapper: (Map<String, Object?> row) => Review(
+            id: row['id'] as String,
+            entityId: row['entityId'] as String,
+            entityType: row['entityType'] as String,
+            userId: row['userId'] as String,
+            rating: row['rating'] as int,
+            title: row['title'] as String,
+            content: row['content'] as String?,
+            createdAtMs: row['createdAtMs'] as int?,
+            updatedAtMs: row['updatedAtMs'] as int?,
+            metadataJson: row['metadataJson'] as String?),
+        arguments: [id]);
+  }
+
+  @override
+  Future<int?> countReviews() async {
+    return _queryAdapter.query('SELECT COUNT(*) FROM reviews',
+        mapper: (Map<String, Object?> row) => row.values.first as int);
+  }
+
+  @override
+  Future<void> insertReview(Review review) async {
+    await _reviewInsertionAdapter.insert(review, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertReviews(List<Review> reviews) async {
+    await _reviewInsertionAdapter.insertList(reviews, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> updateReview(Review review) {
+    return _reviewUpdateAdapter.updateAndReturnChangedRows(
+        review, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> deleteReview(Review review) {
+    return _reviewDeletionAdapter.deleteAndReturnChangedRows(review);
   }
 }
 
