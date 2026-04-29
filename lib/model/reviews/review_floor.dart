@@ -13,7 +13,6 @@ class Review {
   final int rating;
   final String title;
   final String? content;
-  // Almacenar como milisegundos desde epoch (int) para compatibilidad con Floor
   final int? createdAtMs;
   final int? updatedAtMs;
   final String? metadata;
@@ -31,7 +30,6 @@ class Review {
     this.metadata,
   });
 
-  // Propiedades para convertir a/desde DateTime
   DateTime? get createdAt =>
       createdAtMs == null ? null : DateTime.fromMillisecondsSinceEpoch(createdAtMs!);
 

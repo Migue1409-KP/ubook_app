@@ -17,7 +17,6 @@ class FloorReviewRepository implements ReviewRepository {
 
   static final _demoReviews = <Review>[];
 
-  /// Inicializa el repositorio cargando datos demo si la BD está vacía.
   Future<void> init() async {
     if (_isHydrated) return;
 
@@ -40,7 +39,6 @@ class FloorReviewRepository implements ReviewRepository {
     final reviews = await database.reviewDao
         .getReviewsByEntity(entityId, entityType);
 
-    // Sort by createdAt descending
     reviews.sort((a, b) {
       final bDate = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
       final aDate = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);

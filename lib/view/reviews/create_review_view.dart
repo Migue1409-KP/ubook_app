@@ -4,7 +4,6 @@ import '../../view_model/reviews/create_review_view_model.dart';
 import '../../theme/app_colors.dart';
 
 class CreateReviewView extends StatelessWidget {
-  // Parámetros solicitados que deben ser enviados por quien convoque esta pantalla
   final String entityId;
   final String entityType;
   final String userId;
@@ -57,7 +56,6 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
   }
 
   Future<void> _onSubmit(CreateReviewViewModel viewModel) async {
-    // Validaciones básicas de mockup
     if (viewModel.rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -98,7 +96,6 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
       return;
     }
 
-    // Evita usar context si el widget fue desmontado.
     if (!mounted) {
       return;
     }
@@ -134,7 +131,6 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Sección de estellas para calificar
                   const Text(
                     'Tu calificación',
                     style: TextStyle(
@@ -163,7 +159,6 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Sección para el título
                   const Text(
                     'Título de la reseña',
                     style: TextStyle(
@@ -200,7 +195,6 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Sección para el contenido
                   const Text(
                     'Cuéntanos más',
                     style: TextStyle(
@@ -238,7 +232,6 @@ class _CreateReviewViewContentState extends State<_CreateReviewViewContent> {
                   ),
                   const SizedBox(height: 48),
 
-                  // Botón de enviar
                   SizedBox(
                     width: double.infinity,
                     height: 54,

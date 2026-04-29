@@ -20,7 +20,6 @@ class CreateReviewViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Método preparado para usarse después con lógica real
   Future<void> submitReview({
     required String entityId,
     required String entityType,
@@ -46,7 +45,6 @@ class CreateReviewViewModel extends ChangeNotifier {
         updatedAtMs: now.millisecondsSinceEpoch,
       );
 
-      // Este flujo ya usa repositorio en memoria y queda listo para backend.
       await _repository.createReview(review);
     } finally {
       _isLoading = false;
