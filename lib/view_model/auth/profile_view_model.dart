@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:ubook_app/model/auth/user_model.dart';
-import 'package:ubook_app/model/auth/auth_provider.dart';
+import 'package:ubook_app/repository/auth/auth_local_storage.dart';
+import 'package:ubook_app/repository/auth/floor_user_repository.dart';
+import 'package:ubook_app/repository/auth/user_repository.dart';
 
 class ProfileViewModel extends ChangeNotifier {
+  final AuthLocalStorage _localStorage;
+  final UserRepository _userRepository;
+
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final educationalCenterController = TextEditingController();
@@ -23,32 +28,36 @@ class ProfileViewModel extends ChangeNotifier {
 
   String? passwordErrorMessage;
 
-  final String _dummyPassword = 'test1234';
+  UserModel? _currentUser;
 
-  ProfileViewModel() {
-    _loadDummyUser();
+  ProfileViewModel({
+    AuthLocalStorage? localStorage,
+    UserRepository? userRepository,
+  }) : _localStorage = localStorage ?? AuthLocalStorage(),
+       _userRepository = userRepository ?? FloorUserRepository.instance {
+    _loadCurrentUser();
   }
 
-  void _loadDummyUser() {
-    final dummyUser = UserModel(
-      id: '1',
-      email: 'test@test.com',
-      name: 'test pepito',
-      birthDate: null,
-      educationalCenter: 'Universidad Católica del Oriente',
-      career: 'Ingeniería de Sistemas',
-      city: 'Rionegro',
-      profileImageUrl: null,
-      authProvider: AuthProvider.emailPassword,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+  Future<void> _loadCurrentUser() async {
+    final lastEmail = await _localStorage.getLastLoginEmail();
+    UserModel? user;
 
-    nameController.text = dummyUser.name;
-    emailController.text = dummyUser.email;
-    educationalCenterController.text = dummyUser.educationalCenter;
-    careerController.text = dummyUser.career;
-    cityController.text = dummyUser.city;
+    if (lastEmail != null && lastEmail.isNotEmpty) {
+      user = await _userRepository.findByEmail(lastEmail);
+    }
+
+    user ??= await _userRepository.findMostRecentUser();
+    _currentUser = user;
+
+    if (user != null) {
+      nameController.text = user.name;
+      emailController.text = user.email;
+      educationalCenterController.text = user.educationalCenter;
+      careerController.text = user.career;
+      cityController.text = user.city;
+    }
+
+    notifyListeners();
   }
 
   // Reutilizar validadores de RegisterViewModel con submittedPersonal
@@ -101,10 +110,28 @@ class ProfileViewModel extends ChangeNotifier {
       return false;
     }
 
+    final currentUser = _currentUser;
+    if (currentUser == null) {
+      passwordErrorMessage = 'No se encontró el usuario activo';
+      notifyListeners();
+      return false;
+    }
+
     isSavingProfile = true;
     notifyListeners();
 
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    final updatedUser = currentUser.copyWith(
+      name: nameController.text.trim(),
+      educationalCenter: educationalCenterController.text.trim(),
+      career: careerController.text.trim(),
+      city: cityController.text.trim(),
+      updatedAt: DateTime.now(),
+    );
+
+    await _userRepository.updateUser(updatedUser);
+    _currentUser = updatedUser;
+
+    await Future<void>.delayed(const Duration(milliseconds: 300));
 
     isSavingProfile = false;
     notifyListeners();
@@ -119,7 +146,14 @@ class ProfileViewModel extends ChangeNotifier {
       return false;
     }
 
-    if (currentPasswordController.text.trim() != _dummyPassword) {
+    final currentUser = _currentUser;
+    if (currentUser == null) {
+      passwordErrorMessage = 'No se encontró el usuario activo';
+      notifyListeners();
+      return false;
+    }
+
+    if (currentPasswordController.text.trim() != currentUser.password) {
       passwordErrorMessage = 'La contraseña actual no es correcta';
       notifyListeners();
       return false;
@@ -129,7 +163,15 @@ class ProfileViewModel extends ChangeNotifier {
     isChangingPassword = true;
     notifyListeners();
 
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    final updatedUser = currentUser.copyWith(
+      password: newPasswordController.text.trim(),
+      updatedAt: DateTime.now(),
+    );
+
+    await _userRepository.updateUser(updatedUser);
+    _currentUser = updatedUser;
+
+    await Future<void>.delayed(const Duration(milliseconds: 300));
 
     currentPasswordController.clear();
     newPasswordController.clear();
