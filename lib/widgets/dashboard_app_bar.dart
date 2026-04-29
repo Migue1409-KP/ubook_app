@@ -19,7 +19,9 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final routeName = ModalRoute.of(context)?.settings.name;
     return AppBar(
+      automaticallyImplyLeading: routeName == '/dashboard' ? false : true,
       elevation: 0,
       backgroundColor: AppColors.background,
       foregroundColor: AppColors.textPrimary,
