@@ -1,4 +1,3 @@
-import 'package:floor/floor.dart';
 import 'package:ubook_app/model/auth/auth_provider.dart';
 import 'package:ubook_app/model/auth/user_model.dart';
 import 'package:ubook_app/database/app_database.dart';
@@ -6,22 +5,16 @@ import 'package:ubook_app/database/app_database.dart';
 import 'user_repository.dart';
 
 class FloorUserRepository implements UserRepository {
-  FloorUserRepository._();
+  FloorUserRepository._(this._database);
 
-  static final FloorUserRepository instance = FloorUserRepository._();
+  static late final FloorUserRepository instance;
 
-  static const String _databaseName = 'ubook_app.db';
-
-  AppDatabase? _database;
-
-  Future<AppDatabase> _getDatabase() async {
-    if (_database != null) {
-      return _database!;
-    }
-
-    _database = await $FloorAppDatabase.databaseBuilder(_databaseName).build();
-    return _database!;
+  static FloorUserRepository initialize(AppDatabase database) {
+    instance = FloorUserRepository._(database);
+    return instance;
   }
+
+  final AppDatabase _database;
 
   UserModel _demoUser() {
     final now = DateTime.now();
@@ -44,8 +37,7 @@ class FloorUserRepository implements UserRepository {
 
   @override
   Future<void> ensureInitialized() async {
-    final database = await _getDatabase();
-    final userDao = database.userDao;
+    final userDao = _database.userDao;
 
     final demoUser = _demoUser();
     final existingUser = await userDao.findByEmail(demoUser.email);
@@ -56,49 +48,41 @@ class FloorUserRepository implements UserRepository {
 
   @override
   Future<UserModel?> findById(String id) async {
-    final database = await _getDatabase();
-    return database.userDao.findById(id);
+    return _database.userDao.findById(id);
   }
 
   @override
   Future<UserModel?> findByEmail(String email) async {
-    final database = await _getDatabase();
-    return database.userDao.findByEmail(email);
+    return _database.userDao.findByEmail(email);
   }
 
   @override
   Future<UserModel?> findMostRecentUser() async {
-    final database = await _getDatabase();
-    return database.userDao.findMostRecentUser();
+    return _database.userDao.findMostRecentUser();
   }
 
   @override
   Future<void> insertUser(UserModel user) async {
-    final database = await _getDatabase();
-    await database.userDao.insertUser(user);
+    await _database.userDao.insertUser(user);
   }
 
   @override
   Future<int> updateUser(UserModel user) async {
-    final database = await _getDatabase();
-    return database.userDao.updateUser(user);
+    return _database.userDao.updateUser(user);
   }
 
   @override
   Future<int> deleteUser(UserModel user) async {
-    final database = await _getDatabase();
-    return database.userDao.deleteUser(user);
+    return _database.userDao.deleteUser(user);
   }
 
   @override
   Future<void> deleteAllUsers() async {
-    final database = await _getDatabase();
-    await database.userDao.deleteAllUsers();
+    await _database.userDao.deleteAllUsers();
   }
 
   @override
   Future<int> countUsers() async {
-    final database = await _getDatabase();
-    return (await database.userDao.countUsers()) ?? 0;
+    return (await _database.userDao.countUsers()) ?? 0;
   }
 }

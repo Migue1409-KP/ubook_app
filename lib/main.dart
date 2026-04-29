@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ubook_app/database/app_database.dart';
 import 'package:ubook_app/view/subjects/subjects_view.dart';
 import 'package:ubook_app/repository/auth/auth_local_storage.dart';
 import 'package:ubook_app/repository/auth/floor_user_repository.dart';
@@ -17,18 +18,32 @@ import 'view/admin_user/admin_users_view.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await FloorUserRepository.instance.ensureInitialized();
-  runApp(const MyApp());
+
+  final database = await $FloorAppDatabase
+      .databaseBuilder('ubook_app.db')
+      .build();
+  final userRepository = FloorUserRepository.initialize(database);
+  await userRepository.ensureInitialized();
+
+  runApp(MyApp(database: database, userRepository: userRepository));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({
+    super.key,
+    required this.database,
+    required this.userRepository,
+  });
+
+  final AppDatabase database;
+  final UserRepository userRepository;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<UserRepository>.value(value: FloorUserRepository.instance),
+        Provider<AppDatabase>.value(value: database),
+        Provider<UserRepository>.value(value: userRepository),
         ChangeNotifierProvider(create: (_) => UserCountProvider()),
         ChangeNotifierProvider(create: (_) => TeacherCountProvider()),
         ChangeNotifierProvider(create: (_) => EducationalCenterCountProvider()),
