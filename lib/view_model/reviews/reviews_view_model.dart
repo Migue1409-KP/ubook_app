@@ -5,7 +5,7 @@ import '../../repository/reviews/review_repository.dart';
 
 class ReviewsViewModel extends ChangeNotifier {
   ReviewsViewModel({ReviewRepository? repository})
-    : _repository = repository ?? InMemoryReviewRepository.instance;
+    : _repository = repository ?? FloorReviewRepository();
 
   final ReviewRepository _repository;
 

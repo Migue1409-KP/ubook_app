@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ubook_app/view/subjects/subjects_view.dart';
 import 'package:ubook_app/repository/auth/auth_local_storage.dart';
+import 'package:ubook_app/repository/reviews/database_service.dart';
 import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
 import 'view/auth/profile_view.dart';
@@ -13,7 +14,12 @@ import 'view_model/educational_center/educational_center_count_provider.dart';
 import 'view_model/teachers/teacher_count_provider.dart';
 import 'view/admin_user/admin_users_view.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize the reviews database via singleton
+  await DatabaseService.instance.database;
+  
   runApp(const MyApp());
 }
 

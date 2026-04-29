@@ -5,7 +5,7 @@ import '../../repository/reviews/review_repository.dart';
 
 class CreateReviewViewModel extends ChangeNotifier {
   CreateReviewViewModel({ReviewRepository? repository})
-    : _repository = repository ?? InMemoryReviewRepository.instance;
+    : _repository = repository ?? FloorReviewRepository();
 
   final ReviewRepository _repository;
 
@@ -42,8 +42,8 @@ class CreateReviewViewModel extends ChangeNotifier {
         rating: _rating,
         title: title,
         content: content.isEmpty ? null : content,
-        createdAt: now,
-        updatedAt: now,
+        createdAtMs: now.millisecondsSinceEpoch,
+        updatedAtMs: now.millisecondsSinceEpoch,
       );
 
       // Este flujo ya usa repositorio en memoria y queda listo para backend.

@@ -39,24 +39,6 @@ class Review {
       updatedAtMs == null ? null : DateTime.fromMillisecondsSinceEpoch(updatedAtMs!);
 
   factory Review.fromJson(Map<String, dynamic> json) {
-    var createdAtValue = json['created_at'];
-    var updatedAtValue = json['updated_at'];
-    
-    int? createdAtMs;
-    int? updatedAtMs;
-    
-    if (createdAtValue != null) {
-        createdAtMs = createdAtValue is String
-          ? DateTime.parse(createdAtValue).millisecondsSinceEpoch
-          : (createdAtValue as DateTime).millisecondsSinceEpoch;
-    }
-    
-    if (updatedAtValue != null) {
-        updatedAtMs = updatedAtValue is String
-          ? DateTime.parse(updatedAtValue).millisecondsSinceEpoch
-          : (updatedAtValue as DateTime).millisecondsSinceEpoch;
-    }
-    
     return Review(
       id: json['id'] as String,
       entityId: json['entity_id'] as String,
@@ -65,8 +47,12 @@ class Review {
       rating: json['rating'] as int,
       title: json['title'] as String,
       content: json['content'] as String?,
-      createdAtMs: createdAtMs,
-      updatedAtMs: updatedAtMs,
+      createdAtMs: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String).millisecondsSinceEpoch
+          : null,
+      updatedAtMs: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String).millisecondsSinceEpoch
+          : null,
       metadata: json['metadata'] as String?,
     );
   }
