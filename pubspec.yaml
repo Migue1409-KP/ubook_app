@@ -49,7 +49,7 @@ dependencies:
   # Persistencia local simple (no sensible)
   shared_preferences: ^2.3.2
 
-  # Persistencia con ORM Floor — reseñas
+  # Persistencia con ORM Floor y SQLite
   floor: ^1.5.0
   sqflite: ^2.4.2+1
   path: ^1.8.3
