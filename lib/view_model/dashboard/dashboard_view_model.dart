@@ -1,6 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../../repository/dashboard/dashboard_local_storage.dart';
+
 class DashboardViewModel extends ChangeNotifier {
+  DashboardViewModel() {
+    unawaited(_loadSelectedFilter());
+  }
+
+  final DashboardLocalStorage _localStorage = DashboardLocalStorage();
+
   // Dummy data for Top 5 Educational Centers
   final List<Map<String, dynamic>> topCenters = [
     {
@@ -120,6 +130,15 @@ class DashboardViewModel extends ChangeNotifier {
 
   void setFilter(String filter) {
     selectedFilter = filter;
+    unawaited(_localStorage.saveSelectedFilter(filter));
+    notifyListeners();
+  }
+
+  Future<void> _loadSelectedFilter() async {
+    final savedFilter = await _localStorage.getSelectedFilter();
+    if (savedFilter == null || !filterOptions.contains(savedFilter)) return;
+
+    selectedFilter = savedFilter;
     notifyListeners();
   }
 }
