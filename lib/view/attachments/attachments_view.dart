@@ -11,8 +11,8 @@ class AttachmentsView extends StatefulWidget {
 
   const AttachmentsView({
     super.key,
-    this.subjectId    = '',
-    this.teacherId    = '',
+    this.subjectId = '',
+    this.teacherId = '',
     this.uploadedById = '',
   });
 
@@ -21,31 +21,30 @@ class AttachmentsView extends StatefulWidget {
 }
 
 class _AttachmentsViewState extends State<AttachmentsView> {
-  late final AttachmentsViewModel _vm;
+  // Singleton: no se crea ni se destruye con la vista.
+  // La selección de archivo y la lista persisten al navegar.
+  final AttachmentsViewModel _vm = AttachmentsViewModel.instance;
 
   @override
   void initState() {
     super.initState();
-    _vm = AttachmentsViewModel();
   }
 
   @override
   void dispose() {
-    _vm.dispose();
+    // No llamamos _vm.dispose() — el singleton debe seguir vivo.
     super.dispose();
   }
 
   Future<void> _openForm() async {
-    _vm.clearSelection();
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _AttachmentForm(
-        vm:           _vm,
-        uploadedById: widget.uploadedById,
-        subjectId:    widget.subjectId,
-        teacherId:    widget.teacherId,
+        vm: _vm,
+        subjectId: widget.subjectId,
+        teacherId: widget.teacherId,
       ),
     );
   }
@@ -62,7 +61,9 @@ class _AttachmentsViewState extends State<AttachmentsView> {
             child: const Text('Cancelar'),
           ),
           TextButton(
-            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Eliminar'),
           ),
@@ -77,7 +78,10 @@ class _AttachmentsViewState extends State<AttachmentsView> {
     if (!mounted) return;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Theme.of(context).colorScheme.error),
+        SnackBar(
+          content: Text(error),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
     }
   }
@@ -101,10 +105,10 @@ class _AttachmentsViewState extends State<AttachmentsView> {
             itemCount: _vm.attachments.length,
             separatorBuilder: (context, index) => const SizedBox(height: 10),
             itemBuilder: (context, i) => _AttachmentCard(
-              attachment:   _vm.attachments[i],
-              isOpening:  _vm.isOpening,
+              attachment: _vm.attachments[i],
+              isOpening: _vm.isOpening,
               onDelete: () => _confirmDeletion(i),
-              onOpen:    () => _openFile(_vm.attachments[i]),
+              onOpen: () => _openFile(_vm.attachments[i]),
             ),
           );
         },
@@ -122,13 +126,11 @@ class _AttachmentsViewState extends State<AttachmentsView> {
 
 class _AttachmentForm extends StatefulWidget {
   final AttachmentsViewModel vm;
-  final String uploadedById;
   final String subjectId;
   final String teacherId;
 
   const _AttachmentForm({
     required this.vm,
-    required this.uploadedById,
     required this.subjectId,
     required this.teacherId,
   });
@@ -138,18 +140,26 @@ class _AttachmentForm extends StatefulWidget {
 }
 
 class _AttachmentFormState extends State<_AttachmentForm> {
-  final _formKey      = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final _fileNameController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    // Restaura el nombre personalizado guardado en el VM (persiste entre aperturas del modal).
+    _fileNameController.text = widget.vm.customFileName;
+    // Sincroniza ediciones del usuario de vuelta al VM.
+    _fileNameController.addListener(() {
+      widget.vm.updateCustomFileName(_fileNameController.text);
+    });
     widget.vm.addListener(_onViewModelChanged);
   }
 
   void _onViewModelChanged() {
-    if (widget.vm.fileName != null && _fileNameController.text.isEmpty) {
-      _fileNameController.text = widget.vm.fileName!;
+    // Solo sobreescribe el campo cuando se selecciona un archivo nuevo
+    // (el VM rellena customFileName automáticamente con el nombre del archivo).
+    if (_fileNameController.text != widget.vm.customFileName) {
+      _fileNameController.text = widget.vm.customFileName;
     }
   }
 
@@ -163,10 +173,9 @@ class _AttachmentFormState extends State<_AttachmentForm> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     final attachment = widget.vm.buildAttachment(
-      name:       _fileNameController.text.trim(),
-      uploadedById: widget.uploadedById,
-      subjectId:    widget.subjectId,
-      teacherId:    widget.teacherId,
+      name: _fileNameController.text.trim(),
+      subjectId: widget.subjectId,
+      teacherId: widget.teacherId,
     );
     if (attachment == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -178,6 +187,7 @@ class _AttachmentFormState extends State<_AttachmentForm> {
       return;
     }
     widget.vm.addAttachment(attachment);
+    widget.vm.clearSelection();
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -201,7 +211,8 @@ class _AttachmentFormState extends State<_AttachmentForm> {
             children: [
               Center(
                 child: Container(
-                  width: 40, height: 4,
+                  width: 40,
+                  height: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
                     color: Theme.of(context).dividerColor,
@@ -210,9 +221,12 @@ class _AttachmentFormState extends State<_AttachmentForm> {
                 ),
               ),
 
-              Text('Subir adjunto',
-                  style: Theme.of(context).textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'Subir adjunto',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 20),
 
               ListenableBuilder(
@@ -228,9 +242,18 @@ class _AttachmentFormState extends State<_AttachmentForm> {
                   isLoading: widget.vm.isSelecting,
                   onSelect: () => widget.vm.selectFile(
                     allowedExtensions: [
-                      'pdf', 'doc', 'docx', 'ppt', 'pptx',
-                      'xls', 'xlsx', 'jpg', 'jpeg', 'png',
-                      'zip', 'rar',
+                      'pdf',
+                      'doc',
+                      'docx',
+                      'ppt',
+                      'pptx',
+                      'xls',
+                      'xlsx',
+                      'jpg',
+                      'jpeg',
+                      'png',
+                      'zip',
+                      'rar',
                     ],
                   ),
                 ),
@@ -247,22 +270,24 @@ class _AttachmentFormState extends State<_AttachmentForm> {
               ),
               const SizedBox(height: 24),
 
-              Row(children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancelar'),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cancelar'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _submit,
-                    icon: const Icon(Icons.upload),
-                    label: const Text('Subir'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _submit,
+                      icon: const Icon(Icons.upload),
+                      label: const Text('Subir'),
+                    ),
                   ),
-                ),
-              ]),
+                ],
+              ),
             ],
           ),
         ),
@@ -272,8 +297,8 @@ class _AttachmentFormState extends State<_AttachmentForm> {
 }
 
 class _AttachmentCard extends StatelessWidget {
-  final Attachment      attachment;
-  final bool         isOpening;
+  final Attachment attachment;
+  final bool isOpening;
   final VoidCallback onDelete;
   final VoidCallback onOpen;
 
@@ -286,18 +311,25 @@ class _AttachmentCard extends StatelessWidget {
 
   IconData get _icon {
     switch (attachment.fileType.toUpperCase()) {
-      case 'PDF':  return Icons.picture_as_pdf;
+      case 'PDF':
+        return Icons.picture_as_pdf;
       case 'DOCX':
-      case 'DOC':  return Icons.description;
+      case 'DOC':
+        return Icons.description;
       case 'PPTX':
-      case 'PPT':  return Icons.slideshow;
+      case 'PPT':
+        return Icons.slideshow;
       case 'XLSX':
-      case 'XLS':  return Icons.table_chart;
+      case 'XLS':
+        return Icons.table_chart;
       case 'JPG':
       case 'JPEG':
-      case 'PNG':  return Icons.image;
-      case 'ZIP':  return Icons.folder_zip;
-      default:     return Icons.insert_drive_file;
+      case 'PNG':
+        return Icons.image;
+      case 'ZIP':
+        return Icons.folder_zip;
+      default:
+        return Icons.insert_drive_file;
     }
   }
 
@@ -314,7 +346,7 @@ class _AttachmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Card(
       elevation: 2,
       color: theme.colorScheme.surface,
@@ -324,7 +356,8 @@ class _AttachmentCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 48, height: 48,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: _color(colorScheme).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
@@ -340,7 +373,8 @@ class _AttachmentCard extends StatelessWidget {
                   Text(
                     attachment.fileName,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w700),
+                      fontWeight: FontWeight.w700,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
@@ -348,12 +382,15 @@ class _AttachmentCard extends StatelessWidget {
                     spacing: 12,
                     runSpacing: 2,
                     children: [
-                    _Chip(Icons.category,     attachment.fileType),
-                    _Chip(Icons.person,        attachment.uploadedById),
-                    _Chip(Icons.book,          attachment.subjectId),
-                    _Chip(Icons.school,        attachment.teacherId),
-                    _Chip(Icons.data_usage,    attachment.fileSizeFormatted),
-                    _Chip(Icons.calendar_today, _formatDate(attachment.uploadedAt)),
+                      _Chip(Icons.category, attachment.fileType),
+                      _Chip(Icons.person, attachment.uploadedById),
+                      _Chip(Icons.book, attachment.subjectId),
+                      _Chip(Icons.school, attachment.teacherId),
+                      _Chip(Icons.data_usage, attachment.fileSizeFormatted),
+                      _Chip(
+                        Icons.calendar_today,
+                        _formatDate(attachment.uploadedAt),
+                      ),
                     ],
                   ),
                 ],
@@ -364,7 +401,8 @@ class _AttachmentCard extends StatelessWidget {
                 ? const Padding(
                     padding: EdgeInsets.all(12),
                     child: SizedBox(
-                      width: 20, height: 20,
+                      width: 20,
+                      height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   )
@@ -375,7 +413,7 @@ class _AttachmentCard extends StatelessWidget {
                           : Icons.cloud_off,
                       color: attachment.fileBytes != null
                           ? AppColors.primary
-                                    : Theme.of(context).colorScheme.outlineVariant,
+                          : Theme.of(context).colorScheme.outlineVariant,
                     ),
                     tooltip: attachment.fileBytes != null
                         ? 'Ver / Descargar'
@@ -399,7 +437,7 @@ class _AttachmentCard extends StatelessWidget {
 
 class _Chip extends StatelessWidget {
   final IconData icon;
-  final String   text;
+  final String text;
   const _Chip(this.icon, this.text);
 
   @override
@@ -408,11 +446,7 @@ class _Chip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 12,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+        Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
         const SizedBox(width: 3),
         Text(
           text,
@@ -462,11 +496,7 @@ class _EmptyScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.folder_open,
-            size: 90,
-            color: AppColors.divider,
-          ),
+          Icon(Icons.folder_open, size: 90, color: AppColors.divider),
           const SizedBox(height: 16),
           Text(
             'Sin adjuntos todavía',

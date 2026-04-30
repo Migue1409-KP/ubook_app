@@ -6,33 +6,71 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../model/attachments/attachment.dart';
+import '../../repository/attachments/attachment_local_storage.dart';
 
 class AttachmentsViewModel extends ChangeNotifier {
+  AttachmentsViewModel._() {
+    _loadCustomFileName();
+  }
+
+  /// Instancia única que vive durante todo el ciclo de la app.
+  /// La selección de archivo y la lista de adjuntos se mantienen
+  /// aunque el usuario navegue fuera de la vista.
+  static final AttachmentsViewModel instance = AttachmentsViewModel._();
+
+  final _storage = AttachmentLocalStorage();
+
   final List<Attachment> _attachments = [];
   List<Attachment> get attachments => List.unmodifiable(_attachments);
 
+  /// Carga el nombre del archivo guardado en SharedPreferences al arrancar.
+  Future<void> _loadCustomFileName() async {
+    final saved = await _storage.getCustomFileName();
+    if (saved != null) {
+      customFileName = saved;
+      notifyListeners();
+    }
+  }
+
   Uint8List? fileBytes;
-  String?    fileName;
-  int?       fileSize;
-  String     detectedType = '';
-  bool       isSelecting = false;
-  bool       isOpening      = false;
+  String? fileName;
+
+  /// Nombre editable por el usuario. Se inicializa con el nombre del archivo
+  /// al seleccionarlo y se mantiene aunque se cierre el formulario.
+  String customFileName = '';
+  int? fileSize;
+  String detectedType = '';
+  bool isSelecting = false;
+  bool isOpening = false;
 
   bool get isFileSelected => fileBytes != null;
 
   String get formattedFileSize {
     if (fileSize == null) return '';
     final size = fileSize!;
-    if (size < 1024)     return '$size B';
-    if (size < 1048576)  return '${(size / 1024).toStringAsFixed(1)} KB';
+    if (size < 1024) return '$size B';
+    if (size < 1048576) return '${(size / 1024).toStringAsFixed(1)} KB';
     return '${(size / 1048576).toStringAsFixed(1)} MB';
   }
 
   static const _knownExtensions = [
-    'PDF', 'DOC', 'DOCX', 'PPT', 'PPTX', 'XLS', 'XLSX',
-    'JPG', 'JPEG', 'PNG', 'ZIP', 'RAR',
+    'PDF',
+    'DOC',
+    'DOCX',
+    'PPT',
+    'PPTX',
+    'XLS',
+    'XLSX',
+    'JPG',
+    'JPEG',
+    'PNG',
+    'ZIP',
+    'RAR',
   ];
 
+  // TODO(sqlite): Reemplazar con inserción real en SQLite via AttachmentDao.
+  // Eliminar este método y la lista _attachments cuando se implemente la base de datos.
+  // La lista _attachments solo vive en memoria; se pierde al cerrar la app.
   void addAttachment(Attachment attachment) {
     _attachments.add(attachment);
     notifyListeners();
@@ -54,11 +92,13 @@ class AttachmentsViewModel extends ChangeNotifier {
       );
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
-        final ext  = (file.extension ?? 'unknown').toUpperCase();
-        fileBytes  = file.bytes;
+        final ext = (file.extension ?? 'unknown').toUpperCase();
+        fileBytes = file.bytes;
         fileName = file.name;
+        customFileName = file.name; // auto-rellena; el usuario puede cambiarlo
         fileSize = file.size;
         detectedType = _knownExtensions.contains(ext) ? ext : 'OTHER';
+        await _storage.saveCustomFileName(customFileName);
       }
     } finally {
       isSelecting = false;
@@ -66,33 +106,45 @@ class AttachmentsViewModel extends ChangeNotifier {
     }
   }
 
+  /// Actualiza el nombre personalizado desde el campo de texto del formulario.
+  void updateCustomFileName(String name) {
+    customFileName = name;
+    _storage.saveCustomFileName(name);
+    // No notifyListeners: el controller ya refleja el cambio en la UI.
+  }
+
   void clearSelection() {
-    fileBytes  = null;
+    fileBytes = null;
     fileName = null;
+    customFileName = '';
     fileSize = null;
     detectedType = '';
+    _storage.clearCustomFileName();
     notifyListeners();
   }
 
   Attachment? buildAttachment({
     required String name,
-    required String uploadedById,
+    String uploadedById = '',
     required String subjectId,
     required String teacherId,
   }) {
     if (fileBytes == null) return null;
     return Attachment(
-      fileName:     name,
-      fileType:     detectedType,
+      fileName: name,
+      fileType: detectedType,
       uploadedById: uploadedById,
-      subjectId:    subjectId,
-      teacherId:    teacherId,
-      fileBytes:    fileBytes,
-      fileSize:     fileSize,
-      uploadedAt:   DateTime.now(),
+      subjectId: subjectId,
+      teacherId: teacherId,
+      fileBytes: fileBytes,
+      fileSize: fileSize,
+      uploadedAt: DateTime.now(),
     );
   }
 
+  // TODO(sqlite): Al implementar SQLite, el archivo debe leerse desde su ruta
+  // persistente en el sistema de archivos, no desde fileBytes en memoria.
+  // El directorio temporal usado aquí puede ser limpiado por el SO en cualquier momento.
   Future<String?> openFile(Attachment attachment) async {
     if (kIsWeb) return 'Download is not available in the web version';
 
@@ -102,8 +154,8 @@ class AttachmentsViewModel extends ChangeNotifier {
     isOpening = true;
     notifyListeners();
     try {
-      final directory    = await getTemporaryDirectory();
-      final path   = '${directory.path}/${attachment.fileName}';
+      final directory = await getTemporaryDirectory();
+      final path = '${directory.path}/${attachment.fileName}';
       await File(path).writeAsBytes(bytes, flush: true);
       final result = await OpenFile.open(path);
       if (result.type != ResultType.done) return result.message;
