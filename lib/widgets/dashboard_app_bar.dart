@@ -5,17 +5,54 @@ import 'package:ubook_app/repository/auth/auth_local_storage.dart';
 import '../theme/app_colors.dart';
 import 'notification/notification_bell.dart';
 
-class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
+class DashboardAppBar extends StatefulWidget implements PreferredSizeWidget {
+  final String searchQuery;
   final String selectedFilter;
   final List<String> filterOptions;
+  final ValueChanged<String> onSearchChanged;
   final Function(String) onFilterChanged;
 
   const DashboardAppBar({
     super.key,
+    required this.searchQuery,
     required this.selectedFilter,
     required this.filterOptions,
+    required this.onSearchChanged,
     required this.onFilterChanged,
   });
+
+  @override
+  State<DashboardAppBar> createState() => _DashboardAppBarState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(140);
+}
+
+class _DashboardAppBarState extends State<DashboardAppBar> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(text: widget.searchQuery);
+  }
+
+  @override
+  void didUpdateWidget(covariant DashboardAppBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.searchQuery != _searchController.text) {
+      _searchController.text = widget.searchQuery;
+      _searchController.selection = TextSelection.collapsed(
+        offset: _searchController.text.length,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -150,6 +187,8 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                     border: Border.all(color: AppColors.divider),
                   ),
                   child: TextField(
+                    controller: _searchController,
+                    onChanged: widget.onSearchChanged,
                     decoration: InputDecoration(
                       hintText: 'Buscar en UBook...',
                       hintStyle: const TextStyle(color: AppColors.placeholder),
@@ -195,11 +234,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     if (!context.mounted) return;
 
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/login',
-      (_) => false,
-    );
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
   }
 
   void _showFilterBottomSheet(BuildContext context) {
@@ -233,7 +268,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              ...filterOptions.map((option) {
+              ...widget.filterOptions.map((option) {
                 return RadioListTile<String>(
                   title: Text(
                     option,
@@ -243,12 +278,12 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                   value: option,
-                  groupValue: selectedFilter,
+                  groupValue: widget.selectedFilter,
                   activeColor: AppColors.primary,
                   contentPadding: EdgeInsets.zero,
                   onChanged: (value) {
                     if (value != null) {
-                      onFilterChanged(value);
+                      widget.onFilterChanged(value);
                       Navigator.pop(context);
                     }
                   },
@@ -261,7 +296,4 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
       },
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(140);
 }

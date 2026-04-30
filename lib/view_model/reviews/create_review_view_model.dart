@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../model/reviews/review.dart';
 import '../../repository/reviews/review_repository.dart';
+import '../../repository/reviews/review_repository_provider.dart';
 
 class CreateReviewViewModel extends ChangeNotifier {
   CreateReviewViewModel({ReviewRepository? repository})
-    : _repository = repository ?? InMemoryReviewRepository.instance;
+    : _repository = repository ?? ReviewRepositoryProvider.instance;
 
   final ReviewRepository _repository;
 
@@ -46,7 +47,6 @@ class CreateReviewViewModel extends ChangeNotifier {
         updatedAt: now,
       );
 
-      // Este flujo ya usa repositorio en memoria y queda listo para backend.
       await _repository.createReview(review);
     } finally {
       _isLoading = false;
