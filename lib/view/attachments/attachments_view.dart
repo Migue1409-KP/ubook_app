@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../model/attachments/attachment.dart';
+import '../../model/attachments/attachment_model.dart';
 import '../../view_model/attachments/attachments_view_model.dart';
 import '../../widgets/file_picker_widget.dart';
 import '../../theme/app_colors.dart';
@@ -21,18 +21,23 @@ class AttachmentsView extends StatefulWidget {
 }
 
 class _AttachmentsViewState extends State<AttachmentsView> {
-  // Singleton: no se crea ni se destruye con la vista.
-  // La selección de archivo y la lista persisten al navegar.
-  final AttachmentsViewModel _vm = AttachmentsViewModel.instance;
+  // Instancia aislada por contexto (subjectId + teacherId).
+  // El estado no se comparte con otras vistas de adjuntos.
+  late final AttachmentsViewModel _vm = AttachmentsViewModel.forContext(
+    widget.subjectId,
+    widget.teacherId,
+  );
 
   @override
   void initState() {
     super.initState();
+    _vm.loadBySubject(widget.subjectId);
   }
 
   @override
   void dispose() {
-    // No llamamos _vm.dispose() — el singleton debe seguir vivo.
+    // No llamamos _vm.dispose() — la instancia se reutiliza si se vuelve
+    // a navegar al mismo contexto (subjectId + teacherId).
     super.dispose();
   }
 
@@ -45,6 +50,7 @@ class _AttachmentsViewState extends State<AttachmentsView> {
         vm: _vm,
         subjectId: widget.subjectId,
         teacherId: widget.teacherId,
+        uploadedById: widget.uploadedById,
       ),
     );
   }
@@ -70,10 +76,10 @@ class _AttachmentsViewState extends State<AttachmentsView> {
         ],
       ),
     );
-    if (ok == true) _vm.deleteAttachment(index);
+    if (ok == true) await _vm.deleteAttachment(index);
   }
 
-  Future<void> _openFile(Attachment attachment) async {
+  Future<void> _openFile(AttachmentModel attachment) async {
     final error = await _vm.openFile(attachment);
     if (!mounted) return;
     if (error != null) {
@@ -106,7 +112,7 @@ class _AttachmentsViewState extends State<AttachmentsView> {
             separatorBuilder: (context, index) => const SizedBox(height: 10),
             itemBuilder: (context, i) => _AttachmentCard(
               attachment: _vm.attachments[i],
-              isOpening: _vm.isOpening,
+              isOpening: _vm.openingId == _vm.attachments[i].id,
               onDelete: () => _confirmDeletion(i),
               onOpen: () => _openFile(_vm.attachments[i]),
             ),
@@ -128,11 +134,13 @@ class _AttachmentForm extends StatefulWidget {
   final AttachmentsViewModel vm;
   final String subjectId;
   final String teacherId;
+  final String uploadedById;
 
   const _AttachmentForm({
     required this.vm,
     required this.subjectId,
     required this.teacherId,
+    required this.uploadedById,
   });
 
   @override
@@ -170,10 +178,11 @@ class _AttachmentFormState extends State<_AttachmentForm> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final attachment = widget.vm.buildAttachment(
       name: _fileNameController.text.trim(),
+      uploadedById: widget.uploadedById,
       subjectId: widget.subjectId,
       teacherId: widget.teacherId,
     );
@@ -186,7 +195,7 @@ class _AttachmentFormState extends State<_AttachmentForm> {
       );
       return;
     }
-    widget.vm.addAttachment(attachment);
+    await widget.vm.addAttachment(attachment);
     widget.vm.clearSelection();
     if (mounted) Navigator.of(context).pop();
   }
@@ -297,7 +306,7 @@ class _AttachmentFormState extends State<_AttachmentForm> {
 }
 
 class _AttachmentCard extends StatelessWidget {
-  final Attachment attachment;
+  final AttachmentModel attachment;
   final bool isOpening;
   final VoidCallback onDelete;
   final VoidCallback onOpen;
@@ -408,17 +417,17 @@ class _AttachmentCard extends StatelessWidget {
                   )
                 : IconButton(
                     icon: Icon(
-                      attachment.fileBytes != null
-                          ? Icons.download_outlined
-                          : Icons.cloud_off,
-                      color: attachment.fileBytes != null
+                      attachment.filePath != null
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: attachment.filePath != null
                           ? AppColors.primary
                           : Theme.of(context).colorScheme.outlineVariant,
                     ),
-                    tooltip: attachment.fileBytes != null
-                        ? 'Ver / Descargar'
+                    tooltip: attachment.filePath != null
+                        ? 'Visualizar archivo'
                         : 'Archivo no disponible localmente',
-                    onPressed: attachment.fileBytes != null ? onOpen : null,
+                    onPressed: attachment.filePath != null ? onOpen : null,
                   ),
             IconButton(
               icon: Icon(

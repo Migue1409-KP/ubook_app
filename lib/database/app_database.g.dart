@@ -76,13 +76,15 @@ class _$AppDatabase extends AppDatabase {
 
   ReviewDao? _reviewDaoInstance;
 
+  AttachmentDao? _attachmentDaoInstance;
+
   Future<sqflite.Database> open(
     String path,
     List<Migration> migrations, [
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 2,
+      version: 3,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -102,6 +104,8 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `reviews` (`id` TEXT NOT NULL, `entityId` TEXT NOT NULL, `entityType` TEXT NOT NULL, `userId` TEXT NOT NULL, `rating` INTEGER NOT NULL, `title` TEXT NOT NULL, `content` TEXT, `createdAtMs` INTEGER, `updatedAtMs` INTEGER, `metadataJson` TEXT, PRIMARY KEY (`id`))');
         await database.execute(
+            'CREATE TABLE IF NOT EXISTS `attachments` (`id` TEXT, `file_name` TEXT NOT NULL, `file_type` TEXT NOT NULL, `uploaded_by_id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `file_path` TEXT, `file_size` INTEGER, `uploaded_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
             'CREATE UNIQUE INDEX `index_users_email` ON `users` (`email`)');
 
         await callback?.onCreate?.call(database, version);
@@ -118,6 +122,11 @@ class _$AppDatabase extends AppDatabase {
   @override
   ReviewDao get reviewDao {
     return _reviewDaoInstance ??= _$ReviewDao(database, changeListener);
+  }
+
+  @override
+  AttachmentDao get attachmentDao {
+    return _attachmentDaoInstance ??= _$AttachmentDao(database, changeListener);
   }
 }
 
@@ -407,6 +416,188 @@ class _$ReviewDao extends ReviewDao {
   @override
   Future<int> deleteReview(Review review) {
     return _reviewDeletionAdapter.deleteAndReturnChangedRows(review);
+  }
+}
+
+class _$AttachmentDao extends AttachmentDao {
+  _$AttachmentDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _attachmentModelInsertionAdapter = InsertionAdapter(
+            database,
+            'attachments',
+            (AttachmentModel item) => <String, Object?>{
+                  'id': item.id,
+                  'file_name': item.fileName,
+                  'file_type': item.fileType,
+                  'uploaded_by_id': item.uploadedById,
+                  'subject_id': item.subjectId,
+                  'teacher_id': item.teacherId,
+                  'file_path': item.filePath,
+                  'file_size': item.fileSize,
+                  'uploaded_at': item.uploadedAtMs
+                }),
+        _attachmentModelUpdateAdapter = UpdateAdapter(
+            database,
+            'attachments',
+            ['id'],
+            (AttachmentModel item) => <String, Object?>{
+                  'id': item.id,
+                  'file_name': item.fileName,
+                  'file_type': item.fileType,
+                  'uploaded_by_id': item.uploadedById,
+                  'subject_id': item.subjectId,
+                  'teacher_id': item.teacherId,
+                  'file_path': item.filePath,
+                  'file_size': item.fileSize,
+                  'uploaded_at': item.uploadedAtMs
+                }),
+        _attachmentModelDeletionAdapter = DeletionAdapter(
+            database,
+            'attachments',
+            ['id'],
+            (AttachmentModel item) => <String, Object?>{
+                  'id': item.id,
+                  'file_name': item.fileName,
+                  'file_type': item.fileType,
+                  'uploaded_by_id': item.uploadedById,
+                  'subject_id': item.subjectId,
+                  'teacher_id': item.teacherId,
+                  'file_path': item.filePath,
+                  'file_size': item.fileSize,
+                  'uploaded_at': item.uploadedAtMs
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<AttachmentModel> _attachmentModelInsertionAdapter;
+
+  final UpdateAdapter<AttachmentModel> _attachmentModelUpdateAdapter;
+
+  final DeletionAdapter<AttachmentModel> _attachmentModelDeletionAdapter;
+
+  @override
+  Future<AttachmentModel?> findById(String id) async {
+    return _queryAdapter.query(
+        'SELECT * FROM attachments WHERE id = ?1 LIMIT 1',
+        mapper: (Map<String, Object?> row) => AttachmentModel(
+            id: row['id'] as String?,
+            fileName: row['file_name'] as String,
+            fileType: row['file_type'] as String,
+            uploadedById: row['uploaded_by_id'] as String,
+            subjectId: row['subject_id'] as String,
+            teacherId: row['teacher_id'] as String,
+            filePath: row['file_path'] as String?,
+            fileSize: row['file_size'] as int?,
+            uploadedAtMs: row['uploaded_at'] as int),
+        arguments: [id]);
+  }
+
+  @override
+  Future<List<AttachmentModel>> findBySubjectId(String subjectId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM attachments WHERE subject_id = ?1',
+        mapper: (Map<String, Object?> row) => AttachmentModel(
+            id: row['id'] as String?,
+            fileName: row['file_name'] as String,
+            fileType: row['file_type'] as String,
+            uploadedById: row['uploaded_by_id'] as String,
+            subjectId: row['subject_id'] as String,
+            teacherId: row['teacher_id'] as String,
+            filePath: row['file_path'] as String?,
+            fileSize: row['file_size'] as int?,
+            uploadedAtMs: row['uploaded_at'] as int),
+        arguments: [subjectId]);
+  }
+
+  @override
+  Future<List<AttachmentModel>> findByTeacherId(String teacherId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM attachments WHERE teacher_id = ?1',
+        mapper: (Map<String, Object?> row) => AttachmentModel(
+            id: row['id'] as String?,
+            fileName: row['file_name'] as String,
+            fileType: row['file_type'] as String,
+            uploadedById: row['uploaded_by_id'] as String,
+            subjectId: row['subject_id'] as String,
+            teacherId: row['teacher_id'] as String,
+            filePath: row['file_path'] as String?,
+            fileSize: row['file_size'] as int?,
+            uploadedAtMs: row['uploaded_at'] as int),
+        arguments: [teacherId]);
+  }
+
+  @override
+  Future<List<AttachmentModel>> findByUploadedById(String uploadedById) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM attachments WHERE uploaded_by_id = ?1',
+        mapper: (Map<String, Object?> row) => AttachmentModel(
+            id: row['id'] as String?,
+            fileName: row['file_name'] as String,
+            fileType: row['file_type'] as String,
+            uploadedById: row['uploaded_by_id'] as String,
+            subjectId: row['subject_id'] as String,
+            teacherId: row['teacher_id'] as String,
+            filePath: row['file_path'] as String?,
+            fileSize: row['file_size'] as int?,
+            uploadedAtMs: row['uploaded_at'] as int),
+        arguments: [uploadedById]);
+  }
+
+  @override
+  Future<List<AttachmentModel>> findAll() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM attachments ORDER BY uploaded_at DESC',
+        mapper: (Map<String, Object?> row) => AttachmentModel(
+            id: row['id'] as String?,
+            fileName: row['file_name'] as String,
+            fileType: row['file_type'] as String,
+            uploadedById: row['uploaded_by_id'] as String,
+            subjectId: row['subject_id'] as String,
+            teacherId: row['teacher_id'] as String,
+            filePath: row['file_path'] as String?,
+            fileSize: row['file_size'] as int?,
+            uploadedAtMs: row['uploaded_at'] as int));
+  }
+
+  @override
+  Future<void> deleteById(String id) async {
+    await _queryAdapter.queryNoReturn('DELETE FROM attachments WHERE id = ?1',
+        arguments: [id]);
+  }
+
+  @override
+  Future<void> deleteAll() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM attachments');
+  }
+
+  @override
+  Future<int?> count() async {
+    return _queryAdapter.query('SELECT COUNT(*) FROM attachments',
+        mapper: (Map<String, Object?> row) => row.values.first as int);
+  }
+
+  @override
+  Future<void> insertAttachment(AttachmentModel AttachmentModel) async {
+    await _attachmentModelInsertionAdapter.insert(
+        AttachmentModel, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> updateAttachment(AttachmentModel AttachmentModel) {
+    return _attachmentModelUpdateAdapter.updateAndReturnChangedRows(
+        AttachmentModel, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> deleteAttachment(AttachmentModel AttachmentModel) {
+    return _attachmentModelDeletionAdapter
+        .deleteAndReturnChangedRows(AttachmentModel);
   }
 }
 

@@ -1,31 +1,31 @@
 import 'package:floor/floor.dart';
-import 'package:ubook_app/model/attachments/attachment.dart';
+import 'package:ubook_app/model/attachments/attachment_model.dart';
 
 @dao
 abstract class AttachmentDao {
   @Query('SELECT * FROM attachments WHERE id = :id LIMIT 1')
-  Future<Attachment?> findById(String id);
+  Future<AttachmentModel?> findById(String id);
 
   @Query('SELECT * FROM attachments WHERE subject_id = :subjectId')
-  Future<List<Attachment>> findBySubjectId(String subjectId);
+  Future<List<AttachmentModel>> findBySubjectId(String subjectId);
 
   @Query('SELECT * FROM attachments WHERE teacher_id = :teacherId')
-  Future<List<Attachment>> findByTeacherId(String teacherId);
+  Future<List<AttachmentModel>> findByTeacherId(String teacherId);
 
   @Query('SELECT * FROM attachments WHERE uploaded_by_id = :uploadedById')
-  Future<List<Attachment>> findByUploadedById(String uploadedById);
+  Future<List<AttachmentModel>> findByUploadedById(String uploadedById);
 
   @Query('SELECT * FROM attachments ORDER BY uploaded_at DESC')
-  Future<List<Attachment>> findAll();
+  Future<List<AttachmentModel>> findAll();
 
   @insert
-  Future<void> insertAttachment(Attachment attachment);
+  Future<void> insertAttachment(AttachmentModel AttachmentModel);
 
   @update
-  Future<int> updateAttachment(Attachment attachment);
+  Future<int> updateAttachment(AttachmentModel AttachmentModel);
 
   @delete
-  Future<int> deleteAttachment(Attachment attachment);
+  Future<int> deleteAttachment(AttachmentModel AttachmentModel);
 
   @Query('DELETE FROM attachments WHERE id = :id')
   Future<void> deleteById(String id);

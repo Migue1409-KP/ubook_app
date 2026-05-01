@@ -1,31 +1,40 @@
-import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:open_file/open_file.dart';
-import 'package:path_provider/path_provider.dart';
 
-import '../../model/attachments/attachment.dart';
+import '../../model/attachments/attachment_model.dart';
 import '../../repository/attachments/attachment_local_storage.dart';
+import '../../repository/attachments/floor_attachment_repository.dart';
 
 class AttachmentsViewModel extends ChangeNotifier {
-  AttachmentsViewModel._() {
-    _loadCustomFileName();
+  AttachmentsViewModel._(this._contextKey) {
+    ready = _loadCustomFileName();
   }
 
-  /// Instancia única que vive durante todo el ciclo de la app.
-  /// La selección de archivo y la lista de adjuntos se mantienen
-  /// aunque el usuario navegue fuera de la vista.
-  static final AttachmentsViewModel instance = AttachmentsViewModel._();
+  /// Completa cuando [_loadCustomFileName] termina de hidratarse desde SharedPreferences.
+  late final Future<void> ready;
+
+  /// Clave que identifica el contexto (subjectId:teacherId).
+  final String _contextKey;
+
+  /// Cache de instancias por contexto. Una instancia por combinación
+  /// subjectId+teacherId — el estado no se comparte entre distintas vistas.
+  static final Map<String, AttachmentsViewModel> _instances = {};
+
+  /// Devuelve (o crea) la instancia asociada al contexto dado.
+  static AttachmentsViewModel forContext(String subjectId, String teacherId) {
+    final key = '$subjectId:$teacherId';
+    return _instances.putIfAbsent(key, () => AttachmentsViewModel._(key));
+  }
 
   final _storage = AttachmentLocalStorage();
 
-  final List<Attachment> _attachments = [];
-  List<Attachment> get attachments => List.unmodifiable(_attachments);
+  final List<AttachmentModel> _attachments = [];
+  List<AttachmentModel> get attachments => List.unmodifiable(_attachments);
 
   /// Carga el nombre del archivo guardado en SharedPreferences al arrancar.
   Future<void> _loadCustomFileName() async {
-    final saved = await _storage.getCustomFileName();
+    final saved = await _storage.getCustomFileName(contextKey: _contextKey);
     if (saved != null) {
       customFileName = saved;
       notifyListeners();
@@ -41,7 +50,10 @@ class AttachmentsViewModel extends ChangeNotifier {
   int? fileSize;
   String detectedType = '';
   bool isSelecting = false;
-  bool isOpening = false;
+
+  /// Id del adjunto que está siendo abierto actualmente.
+  /// `null` cuando ninguno está en proceso de apertura.
+  String? openingId;
 
   bool get isFileSelected => fileBytes != null;
 
@@ -68,15 +80,33 @@ class AttachmentsViewModel extends ChangeNotifier {
     'RAR',
   ];
 
-  // TODO(sqlite): Reemplazar con inserción real en SQLite via AttachmentDao.
-  // Eliminar este método y la lista _attachments cuando se implemente la base de datos.
-  // La lista _attachments solo vive en memoria; se pierde al cerrar la app.
-  void addAttachment(Attachment attachment) {
-    _attachments.add(attachment);
+  /// Libera la instancia asociada a un contexto cuando ya no se necesita.
+  /// Llamar desde el [State.dispose] de la vista si no se va a reutilizar.
+  static void disposeContext(String subjectId, String teacherId) {
+    final key = '$subjectId:$teacherId';
+    _instances[key]?.dispose();
+    _instances.remove(key);
+  }
+
+  Future<void> addAttachment(AttachmentModel attachment) async {
+    final saved = await FloorAttachmentRepository.instance.saveFile(attachment);
+    _attachments.add(saved);
     notifyListeners();
   }
 
-  void deleteAttachment(int index) {
+  /// Carga desde la BD los adjuntos asociados a [subjectId].
+  Future<void> loadBySubject(String subjectId) async {
+    _attachments
+      ..clear()
+      ..addAll(
+        await FloorAttachmentRepository.instance.findBySubjectId(subjectId),
+      );
+    notifyListeners();
+  }
+
+  Future<void> deleteAttachment(int index) async {
+    final attachment = _attachments[index];
+    await FloorAttachmentRepository.instance.deleteAttachment(attachment);
     _attachments.removeAt(index);
     notifyListeners();
   }
@@ -98,7 +128,10 @@ class AttachmentsViewModel extends ChangeNotifier {
         customFileName = file.name; // auto-rellena; el usuario puede cambiarlo
         fileSize = file.size;
         detectedType = _knownExtensions.contains(ext) ? ext : 'OTHER';
-        await _storage.saveCustomFileName(customFileName);
+        await _storage.saveCustomFileName(
+          customFileName,
+          contextKey: _contextKey,
+        );
       }
     } finally {
       isSelecting = false;
@@ -109,7 +142,7 @@ class AttachmentsViewModel extends ChangeNotifier {
   /// Actualiza el nombre personalizado desde el campo de texto del formulario.
   void updateCustomFileName(String name) {
     customFileName = name;
-    _storage.saveCustomFileName(name);
+    _storage.saveCustomFileName(name, contextKey: _contextKey);
     // No notifyListeners: el controller ya refleja el cambio en la UI.
   }
 
@@ -119,18 +152,18 @@ class AttachmentsViewModel extends ChangeNotifier {
     customFileName = '';
     fileSize = null;
     detectedType = '';
-    _storage.clearCustomFileName();
+    _storage.clearCustomFileName(contextKey: _contextKey);
     notifyListeners();
   }
 
-  Attachment? buildAttachment({
+  AttachmentModel? buildAttachment({
     required String name,
-    String uploadedById = '',
+    required String uploadedById,
     required String subjectId,
     required String teacherId,
   }) {
     if (fileBytes == null) return null;
-    return Attachment(
+    return AttachmentModel(
       fileName: name,
       fileType: detectedType,
       uploadedById: uploadedById,
@@ -138,32 +171,26 @@ class AttachmentsViewModel extends ChangeNotifier {
       teacherId: teacherId,
       fileBytes: fileBytes,
       fileSize: fileSize,
-      uploadedAt: DateTime.now(),
+      uploadedAtMs: DateTime.now().millisecondsSinceEpoch,
     );
   }
 
-  // TODO(sqlite): Al implementar SQLite, el archivo debe leerse desde su ruta
-  // persistente en el sistema de archivos, no desde fileBytes en memoria.
-  // El directorio temporal usado aquí puede ser limpiado por el SO en cualquier momento.
-  Future<String?> openFile(Attachment attachment) async {
+  Future<String?> openFile(AttachmentModel attachment) async {
     if (kIsWeb) return 'Download is not available in the web version';
 
-    final bytes = attachment.fileBytes;
-    if (bytes == null) return 'File does not have saved content locally';
+    final filePath = attachment.filePath;
+    if (filePath == null) return 'File does not have saved content locally';
 
-    isOpening = true;
+    openingId = attachment.id;
     notifyListeners();
     try {
-      final directory = await getTemporaryDirectory();
-      final path = '${directory.path}/${attachment.fileName}';
-      await File(path).writeAsBytes(bytes, flush: true);
-      final result = await OpenFile.open(path);
+      final result = await OpenFile.open(filePath);
       if (result.type != ResultType.done) return result.message;
       return null;
     } catch (e) {
       return 'Could not open file: $e';
     } finally {
-      isOpening = false;
+      openingId = null;
       notifyListeners();
     }
   }

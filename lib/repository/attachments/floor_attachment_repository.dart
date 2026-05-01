@@ -1,7 +1,10 @@
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:ubook_app/database/app_database.dart';
-import 'package:ubook_app/model/attachments/attachment.dart';
-import 'package:ubook_app/repository/attachments/attachment_dao.dart';
-import 'package:ubook_app/repository/attachments/attachment_local_storage.dart';
+import 'package:ubook_app/model/attachments/attachment_model.dart';
+import 'package:flutter/foundation.dart';
 
 import 'attachment_repository.dart';
 
@@ -9,9 +12,6 @@ import 'attachment_repository.dart';
 ///
 /// Sigue el mismo patrón de [FloorUserRepository]: singleton inicializado
 /// una sola vez desde `main.dart` al construir la base de datos.
-///
-/// También expone [localStorage] para persistir el nombre del archivo
-/// pendiente de subir mediante SharedPreferences.
 ///
 /// ```dart
 /// // En main.dart
@@ -21,58 +21,102 @@ import 'attachment_repository.dart';
 class FloorAttachmentRepository implements AttachmentRepository {
   FloorAttachmentRepository._(this._database);
 
-  static late final FloorAttachmentRepository instance;
+  static FloorAttachmentRepository? _instance;
+
+  static FloorAttachmentRepository get instance {
+    final i = _instance;
+    if (i == null) {
+      throw StateError('FloorAttachmentRepository.initialize() no fue llamado');
+    }
+    return i;
+  }
 
   /// Crea e inicializa el singleton. Debe llamarse una sola vez al arrancar la app.
   static FloorAttachmentRepository initialize(AppDatabase database) {
-    instance = FloorAttachmentRepository._(database);
-    return instance;
+    _instance = FloorAttachmentRepository._(database);
+    return _instance!;
   }
+
+  /// Resetea el singleton. Solo para uso en tests.
+  @visibleForTesting
+  static void resetForTesting() => _instance = null;
 
   final AppDatabase _database;
 
-  /// Acceso al almacenamiento local (SharedPreferences) para el nombre
-  /// del archivo pendiente de subir.
-  final AttachmentLocalStorage localStorage = AttachmentLocalStorage();
-
   @override
-  Future<Attachment?> findById(String id) {
+  Future<AttachmentModel?> findById(String id) {
     return _database.attachmentDao.findById(id);
   }
 
   @override
-  Future<List<Attachment>> findBySubjectId(String subjectId) {
+  Future<List<AttachmentModel>> findBySubjectId(String subjectId) {
     return _database.attachmentDao.findBySubjectId(subjectId);
   }
 
   @override
-  Future<List<Attachment>> findByTeacherId(String teacherId) {
+  Future<List<AttachmentModel>> findByTeacherId(String teacherId) {
     return _database.attachmentDao.findByTeacherId(teacherId);
   }
 
   @override
-  Future<List<Attachment>> findByUploadedById(String uploadedById) {
+  Future<List<AttachmentModel>> findByUploadedById(String uploadedById) {
     return _database.attachmentDao.findByUploadedById(uploadedById);
   }
 
   @override
-  Future<List<Attachment>> findAll() {
+  Future<List<AttachmentModel>> findAll() {
     return _database.attachmentDao.findAll();
   }
 
   @override
-  Future<void> insertAttachment(Attachment attachment) {
+  @Deprecated('Use findBySubjectId instead')
+  Future<List<AttachmentModel>> findBySubject(String subjectId) =>
+      findBySubjectId(subjectId);
+
+  @override
+  Future<AttachmentModel> saveFile(AttachmentModel attachment) async {
+    final bytes = attachment.fileBytes;
+    if (bytes == null) {
+      await _database.attachmentDao.insertAttachment(attachment);
+      return attachment;
+    }
+    // Directorio persistente de la app (no limpiado por el SO).
+    final dir = await getApplicationDocumentsDirectory();
+    final destDir = Directory(p.join(dir.path, 'attachments'));
+    if (!await destDir.exists()) await destDir.create(recursive: true);
+    // Nombre físico = id + extensión → evita colisiones entre archivos
+    // con el mismo nombre de usuario (ej. dos "tarea.pdf" distintos).
+    final id =
+        attachment.id ?? DateTime.now().microsecondsSinceEpoch.toString();
+    final ext = attachment.fileType
+        .toLowerCase(); // usar fileType; no depender del nombre del archivo
+    final filePath = p.join(destDir.path, '$id.$ext');
+    await File(filePath).writeAsBytes(bytes, flush: true);
+    final saved = attachment.copyWith(id: id, filePath: filePath);
+    await _database.attachmentDao.insertAttachment(saved);
+    return saved;
+  }
+
+  @override
+  Future<int> deleteAttachment(AttachmentModel attachment) async {
+    // Elimina el archivo local si existe antes de borrar el registro.
+    final localPath = attachment.filePath;
+    if (localPath != null) {
+      final f = File(localPath);
+      if (await f.exists()) await f.delete();
+    }
+    return _database.attachmentDao.deleteAttachment(attachment);
+  }
+
+  /// Inserción de bajo nivel; preferir [saveFile] para uso normal.
+  @override
+  Future<void> insertAttachment(AttachmentModel attachment) {
     return _database.attachmentDao.insertAttachment(attachment);
   }
 
   @override
-  Future<int> updateAttachment(Attachment attachment) {
+  Future<int> updateAttachment(AttachmentModel attachment) {
     return _database.attachmentDao.updateAttachment(attachment);
-  }
-
-  @override
-  Future<int> deleteAttachment(Attachment attachment) {
-    return _database.attachmentDao.deleteAttachment(attachment);
   }
 
   @override

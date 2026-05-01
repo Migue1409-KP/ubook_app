@@ -1,21 +1,24 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AttachmentLocalStorage {
-  static const _customFileNameKey = 'attachment.custom_file_name';
+  static const _baseKey = 'AttachmentModel.custom_file_name';
 
-  Future<void> saveCustomFileName(String name) async {
+  String _key(String contextKey) =>
+      contextKey.isEmpty ? _baseKey : '$_baseKey.$contextKey';
+
+  Future<void> saveCustomFileName(String name, {String contextKey = ''}) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_customFileNameKey, name);
+    await prefs.setString(_key(contextKey), name);
   }
 
-  Future<String?> getCustomFileName() async {
+  Future<String?> getCustomFileName({String contextKey = ''}) async {
     final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getString(_customFileNameKey);
+    final value = prefs.getString(_key(contextKey));
     return (value != null && value.isNotEmpty) ? value : null;
   }
 
-  Future<void> clearCustomFileName() async {
+  Future<void> clearCustomFileName({String contextKey = ''}) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_customFileNameKey);
+    await prefs.remove(_key(contextKey));
   }
 }

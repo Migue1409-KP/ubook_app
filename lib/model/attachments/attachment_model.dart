@@ -1,18 +1,42 @@
 import 'dart:typed_data';
 
-class Attachment {
+import 'package:floor/floor.dart';
+
+@Entity(tableName: 'attachments')
+class AttachmentModel {
+  @PrimaryKey()
   final String? id;
+
+  @ColumnInfo(name: 'file_name')
   final String fileName;
+
+  @ColumnInfo(name: 'file_type')
   final String fileType;
+
+  @ColumnInfo(name: 'uploaded_by_id')
   final String uploadedById;
+
+  @ColumnInfo(name: 'subject_id')
   final String subjectId;
+
+  @ColumnInfo(name: 'teacher_id')
   final String teacherId;
+
+  @ignore
   final Uint8List? fileBytes;
+
+  @ColumnInfo(name: 'file_path')
+  final String? filePath;
+
+  @ColumnInfo(name: 'file_size')
   final int? fileSize;
 
-  final DateTime uploadedAt;
+  @ColumnInfo(name: 'uploaded_at')
+  final int uploadedAtMs;
 
-  const Attachment({
+  DateTime get uploadedAt => DateTime.fromMillisecondsSinceEpoch(uploadedAtMs);
+
+  AttachmentModel({
     this.id,
     required this.fileName,
     required this.fileType,
@@ -20,22 +44,41 @@ class Attachment {
     required this.subjectId,
     required this.teacherId,
     this.fileBytes,
+    this.filePath,
     this.fileSize,
-    required this.uploadedAt,
+    required this.uploadedAtMs,
   });
 
-  factory Attachment.fromJson(Map<String, dynamic> json) {
-    return Attachment(
+  factory AttachmentModel.fromJson(Map<String, dynamic> json) {
+    return AttachmentModel(
       id: json['id'] as String?,
       fileName: json['file_name'] as String,
       fileType: json['file_type'] as String,
       uploadedById: json['uploaded_by_id'] as String,
       subjectId: json['subject_id'] as String,
       teacherId: json['teacher_id'] as String,
+      filePath: json['file_path'] as String?,
       fileSize: json['file_size'] as int?,
-      uploadedAt: DateTime.parse(json['uploaded_at'] as String),
+      uploadedAtMs: DateTime.parse(
+        json['uploaded_at'] as String,
+      ).millisecondsSinceEpoch,
     );
   }
+
+  /// Floor-compatible constructor used by generated DAO code.
+  /// [uploadedAtMs] is the raw milliseconds value stored in the DB.
+  AttachmentModel.fromDb({
+    this.id,
+    required this.fileName,
+    required this.fileType,
+    required this.uploadedById,
+    required this.subjectId,
+    required this.teacherId,
+    this.fileBytes,
+    this.filePath,
+    this.fileSize,
+    required this.uploadedAtMs,
+  });
 
   Map<String, dynamic> toJson() {
     return {
@@ -50,7 +93,7 @@ class Attachment {
     };
   }
 
-  Attachment copyWith({
+  AttachmentModel copyWith({
     String? id,
     String? fileName,
     String? fileType,
@@ -58,10 +101,11 @@ class Attachment {
     String? subjectId,
     String? teacherId,
     Uint8List? fileBytes,
+    String? filePath,
     int? fileSize,
     DateTime? uploadedAt,
   }) {
-    return Attachment(
+    return AttachmentModel(
       id: id ?? this.id,
       fileName: fileName ?? this.fileName,
       fileType: fileType ?? this.fileType,
@@ -69,9 +113,24 @@ class Attachment {
       subjectId: subjectId ?? this.subjectId,
       teacherId: teacherId ?? this.teacherId,
       fileBytes: fileBytes ?? this.fileBytes,
+      filePath: filePath ?? this.filePath,
       fileSize: fileSize ?? this.fileSize,
-      uploadedAt: uploadedAt ?? this.uploadedAt,
+      uploadedAtMs: uploadedAt?.millisecondsSinceEpoch ?? this.uploadedAtMs,
     );
+  }
+
+  Map<String, dynamic> toDbMap() {
+    return {
+      if (id != null) 'id': id,
+      'file_name': fileName,
+      'file_type': fileType,
+      'uploaded_by_id': uploadedById,
+      'subject_id': subjectId,
+      'teacher_id': teacherId,
+      if (filePath != null) 'file_path': filePath,
+      if (fileSize != null) 'file_size': fileSize,
+      'uploaded_at': uploadedAtMs,
+    };
   }
 
   String get fileSizeFormatted {
@@ -90,7 +149,7 @@ class Attachment {
 
   @override
   String toString() {
-    return 'Attachment(id: $id, fileName: $fileName, fileType: $fileType, '
+    return 'AttachmentModel(id: $id, fileName: $fileName, fileType: $fileType, '
         'uploadedById: $uploadedById, subjectId: $subjectId, '
         'teacherId: $teacherId, fileSize: $fileSizeFormatted)';
   }
@@ -98,7 +157,7 @@ class Attachment {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Attachment && other.id == id;
+    return other is AttachmentModel && other.id == id;
   }
 
   @override
