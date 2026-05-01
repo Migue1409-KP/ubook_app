@@ -120,12 +120,36 @@ class FloorAttachmentRepository implements AttachmentRepository {
   }
 
   @override
-  Future<void> deleteById(String id) {
+  Future<void> deleteById(String id) async {
+    // Replicar la lógica de deleteAttachment: primero eliminar el archivo
+    // físico (si existe) para no dejar archivos huérfanos en disco.
+    final attachment = await _database.attachmentDao.findById(id);
+    final localPath = attachment?.filePath;
+    if (localPath != null) {
+      final f = File(localPath);
+      if (await f.exists()) await f.delete();
+    }
     return _database.attachmentDao.deleteById(id);
   }
 
   @override
-  Future<void> deleteAll() {
+  Future<void> deleteAll() async {
+    // Primero obtener todos los registros para poder eliminar sus archivos físicos.
+    final attachments = await _database.attachmentDao.findAll();
+    for (final attachment in attachments) {
+      final localPath = attachment.filePath;
+      if (localPath != null) {
+        try {
+          final f = File(localPath);
+          if (await f.exists()) await f.delete();
+        } catch (e) {
+          // Loguear el error y continuar para no bloquear el borrado de los demás.
+          debugPrint(
+            'deleteAll: no se pudo eliminar el archivo $localPath – $e',
+          );
+        }
+      }
+    }
     return _database.attachmentDao.deleteAll();
   }
 

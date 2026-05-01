@@ -16,9 +16,11 @@ class AttachmentModel {
   @ColumnInfo(name: 'uploaded_by_id')
   final String uploadedById;
 
+  // TODO: en el futuro agregar el nombre de la materia para mostrarlo en la UI
   @ColumnInfo(name: 'subject_id')
   final String subjectId;
 
+  // TODO: en el futuro agregar el nombre del profesor para mostrarlo en la UI
   @ColumnInfo(name: 'teacher_id')
   final String teacherId;
 
