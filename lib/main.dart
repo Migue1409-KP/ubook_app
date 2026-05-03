@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ubook_app/database/app_database.dart';
 import 'package:ubook_app/view/subjects/subjects_view.dart';
+import 'package:ubook_app/repository/attachments/floor_attachment_repository.dart';
 import 'package:ubook_app/repository/auth/auth_local_storage.dart';
 import 'package:ubook_app/repository/auth/floor_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
@@ -23,11 +24,12 @@ Future<void> main() async {
 
   final database = await $FloorAppDatabase
       .databaseBuilder('ubook_app.db')
-      .addMigrations([migration1to2])
+      .addMigrations([migration1to2, migration2to3])
       .build();
   final userRepository = FloorUserRepository.initialize(database);
   await userRepository.ensureInitialized();
   await ReviewRepositoryProvider.initialize(database);
+  FloorAttachmentRepository.initialize(database);
 
   runApp(MyApp(database: database, userRepository: userRepository));
 }
