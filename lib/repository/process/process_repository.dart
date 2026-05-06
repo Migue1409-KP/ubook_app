@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../model/process/process_model.dart';
 
 abstract class ProcessRepository {
@@ -8,6 +12,9 @@ abstract class ProcessRepository {
 }
 
 class InMemoryProcessRepository implements ProcessRepository {
+  static const String _storageKey = 'processes_v1';
+  bool _isHydrated = false;
+
   final List<ProcessModel> _processes = [
     ProcessModel(
       id: 'proc_001',
@@ -330,30 +337,70 @@ class InMemoryProcessRepository implements ProcessRepository {
     ),
   ];
 
+  Future<void> _hydrateIfNeeded() async {
+    if (_isHydrated) return;
+    _isHydrated = true;
+
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getString(_storageKey);
+    if (stored == null || stored.trim().isEmpty) {
+      await _persist();
+      return;
+    }
+
+    try {
+      final decoded = jsonDecode(stored);
+      if (decoded is List) {
+        _processes
+          ..clear()
+          ..addAll(
+            decoded
+                .whereType<Map<String, dynamic>>()
+                .map(ProcessModel.fromJson),
+          );
+      }
+    } catch (_) {
+      await _persist();
+    }
+  }
+
+  Future<void> _persist() async {
+    final prefs = await SharedPreferences.getInstance();
+    final payload = jsonEncode(_processes.map((p) => p.toJson()).toList());
+    await prefs.setString(_storageKey, payload);
+  }
+
   @override
   Future<List<ProcessModel>> getProcesses() async {
+    await _hydrateIfNeeded();
     await Future.delayed(const Duration(milliseconds: 300));
     return List<ProcessModel>.from(_processes);
   }
 
   @override
   Future<void> addProcess(ProcessModel process) async {
+    await _hydrateIfNeeded();
     await Future.delayed(const Duration(seconds: 1));
     _processes.add(process);
+    await _persist();
   }
 
   @override
   Future<void> updateProcess(ProcessModel process) async {
+    await _hydrateIfNeeded();
     await Future.delayed(const Duration(seconds: 1));
     final index = _processes.indexWhere((p) => p.id == process.id);
     if (index != -1) {
       _processes[index] = process;
+      await _persist();
     }
   }
 
   @override
   Future<void> deleteProcess(String processId) async {
+    await _hydrateIfNeeded();
     await Future.delayed(const Duration(milliseconds: 500));
     _processes.removeWhere((p) => p.id == processId);
+    await _persist();
   }
 }

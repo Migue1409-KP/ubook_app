@@ -476,29 +476,83 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
   // ── Headers ───────────────────────────────────────────────────────────────
   Widget _buildTeacherHeader(TeacherSubjectsViewModel vm) {
     final t = widget.teacher!;
-    return _InfoHeader(
-      initials: '${t.firstName[0]}${t.lastName[0]}',
-      title: t.fullName,
-      subtitle: t.email,
-      tag: t.department,
-      badge1Label: 'Materias',
-      badge1Value: '${vm.assignedSubjects.length}',
-      badge2Label: 'Créditos',
-      badge2Value: '${vm.totalCredits}',
+    return Column(
+      children: [
+        _InfoHeader(
+          initials: '${t.firstName[0]}${t.lastName[0]}',
+          title: t.fullName,
+          subtitle: t.email,
+          tag: t.department,
+          badge1Label: 'Materias',
+          badge1Value: '${vm.assignedSubjects.length}',
+          badge2Label: 'Créditos',
+          badge2Value: '${vm.totalCredits}',
+        ),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.save_outlined, color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Total asignaciones almacenadas: ${vm.storedLinkCount}',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildSubjectHeader(TeacherSubjectsViewModel vm) {
     final s = widget.subject!;
-    return _InfoHeader(
-      initials: s.nombre.substring(0, 2).toUpperCase(),
-      title: s.nombre,
-      subtitle: s.contenido,
-      tag: '${s.creditos} créditos  •  ${s.horas} h',
-      badge1Label: 'Profesores',
-      badge1Value: '${vm.subjectLinks.length}',
-      badge2Label: '',
-      badge2Value: '',
+    return Column(
+      children: [
+        _InfoHeader(
+          initials: s.nombre.substring(0, 2).toUpperCase(),
+          title: s.nombre,
+          subtitle: s.contenido,
+          tag: '${s.creditos} créditos  •  ${s.horas} h',
+          badge1Label: 'Profesores',
+          badge1Value: '${vm.subjectLinks.length}',
+          badge2Label: '',
+          badge2Value: '',
+        ),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.save_outlined, color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Total asignaciones almacenadas: ${vm.storedLinkCount}',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

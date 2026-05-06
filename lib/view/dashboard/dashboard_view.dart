@@ -23,10 +23,7 @@ class DashboardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => DashboardViewModel(),
-      child: _DashboardViewContent(),
-    );
+    return _DashboardViewContent();
   }
 }
 
@@ -38,8 +35,10 @@ class _DashboardViewContent extends StatelessWidget {
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: DashboardAppBar(
+            searchQuery: viewModel.searchQuery,
             selectedFilter: viewModel.selectedFilter,
             filterOptions: viewModel.filterOptions,
+            onSearchChanged: viewModel.setSearchQuery,
             onFilterChanged: viewModel.setFilter,
           ),
           body: SingleChildScrollView(
@@ -245,15 +244,13 @@ class _DashboardViewContent extends StatelessWidget {
     BuildContext context,
     Map<String, dynamic> item,
   ) {
-  final rawId = item['id'];
-  if (rawId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('No se pudo abrir el centro educativo.'),
-      ),
-    );
-    return;
-  }
+    final rawId = item['id'];
+    if (rawId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir el centro educativo.')),
+      );
+      return;
+    }
     final center = EducationalCenter(
       id: rawId.toString(),
       name: item['name'] as String? ?? 'Centro educativo',

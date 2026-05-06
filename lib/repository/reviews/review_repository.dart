@@ -1,7 +1,11 @@
+import 'package:ubook_app/database/app_database.dart';
+
 import '../../model/reviews/review.dart';
 import '../../model/reviews/review_entity_types.dart';
 
 abstract class ReviewRepository {
+  Future<void> ensureInitialized();
+
   Future<List<Review>> getReviews({
     required String entityId,
     required String entityType,
@@ -10,14 +14,19 @@ abstract class ReviewRepository {
   Future<Review> createReview(Review review);
 }
 
-class InMemoryReviewRepository implements ReviewRepository {
-  InMemoryReviewRepository._internal();
+class FloorReviewRepository implements ReviewRepository {
+  FloorReviewRepository._(this._database);
 
-  static final InMemoryReviewRepository instance =
-      InMemoryReviewRepository._internal();
+  static late final FloorReviewRepository instance;
 
-  final List<Review> _reviews = <Review>[
-    // Teacher dummies
+  static FloorReviewRepository initialize(AppDatabase database) {
+    instance = FloorReviewRepository._(database);
+    return instance;
+  }
+
+  final AppDatabase _database;
+
+  final List<Review> _seedReviews = <Review>[
     Review(
       id: 'REV-TEA-001',
       entityId: 'DUMMY-TCH',
@@ -51,8 +60,6 @@ class InMemoryReviewRepository implements ReviewRepository {
       createdAt: DateTime(2026, 1, 15),
       updatedAt: DateTime(2026, 1, 15),
     ),
-
-    // Subject dummies
     Review(
       id: 'REV-SUB-001',
       entityId: 'SUB-001',
@@ -86,8 +93,6 @@ class InMemoryReviewRepository implements ReviewRepository {
       createdAt: DateTime(2026, 1, 10),
       updatedAt: DateTime(2026, 1, 10),
     ),
-
-    // Educational center dummies
     Review(
       id: 'REV-EDU-001',
       entityId: 'EDU-001',
@@ -95,7 +100,7 @@ class InMemoryReviewRepository implements ReviewRepository {
       userId: 'USR-007',
       rating: 5,
       title: 'Excelente ambiente academico',
-      content: 'Instalaciones cuidadas y buen acompañamiento estudiantil.',
+      content: 'Instalaciones cuidadas y buen acompanamiento estudiantil.',
       createdAt: DateTime(2026, 2, 9),
       updatedAt: DateTime(2026, 2, 9),
     ),
@@ -121,8 +126,6 @@ class InMemoryReviewRepository implements ReviewRepository {
       createdAt: DateTime(2026, 1, 12),
       updatedAt: DateTime(2026, 1, 12),
     ),
-
-    // Career dummies
     Review(
       id: 'REV-CAR-001',
       entityId: 'CAR-001',
@@ -159,31 +162,28 @@ class InMemoryReviewRepository implements ReviewRepository {
   ];
 
   @override
+  Future<void> ensureInitialized() async {
+    final count = await _database.reviewDao.countReviews() ?? 0;
+    if (count == 0) {
+      await _database.reviewDao.insertReviews(_seedReviews);
+    }
+  }
+
+  @override
   Future<List<Review>> getReviews({
     required String entityId,
     required String entityType,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 350));
-
-    // TODO: cuando se conecte backend, filtrar tambien por entityId.
-    final reviews =
-        _reviews
-            .where((review) => review.entityType == entityType)
-            .toList(growable: false)
-          ..sort((a, b) {
-            final bDate = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-            final aDate = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-            return bDate.compareTo(aDate);
-          });
-
+    final reviews = await _database.reviewDao.findByEntity(
+      entityId,
+      entityType,
+    );
     return List<Review>.unmodifiable(reviews);
   }
 
   @override
   Future<Review> createReview(Review review) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    _reviews.insert(0, review);
+    await _database.reviewDao.insertReview(review);
     return review;
   }
 }
