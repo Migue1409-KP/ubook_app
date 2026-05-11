@@ -8,7 +8,6 @@ import '../../widgets/teachers/teacher_row_card.dart';
 import '../../widgets/teachers/teacher_delete_dialog.dart';
 import '../teacher_subject/teacher_subjects_page.dart';
 import 'teacher_form_view.dart';
-import '../../repository/teachers/floor_teacher_repository.dart';
 
 class TeacherListView extends StatefulWidget {
   const TeacherListView({super.key});
@@ -18,7 +17,7 @@ class TeacherListView extends StatefulWidget {
 }
 
 class _TeacherListViewState extends State<TeacherListView> {
-  final TeacherListViewModel _viewModel = TeacherListViewModel(FloorTeacherRepository.instance);
+  final TeacherListViewModel _viewModel = TeacherListViewModel();
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -157,10 +156,6 @@ class _TeacherListViewState extends State<TeacherListView> {
   }
 
   Widget _buildTeacherList() {
-    if (_viewModel.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     final teachers = _viewModel.filteredTeachers;
 
     if (teachers.isEmpty) {
