@@ -1,10 +1,4 @@
-import 'package:floor/floor.dart';
-import 'package:flutter/foundation.dart';
-
-@Entity(tableName: 'teachers')
-@immutable
 class Teacher {
-  @PrimaryKey()
   final String id;
   final String firstName;
   final String lastName;
@@ -16,10 +10,10 @@ class Teacher {
   final List<String> subjects;
   final String profileImageUrl;
   final bool isActive;
-  final int createdAtMs;
-  final int updatedAtMs;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
-  Teacher({
+  const Teacher({
     required this.id,
     required this.firstName,
     required this.lastName,
@@ -31,17 +25,11 @@ class Teacher {
     this.subjects = const [],
     this.profileImageUrl = '',
     this.isActive = true,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    int? createdAtMs,
-    int? updatedAtMs,
-  })  : createdAtMs = createdAtMs ?? (createdAt ?? DateTime.now()).millisecondsSinceEpoch,
-        updatedAtMs = updatedAtMs ?? (updatedAt ?? DateTime.now()).millisecondsSinceEpoch;
+    required this.createdAt,
+    required this.updatedAt,
+  });
 
   String get fullName => '$firstName $lastName';
-
-  DateTime get createdAt => DateTime.fromMillisecondsSinceEpoch(createdAtMs);
-  DateTime get updatedAt => DateTime.fromMillisecondsSinceEpoch(updatedAtMs);
 
   factory Teacher.fromJson(Map<String, dynamic> json) {
     return Teacher(
@@ -59,8 +47,8 @@ class Teacher {
           const [],
       profileImageUrl: json['profile_image_url'] as String? ?? '',
       isActive: json['is_active'] as bool? ?? true,
-      createdAt: _readDate(json['created_at']),
-      updatedAt: _readDate(json['updated_at']),
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
 
@@ -80,14 +68,6 @@ class Teacher {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
-  }
-
-  static DateTime? _readDate(dynamic value) {
-    if (value == null) return null;
-    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
-    if (value is String) return DateTime.tryParse(value);
-    if (value is DateTime) return value;
-    return null;
   }
 
   Teacher copyWith({
