@@ -1,64 +1,78 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ubook_app/model/career/career_model.dart';
+import 'package:ubook_app/repository/career/career_prefs.dart';
+import 'package:ubook_app/repository/career/career_repository.dart';
 
 class CareerViewModel extends ChangeNotifier {
+  final CareerRepository _repository;
+  final CareerPrefs _prefs = CareerPrefs();
 
   final List<Career> _careers = [];
   String _searchQuery = '';
-
-  static const String _careersKey = 'careers_list';
+  String _sortOrder = 'name';
 
   List<Career> get careers => _careers;
+  String get sortOrder => _sortOrder;
 
-  CareerViewModel() {
-    _loadCareers();
+  CareerViewModel(this._repository) {
+    _loadSortOrder(); // SharedPreferences — preferencia de UI
+    loadCareers();    // Floor — datos reales
   }
 
-  // ─── PERSISTENCIA ───────────────────────────────────────────
+  // ─── PERSISTENCIA UI (SharedPreferences) ─────────────────────
 
-  Future<void> _loadCareers() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_careersKey);
-    if (raw != null) {
-      final List decoded = jsonDecode(raw);
-      _careers.clear();
-      _careers.addAll(decoded.map((e) => Career.fromJson(e)));
+  Future<void> _loadSortOrder() async {
+    final saved = await _prefs.getSortOrder(); // ← cambio
+    if (saved != null) {
+      _sortOrder = saved;
       notifyListeners();
     }
   }
 
-  Future<void> _saveCareers() async {
-    final prefs = await SharedPreferences.getInstance();
-    final encoded = jsonEncode(_careers.map((c) => c.toJson()).toList());
-    await prefs.setString(_careersKey, encoded);
-  }
-
-  // ─── CRUD ────────────────────────────────────────────────────
-
-  void addCareer(Career career) {
-    _careers.add(career);
+  Future<void> setSortOrder(String order) async {
+    _sortOrder = order;
+    await _prefs.saveSortOrder(order); // ← cambio
+    _applySortOrder();
     notifyListeners();
-    _saveCareers();
   }
 
-  void updateCareer(Career updatedCareer) {
-    final index = _careers.indexWhere((c) => c.id == updatedCareer.id);
-    if (index != -1) {
-      _careers[index] = updatedCareer;
-      notifyListeners();
-      _saveCareers();
+  void _applySortOrder() {
+    if (_sortOrder == 'name') {
+      _careers.sort((a, b) => a.name.compareTo(b.name));
+    } else if (_sortOrder == 'semesters') {
+      _careers.sort((a, b) => a.semesters.compareTo(b.semesters));
+    } else if (_sortOrder == 'credits') {
+      _careers.sort((a, b) => a.credits.compareTo(b.credits));
     }
   }
 
-  void deleteCareer(String id) {
-    _careers.removeWhere((c) => c.id == id);
+  // ─── CRUD (Floor) ─────────────────────────────────────────────
+
+  Future<void> loadCareers() async {
+    final result = await _repository.getAll();
+    _careers.clear();
+    _careers.addAll(result);
+    _applySortOrder();
     notifyListeners();
-    _saveCareers();
   }
 
-  // ─── FILTROS ─────────────────────────────────────────────────
+  Future<void> addCareer(Career career) async {
+    await _repository.save(career);
+    await loadCareers();
+  }
+
+  Future<void> updateCareer(Career updatedCareer) async {
+    await _repository.save(updatedCareer);
+    await loadCareers();
+  }
+
+  Future<void> deleteCareer(String id) async {
+    final career = _careers.firstWhere((c) => c.id == id);
+    await _repository.delete(career);
+    await loadCareers();
+  }
+
+  // ─── FILTROS ──────────────────────────────────────────────────
 
   void setSearch(String value) {
     _searchQuery = value;
@@ -67,17 +81,14 @@ class CareerViewModel extends ChangeNotifier {
 
   List<Career> getFilteredCareersByCenter(String? centerId) {
     List<Career> filtered = _careers;
-
     if (centerId != null) {
       filtered = filtered.where((c) => c.educationalCenterId == centerId).toList();
     }
-
     if (_searchQuery.isNotEmpty) {
       filtered = filtered
           .where((c) => c.name.toLowerCase().contains(_searchQuery.toLowerCase()))
           .toList();
     }
-
     return filtered;
   }
 }

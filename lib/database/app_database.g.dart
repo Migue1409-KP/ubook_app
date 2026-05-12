@@ -78,13 +78,15 @@ class _$AppDatabase extends AppDatabase {
 
   AttachmentDao? _attachmentDaoInstance;
 
+  CareerDao? _careerDaoInstance;
+
   Future<sqflite.Database> open(
     String path,
     List<Migration> migrations, [
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 3,
+      version: 4,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -105,6 +107,8 @@ class _$AppDatabase extends AppDatabase {
             'CREATE TABLE IF NOT EXISTS `reviews` (`id` TEXT NOT NULL, `entityId` TEXT NOT NULL, `entityType` TEXT NOT NULL, `userId` TEXT NOT NULL, `rating` INTEGER NOT NULL, `title` TEXT NOT NULL, `content` TEXT, `createdAtMs` INTEGER, `updatedAtMs` INTEGER, `metadataJson` TEXT, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `attachments` (`id` TEXT, `file_name` TEXT NOT NULL, `file_type` TEXT NOT NULL, `uploaded_by_id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `file_path` TEXT, `file_size` INTEGER, `uploaded_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `careers` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `educationalCenterId` TEXT NOT NULL, `semesters` INTEGER NOT NULL, `credits` INTEGER NOT NULL, `subjects` TEXT NOT NULL, `processes` TEXT NOT NULL, `reviews` TEXT NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE UNIQUE INDEX `index_users_email` ON `users` (`email`)');
 
@@ -127,6 +131,11 @@ class _$AppDatabase extends AppDatabase {
   @override
   AttachmentDao get attachmentDao {
     return _attachmentDaoInstance ??= _$AttachmentDao(database, changeListener);
+  }
+
+  @override
+  CareerDao get careerDao {
+    return _careerDaoInstance ??= _$CareerDao(database, changeListener);
   }
 }
 
@@ -598,6 +607,124 @@ class _$AttachmentDao extends AttachmentDao {
   Future<int> deleteAttachment(AttachmentModel AttachmentModel) {
     return _attachmentModelDeletionAdapter
         .deleteAndReturnChangedRows(AttachmentModel);
+  }
+}
+
+class _$CareerDao extends CareerDao {
+  _$CareerDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _careerEntityInsertionAdapter = InsertionAdapter(
+            database,
+            'careers',
+            (CareerEntity item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'educationalCenterId': item.educationalCenterId,
+                  'semesters': item.semesters,
+                  'credits': item.credits,
+                  'subjects': item.subjects,
+                  'processes': item.processes,
+                  'reviews': item.reviews
+                }),
+        _careerEntityUpdateAdapter = UpdateAdapter(
+            database,
+            'careers',
+            ['id'],
+            (CareerEntity item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'educationalCenterId': item.educationalCenterId,
+                  'semesters': item.semesters,
+                  'credits': item.credits,
+                  'subjects': item.subjects,
+                  'processes': item.processes,
+                  'reviews': item.reviews
+                }),
+        _careerEntityDeletionAdapter = DeletionAdapter(
+            database,
+            'careers',
+            ['id'],
+            (CareerEntity item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'educationalCenterId': item.educationalCenterId,
+                  'semesters': item.semesters,
+                  'credits': item.credits,
+                  'subjects': item.subjects,
+                  'processes': item.processes,
+                  'reviews': item.reviews
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<CareerEntity> _careerEntityInsertionAdapter;
+
+  final UpdateAdapter<CareerEntity> _careerEntityUpdateAdapter;
+
+  final DeletionAdapter<CareerEntity> _careerEntityDeletionAdapter;
+
+  @override
+  Future<List<CareerEntity>> findAll() async {
+    return _queryAdapter.queryList('SELECT * FROM careers ORDER BY name ASC',
+        mapper: (Map<String, Object?> row) => CareerEntity(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            educationalCenterId: row['educationalCenterId'] as String,
+            semesters: row['semesters'] as int,
+            credits: row['credits'] as int,
+            subjects: row['subjects'] as String,
+            processes: row['processes'] as String,
+            reviews: row['reviews'] as String));
+  }
+
+  @override
+  Future<CareerEntity?> findById(String id) async {
+    return _queryAdapter.query('SELECT * FROM careers WHERE id = ?1 LIMIT 1',
+        mapper: (Map<String, Object?> row) => CareerEntity(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            educationalCenterId: row['educationalCenterId'] as String,
+            semesters: row['semesters'] as int,
+            credits: row['credits'] as int,
+            subjects: row['subjects'] as String,
+            processes: row['processes'] as String,
+            reviews: row['reviews'] as String),
+        arguments: [id]);
+  }
+
+  @override
+  Future<int?> countCareers() async {
+    return _queryAdapter.query('SELECT COUNT(*) FROM careers',
+        mapper: (Map<String, Object?> row) => row.values.first as int);
+  }
+
+  @override
+  Future<void> upsertCareer(CareerEntity career) async {
+    await _careerEntityInsertionAdapter.insert(
+        career, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> upsertCareers(List<CareerEntity> careers) async {
+    await _careerEntityInsertionAdapter.insertList(
+        careers, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<int> updateCareer(CareerEntity career) {
+    return _careerEntityUpdateAdapter.updateAndReturnChangedRows(
+        career, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> deleteCareer(CareerEntity career) {
+    return _careerEntityDeletionAdapter.deleteAndReturnChangedRows(career);
   }
 }
 

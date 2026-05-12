@@ -18,18 +18,20 @@ import 'view_model/dashboard/dashboard_view_model.dart';
 import 'view_model/educational_center/educational_center_count_provider.dart';
 import 'view_model/teachers/teacher_count_provider.dart';
 import 'view/admin_user/admin_users_view.dart';
+import 'package:ubook_app/repository/career/career_repository_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final database = await $FloorAppDatabase
       .databaseBuilder('ubook_app.db')
-      .addMigrations([migration1to2, migration2to3])
+      .addMigrations([migration1to2, migration2to3,migration3to4])
       .build();
   final userRepository = FloorUserRepository.initialize(database);
   await userRepository.ensureInitialized();
   await ReviewRepositoryProvider.initialize(database);
   FloorAttachmentRepository.initialize(database);
+  await CareerRepositoryProvider.initialize(database);
 
   runApp(MyApp(database: database, userRepository: userRepository));
 }
