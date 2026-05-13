@@ -2,98 +2,46 @@ import 'package:flutter/material.dart';
 import '../../model/teachers/teacher.dart';
 import '../../model/subjectteacher/subjectteacher.dart';
 import '../../model/subjects/subjects.dart';
-import '../../repository/teacher_subject/teacher_subject_local_storage.dart';
+import '../../repository/teacher_subject/floor_subject_teacher_repository.dart';
+import '../../repository/teacher_subject/subject_teacher_repository.dart';
 
-// ---------------------------------------------------------------------------
-// FakeApi — simula backend. Incluye materias por defecto cuando no se inyectan.
-// ---------------------------------------------------------------------------
-class _FakeApi {
-  static final List<Subject> _defaultSubjects = [
-    Subject(id: '1', nombre: 'Ingeniería de Sistemas', horas: 60, creditos: 4, prerrequisitos: [], contenido: 'Fundamentos de arquitectura de software.'),
-    Subject(id: '2', nombre: 'Cálculo Diferencial',    horas: 64, creditos: 3, prerrequisitos: [], contenido: 'Límites y derivadas.'),
-    Subject(id: '3', nombre: 'Fundamentos de IA',      horas: 48, creditos: 3, prerrequisitos: [], contenido: 'Búsqueda, lógica y agentes.'),
-    Subject(id: '4', nombre: 'Álgebra Lineal',         horas: 48, creditos: 3, prerrequisitos: ['2'], contenido: 'Vectores y matrices.'),
-    Subject(id: '5', nombre: 'Desarrollo Web',         horas: 64, creditos: 3, prerrequisitos: [], contenido: 'HTML, CSS, JS y frameworks.'),
-  ];
+/// Catálogo de fallback usado cuando el caller no inyecta [allSubjects].
+/// La capa Floor solo persiste las relaciones (tabla subject_teachers); el
+/// catálogo de materias todavía no tiene su propio repositorio.
+final List<Subject> _fallbackSubjects = [
+  Subject(id: '1', nombre: 'Ingeniería de Sistemas', horas: 60, creditos: 4, prerrequisitos: const [], contenido: 'Fundamentos de arquitectura de software.'),
+  Subject(id: '2', nombre: 'Cálculo Diferencial',    horas: 64, creditos: 3, prerrequisitos: const [], contenido: 'Límites y derivadas.'),
+  Subject(id: '3', nombre: 'Fundamentos de IA',      horas: 48, creditos: 3, prerrequisitos: const [], contenido: 'Búsqueda, lógica y agentes.'),
+  Subject(id: '4', nombre: 'Álgebra Lineal',         horas: 48, creditos: 3, prerrequisitos: const ['2'], contenido: 'Vectores y matrices.'),
+  Subject(id: '5', nombre: 'Desarrollo Web',         horas: 64, creditos: 3, prerrequisitos: const [], contenido: 'HTML, CSS, JS y frameworks.'),
+];
 
-  static final List<SubjectTeacher> _links = [];
-
-  /// Inserta links desde caché sin duplicar por id. Permite que el fake api
-  /// actúe como fuente única de verdad aun después de reiniciar la app.
-  static void hydrateLinks(List<SubjectTeacher> cached) {
-    final existing = _links.map((l) => l.id).toSet();
-    for (final link in cached) {
-      if (!existing.contains(link.id)) _links.add(link);
-    }
-  }
-
-  static Future<List<Subject>> fetchSubjects() async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return List.from(_defaultSubjects);
-  }
-
-  static Future<List<SubjectTeacher>> fetchLinksByTeacher(String teacherId) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return _links.where((l) => l.teacherId == teacherId).toList();
-  }
-
-  static Future<List<SubjectTeacher>> fetchLinksBySubject(String subjectId) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return _links.where((l) => l.subjectId == subjectId).toList();
-  }
-
-  static Future<SubjectTeacher> assign({
-    required String teacherId,
-    required String teacherName,
-    required String teacherEmail,
-    required Subject subject,
-  }) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final link = SubjectTeacher(
-      id: 'ST-${DateTime.now().millisecondsSinceEpoch}',
-      subjectId: subject.id,
-      subjectNombre: subject.nombre,
-      subjectCreditos: subject.creditos,
-      subjectHoras: subject.horas,
-      teacherId: teacherId,
-      teacherName: teacherName,
-      teacherEmail: teacherEmail,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    _links.add(link);
-    return link;
-  }
-
-  static Future<void> removeLink(String linkId) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    _links.removeWhere((l) => l.id == linkId);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// ViewModel
-// ---------------------------------------------------------------------------
+/// ViewModel para la pantalla de relaciones profesor ↔ materia.
+///
+/// Soporta dos modos:
+/// - Modo profesor: lista materias asignadas / disponibles de un profesor.
+/// - Modo materia : lista profesores asignados a una materia.
+///
+/// La persistencia se hace via [SubjectTeacherRepository] (Floor + SQLite).
 class TeacherSubjectsViewModel extends ChangeNotifier {
   final Teacher? teacher;
   final Subject? subject;
   final List<Subject> allSubjects;
   final List<Teacher> allTeachers;
-  final TeacherSubjectLocalStorage _localStorage;
+  final SubjectTeacherRepository _repository;
 
   TeacherSubjectsViewModel({
     this.teacher,
     this.subject,
     this.allSubjects = const [],
     this.allTeachers = const [],
-    TeacherSubjectLocalStorage? localStorage,
-  })  : _localStorage = localStorage ?? TeacherSubjectLocalStorage(),
+    SubjectTeacherRepository? repository,
+  })  : _repository = repository ?? FloorSubjectTeacherRepository.instance,
         assert(teacher != null || subject != null) {
     _load();
   }
 
   List<SubjectTeacher> _links = [];
-  List<Subject> _subjects = [];
 
   bool isInitialLoading = true;
   bool isBusy = false;
@@ -102,11 +50,6 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
 
   int get storedLinkCount => _links.length;
 
-  String get _ownerId => isTeacherMode ? teacher!.id : subject!.id;
-
-  TeacherSubjectOwner get _ownerKind =>
-      isTeacherMode ? TeacherSubjectOwner.teacher : TeacherSubjectOwner.subject;
-
   String get searchQuery => _searchQuery;
   bool get isTeacherMode => teacher != null;
 
@@ -114,9 +57,8 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
       ? 'Materias de ${teacher!.firstName}'
       : 'Profesores de ${subject!.nombre}';
 
-  // ── derivados modo profesor ───────────────────────────────────────────────
   List<Subject> get _effectiveSubjects =>
-      allSubjects.isNotEmpty ? allSubjects : _subjects;
+      allSubjects.isNotEmpty ? allSubjects : _fallbackSubjects;
 
   Set<String> get _assignedIds =>
       _links.where((l) => l.teacherId == teacher?.id).map((l) => l.subjectId).toSet();
@@ -135,7 +77,6 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
   int get totalCredits =>
       assignedSubjects.fold(0, (sum, s) => sum + s.creditos);
 
-  // ── derivados modo materia ────────────────────────────────────────────────
   List<SubjectTeacher> get subjectLinks => _links;
 
   List<Subject> _applySearch(List<Subject> list) {
@@ -149,28 +90,14 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── carga ─────────────────────────────────────────────────────────────────
   Future<void> _load() async {
     isInitialLoading = true;
     errorMessage = null;
     notifyListeners();
     try {
-      if (allSubjects.isEmpty) {
-        _subjects = await _FakeApi.fetchSubjects();
-      }
-
-      // Rehidratamos el fake api desde la caché local antes de consultar,
-      // porque _FakeApi._links es estático y se pierde al reiniciar la app.
-      // Sin esto, un fetch posterior devolvería solo lo creado en la sesión
-      // actual y sobreescribiría lo persistido.
-      final cached = await _localStorage.getLinks(_ownerKind, _ownerId);
-      _FakeApi.hydrateLinks(cached);
-
       _links = isTeacherMode
-          ? await _FakeApi.fetchLinksByTeacher(teacher!.id)
-          : await _FakeApi.fetchLinksBySubject(subject!.id);
-
-      await _persistState();
+          ? await _repository.findByTeacherId(teacher!.id)
+          : await _repository.findBySubjectId(subject!.id);
     } catch (_) {
       errorMessage = 'No se pudo cargar la información. Intenta de nuevo.';
     } finally {
@@ -186,23 +113,25 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
     await _load();
   }
 
-  Future<void> _persistState() async {
-    await _localStorage.saveLinks(_ownerKind, _ownerId, _links);
-  }
-
-  // ── asignar / quitar (modo profesor) ─────────────────────────────────────
   Future<bool> assignSubject(Subject subject) async {
     isBusy = true;
     notifyListeners();
     try {
-      final link = await _FakeApi.assign(
+      final now = DateTime.now();
+      final link = SubjectTeacher(
+        id: 'ST-${now.microsecondsSinceEpoch}',
+        subjectId: subject.id,
+        subjectNombre: subject.nombre,
+        subjectCreditos: subject.creditos,
+        subjectHoras: subject.horas,
         teacherId: teacher!.id,
         teacherName: teacher!.fullName,
         teacherEmail: teacher!.email,
-        subject: subject,
+        createdAt: now,
+        updatedAt: now,
       );
+      await _repository.insertSubjectTeacher(link);
       _links.add(link);
-      await _persistState();
       errorMessage = null;
       return true;
     } catch (_) {
@@ -221,9 +150,8 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
       final link = _links.firstWhere(
         (l) => l.subjectId == subject.id && l.teacherId == teacher!.id,
       );
-      await _FakeApi.removeLink(link.id);
+      await _repository.deleteById(link.id);
       _links.remove(link);
-      await _persistState();
       errorMessage = null;
       return true;
     } catch (_) {
@@ -235,14 +163,12 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
     }
   }
 
-  // ── quitar (modo materia) ─────────────────────────────────────────────────
   Future<bool> removeLink(SubjectTeacher link) async {
     isBusy = true;
     notifyListeners();
     try {
-      await _FakeApi.removeLink(link.id);
+      await _repository.deleteById(link.id);
       _links.remove(link);
-      await _persistState();
       errorMessage = null;
       return true;
     } catch (_) {

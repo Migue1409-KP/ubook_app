@@ -7,13 +7,17 @@ import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:ubook_app/model/attachments/attachment_model.dart';
 import 'package:ubook_app/model/auth/user_model.dart';
 import 'package:ubook_app/model/process/process_model.dart';
+import 'package:ubook_app/model/career/career_entity.dart';
 import 'package:ubook_app/model/reviews/review.dart';
+import 'package:ubook_app/model/subjectteacher/subjectteacher.dart';
 import 'package:ubook_app/repository/attachments/attachment_dao.dart';
 import 'package:ubook_app/repository/auth/floor_converters.dart';
 import 'package:ubook_app/repository/auth/user_dao.dart';
 import 'package:ubook_app/repository/process/process_dao.dart';
 import 'package:ubook_app/repository/process/process_floor_converters.dart';
+import 'package:ubook_app/repository/career/career_dao.dart';
 import 'package:ubook_app/repository/reviews/review_dao.dart';
+import 'package:ubook_app/repository/teacher_subject/subject_teacher_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -35,6 +39,42 @@ final migration2to3 = Migration(2, 3, (database) async {
     '`file_path` TEXT, '
     '`file_size` INTEGER, '
     '`uploaded_at` INTEGER NOT NULL, '
+    'PRIMARY KEY (`id`)'
+    ')',
+  );
+});
+
+final migration3to4 = Migration(3, 4, (database) async {
+  await database.execute(
+    'CREATE TABLE IF NOT EXISTS `subject_teachers` ('
+    '`id` TEXT NOT NULL, '
+    '`subject_id` TEXT NOT NULL, '
+    '`subject_nombre` TEXT NOT NULL, '
+    '`subject_creditos` INTEGER NOT NULL, '
+    '`subject_horas` INTEGER NOT NULL, '
+    '`teacher_id` TEXT NOT NULL, '
+    '`teacher_name` TEXT NOT NULL, '
+    '`teacher_email` TEXT NOT NULL, '
+    '`is_active` INTEGER NOT NULL, '
+    '`created_at_ms` INTEGER NOT NULL, '
+    '`updated_at_ms` INTEGER NOT NULL, '
+    'PRIMARY KEY (`id`)'
+    ')',
+  );
+});
+
+
+final migration4to5 = Migration(4, 5, (database) async {
+  await database.execute(
+    'CREATE TABLE IF NOT EXISTS `careers` ('
+    '`id` TEXT NOT NULL, '
+    '`name` TEXT NOT NULL, '
+    '`educationalCenterId` TEXT NOT NULL, '
+    '`semesters` INTEGER NOT NULL, '
+    '`credits` INTEGER NOT NULL, '
+    '`subjects` TEXT NOT NULL, '
+    '`processes` TEXT NOT NULL, '
+    '`reviews` TEXT NOT NULL, '
     'PRIMARY KEY (`id`)'
     ')',
   );
@@ -63,10 +103,12 @@ final migration5to6 = Migration(5, 6, (database) async {
   StringListConverter,
   NullableDateTimeConverter,
 ])
-@Database(version: 6, entities: [UserModel, Review, AttachmentModel, ProcessModel])
+@Database(version: 6, entities: [UserModel, Review, AttachmentModel, SubjectTeacher, CareerEntity, ProcessModel])
 abstract class AppDatabase extends FloorDatabase {
   UserDao get userDao;
   ReviewDao get reviewDao;
   AttachmentDao get attachmentDao;
   ProcessDao get processDao;
+  CareerDao get careerDao;
+  SubjectTeacherDao get subjectTeacherDao;
 }

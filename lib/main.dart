@@ -8,6 +8,7 @@ import 'package:ubook_app/repository/auth/floor_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
 import 'package:ubook_app/repository/process/floor_process_repository.dart';
 import 'package:ubook_app/repository/reviews/review_repository_provider.dart';
+import 'package:ubook_app/repository/teacher_subject/floor_subject_teacher_repository.dart';
 import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
 import 'view/auth/profile_view.dart';
@@ -19,13 +20,14 @@ import 'view_model/dashboard/dashboard_view_model.dart';
 import 'view_model/educational_center/educational_center_count_provider.dart';
 import 'view_model/teachers/teacher_count_provider.dart';
 import 'view/admin_user/admin_users_view.dart';
+import 'package:ubook_app/repository/career/career_repository_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final database = await $FloorAppDatabase
       .databaseBuilder('ubook_app.db')
-      .addMigrations([migration1to2, migration2to3, migration5to6])
+      .addMigrations([migration1to2, migration2to3, migration3to4, migration4to5, migration5to6])
       .build();
   final userRepository = FloorUserRepository.initialize(database);
   await userRepository.ensureInitialized();
@@ -33,6 +35,8 @@ Future<void> main() async {
   FloorAttachmentRepository.initialize(database);
   final processRepository = FloorProcessRepository.initialize(database);
   await processRepository.ensureInitialized();
+  await CareerRepositoryProvider.initialize(database);
+  FloorSubjectTeacherRepository.initialize(database);
 
   runApp(MyApp(database: database, userRepository: userRepository));
 }
