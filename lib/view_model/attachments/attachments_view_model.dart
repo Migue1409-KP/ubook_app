@@ -4,6 +4,7 @@ import 'package:open_file/open_file.dart';
 
 import '../../model/attachments/attachment_model.dart';
 import '../../repository/attachments/attachment_local_storage.dart';
+import '../../repository/attachments/file_type_repository.dart';
 import '../../repository/attachments/floor_attachment_repository.dart';
 
 class AttachmentsViewModel extends ChangeNotifier {
@@ -65,20 +66,7 @@ class AttachmentsViewModel extends ChangeNotifier {
     return '${(size / 1048576).toStringAsFixed(1)} MB';
   }
 
-  static const _knownExtensions = [
-    'PDF',
-    'DOC',
-    'DOCX',
-    'PPT',
-    'PPTX',
-    'XLS',
-    'XLSX',
-    'JPG',
-    'JPEG',
-    'PNG',
-    'ZIP',
-    'RAR',
-  ];
+  final _fileTypeRepo = FileTypeRepository.instance;
 
   /// Libera la instancia asociada a un contexto cuando ya no se necesita.
   /// Llamar desde el [State.dispose] de la vista si no se va a reutilizar.
@@ -111,10 +99,24 @@ class AttachmentsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> selectFile({List<String>? allowedExtensions}) async {
+  /// Abre el selector de archivos usando las extensiones permitidas obtenidas
+  /// desde la API. Si la consulta falla, se usa [FileType.any] como fallback.
+  Future<void> selectFile() async {
     isSelecting = true;
     notifyListeners();
     try {
+      List<String>? allowedExtensions;
+      List<String> knownExtensions = [];
+      try {
+        allowedExtensions = await _fileTypeRepo.fetchAllowedExtensions();
+        knownExtensions = allowedExtensions
+            .map((e) => e.toUpperCase())
+            .toList();
+      } catch (_) {
+        // Si la API no responde, se permite cualquier tipo.
+        allowedExtensions = null;
+      }
+
       final result = await FilePicker.platform.pickFiles(
         type: allowedExtensions != null ? FileType.custom : FileType.any,
         allowedExtensions: allowedExtensions,
@@ -127,7 +129,7 @@ class AttachmentsViewModel extends ChangeNotifier {
         fileName = file.name;
         customFileName = file.name; // auto-rellena; el usuario puede cambiarlo
         fileSize = file.size;
-        detectedType = _knownExtensions.contains(ext) ? ext : 'OTHER';
+        detectedType = knownExtensions.contains(ext) ? ext : 'OTHER';
         await _storage.saveCustomFileName(
           customFileName,
           contextKey: _contextKey,
