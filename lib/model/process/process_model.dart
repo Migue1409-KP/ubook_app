@@ -6,6 +6,40 @@ enum ProcessType {
   educationalCenter, // Procesos de centro educativo
 }
 
+extension ProcessTypeX on ProcessType {
+  String get apiValue => name;
+
+  String get label {
+    switch (this) {
+      case ProcessType.career:
+        return 'Carrera';
+      case ProcessType.subject:
+        return 'Materia';
+      case ProcessType.educationalCenter:
+        return 'Centro educativo';
+    }
+  }
+}
+
+final class ProcessTypeMapper {
+  static ProcessType? tryParse(String? rawValue) {
+    switch (rawValue) {
+      case 'career':
+        return ProcessType.career;
+      case 'subject':
+        return ProcessType.subject;
+      case 'educationalCenter':
+        return ProcessType.educationalCenter;
+      default:
+        return null;
+    }
+  }
+
+  static ProcessType parseOrDefault(String? rawValue) {
+    return tryParse(rawValue) ?? ProcessType.subject;
+  }
+}
+
 @Entity(tableName: 'processes')
 class ProcessModel {
   @PrimaryKey()
@@ -47,11 +81,7 @@ class ProcessModel {
 
   factory ProcessModel.fromJson(Map<String, dynamic> json) {
     final typeRaw = json['process_type'] as String?;
-    final parsedType = switch (typeRaw) {
-      'career' => ProcessType.career,
-      'educationalCenter' => ProcessType.educationalCenter,
-      _ => ProcessType.subject,
-    };
+    final parsedType = ProcessTypeMapper.parseOrDefault(typeRaw);
 
     return ProcessModel(
       id: json['id'] as String,
@@ -76,8 +106,7 @@ class ProcessModel {
       'name': name,
       'description': description,
       'required_documents': requiredDocuments,
-      // .name convierte el enum a su nombre en texto ('career' o 'subject')
-      'process_type': processType.name,
+      'process_type': processType.apiValue,
       'related_id': relatedId,
       'is_active': isActive,
       'created_at': createdAt?.toIso8601String(),
