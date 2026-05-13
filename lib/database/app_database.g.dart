@@ -78,13 +78,15 @@ class _$AppDatabase extends AppDatabase {
 
   AttachmentDao? _attachmentDaoInstance;
 
+  SubjectTeacherDao? _subjectTeacherDaoInstance;
+
   Future<sqflite.Database> open(
     String path,
     List<Migration> migrations, [
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 3,
+      version: 4,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -105,6 +107,8 @@ class _$AppDatabase extends AppDatabase {
             'CREATE TABLE IF NOT EXISTS `reviews` (`id` TEXT NOT NULL, `entityId` TEXT NOT NULL, `entityType` TEXT NOT NULL, `userId` TEXT NOT NULL, `rating` INTEGER NOT NULL, `title` TEXT NOT NULL, `content` TEXT, `createdAtMs` INTEGER, `updatedAtMs` INTEGER, `metadataJson` TEXT, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `attachments` (`id` TEXT, `file_name` TEXT NOT NULL, `file_type` TEXT NOT NULL, `uploaded_by_id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `file_path` TEXT, `file_size` INTEGER, `uploaded_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `subject_teachers` (`id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `subject_nombre` TEXT NOT NULL, `subject_creditos` INTEGER NOT NULL, `subject_horas` INTEGER NOT NULL, `teacher_id` TEXT NOT NULL, `teacher_name` TEXT NOT NULL, `teacher_email` TEXT NOT NULL, `is_active` INTEGER NOT NULL, `created_at_ms` INTEGER NOT NULL, `updated_at_ms` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE UNIQUE INDEX `index_users_email` ON `users` (`email`)');
 
@@ -127,6 +131,12 @@ class _$AppDatabase extends AppDatabase {
   @override
   AttachmentDao get attachmentDao {
     return _attachmentDaoInstance ??= _$AttachmentDao(database, changeListener);
+  }
+
+  @override
+  SubjectTeacherDao get subjectTeacherDao {
+    return _subjectTeacherDaoInstance ??=
+        _$SubjectTeacherDao(database, changeListener);
   }
 }
 
@@ -598,6 +608,186 @@ class _$AttachmentDao extends AttachmentDao {
   Future<int> deleteAttachment(AttachmentModel AttachmentModel) {
     return _attachmentModelDeletionAdapter
         .deleteAndReturnChangedRows(AttachmentModel);
+  }
+}
+
+class _$SubjectTeacherDao extends SubjectTeacherDao {
+  _$SubjectTeacherDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _subjectTeacherInsertionAdapter = InsertionAdapter(
+            database,
+            'subject_teachers',
+            (SubjectTeacher item) => <String, Object?>{
+                  'id': item.id,
+                  'subject_id': item.subjectId,
+                  'subject_nombre': item.subjectNombre,
+                  'subject_creditos': item.subjectCreditos,
+                  'subject_horas': item.subjectHoras,
+                  'teacher_id': item.teacherId,
+                  'teacher_name': item.teacherName,
+                  'teacher_email': item.teacherEmail,
+                  'is_active': item.isActive ? 1 : 0,
+                  'created_at_ms': item.createdAtMs,
+                  'updated_at_ms': item.updatedAtMs
+                }),
+        _subjectTeacherUpdateAdapter = UpdateAdapter(
+            database,
+            'subject_teachers',
+            ['id'],
+            (SubjectTeacher item) => <String, Object?>{
+                  'id': item.id,
+                  'subject_id': item.subjectId,
+                  'subject_nombre': item.subjectNombre,
+                  'subject_creditos': item.subjectCreditos,
+                  'subject_horas': item.subjectHoras,
+                  'teacher_id': item.teacherId,
+                  'teacher_name': item.teacherName,
+                  'teacher_email': item.teacherEmail,
+                  'is_active': item.isActive ? 1 : 0,
+                  'created_at_ms': item.createdAtMs,
+                  'updated_at_ms': item.updatedAtMs
+                }),
+        _subjectTeacherDeletionAdapter = DeletionAdapter(
+            database,
+            'subject_teachers',
+            ['id'],
+            (SubjectTeacher item) => <String, Object?>{
+                  'id': item.id,
+                  'subject_id': item.subjectId,
+                  'subject_nombre': item.subjectNombre,
+                  'subject_creditos': item.subjectCreditos,
+                  'subject_horas': item.subjectHoras,
+                  'teacher_id': item.teacherId,
+                  'teacher_name': item.teacherName,
+                  'teacher_email': item.teacherEmail,
+                  'is_active': item.isActive ? 1 : 0,
+                  'created_at_ms': item.createdAtMs,
+                  'updated_at_ms': item.updatedAtMs
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<SubjectTeacher> _subjectTeacherInsertionAdapter;
+
+  final UpdateAdapter<SubjectTeacher> _subjectTeacherUpdateAdapter;
+
+  final DeletionAdapter<SubjectTeacher> _subjectTeacherDeletionAdapter;
+
+  @override
+  Future<SubjectTeacher?> findById(String id) async {
+    return _queryAdapter.query(
+        'SELECT * FROM subject_teachers WHERE id = ?1 LIMIT 1',
+        mapper: (Map<String, Object?> row) => SubjectTeacher(
+            id: row['id'] as String,
+            subjectId: row['subject_id'] as String,
+            subjectNombre: row['subject_nombre'] as String,
+            subjectCreditos: row['subject_creditos'] as int,
+            subjectHoras: row['subject_horas'] as int,
+            teacherId: row['teacher_id'] as String,
+            teacherName: row['teacher_name'] as String,
+            teacherEmail: row['teacher_email'] as String,
+            isActive: (row['is_active'] as int) != 0,
+            createdAtMs: row['created_at_ms'] as int?,
+            updatedAtMs: row['updated_at_ms'] as int?),
+        arguments: [id]);
+  }
+
+  @override
+  Future<List<SubjectTeacher>> findAll() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM subject_teachers ORDER BY created_at_ms DESC',
+        mapper: (Map<String, Object?> row) => SubjectTeacher(
+            id: row['id'] as String,
+            subjectId: row['subject_id'] as String,
+            subjectNombre: row['subject_nombre'] as String,
+            subjectCreditos: row['subject_creditos'] as int,
+            subjectHoras: row['subject_horas'] as int,
+            teacherId: row['teacher_id'] as String,
+            teacherName: row['teacher_name'] as String,
+            teacherEmail: row['teacher_email'] as String,
+            isActive: (row['is_active'] as int) != 0,
+            createdAtMs: row['created_at_ms'] as int?,
+            updatedAtMs: row['updated_at_ms'] as int?));
+  }
+
+  @override
+  Future<List<SubjectTeacher>> findByTeacherId(String teacherId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM subject_teachers WHERE teacher_id = ?1',
+        mapper: (Map<String, Object?> row) => SubjectTeacher(
+            id: row['id'] as String,
+            subjectId: row['subject_id'] as String,
+            subjectNombre: row['subject_nombre'] as String,
+            subjectCreditos: row['subject_creditos'] as int,
+            subjectHoras: row['subject_horas'] as int,
+            teacherId: row['teacher_id'] as String,
+            teacherName: row['teacher_name'] as String,
+            teacherEmail: row['teacher_email'] as String,
+            isActive: (row['is_active'] as int) != 0,
+            createdAtMs: row['created_at_ms'] as int?,
+            updatedAtMs: row['updated_at_ms'] as int?),
+        arguments: [teacherId]);
+  }
+
+  @override
+  Future<List<SubjectTeacher>> findBySubjectId(String subjectId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM subject_teachers WHERE subject_id = ?1',
+        mapper: (Map<String, Object?> row) => SubjectTeacher(
+            id: row['id'] as String,
+            subjectId: row['subject_id'] as String,
+            subjectNombre: row['subject_nombre'] as String,
+            subjectCreditos: row['subject_creditos'] as int,
+            subjectHoras: row['subject_horas'] as int,
+            teacherId: row['teacher_id'] as String,
+            teacherName: row['teacher_name'] as String,
+            teacherEmail: row['teacher_email'] as String,
+            isActive: (row['is_active'] as int) != 0,
+            createdAtMs: row['created_at_ms'] as int?,
+            updatedAtMs: row['updated_at_ms'] as int?),
+        arguments: [subjectId]);
+  }
+
+  @override
+  Future<void> deleteById(String id) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM subject_teachers WHERE id = ?1',
+        arguments: [id]);
+  }
+
+  @override
+  Future<void> deleteAll() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM subject_teachers');
+  }
+
+  @override
+  Future<int?> count() async {
+    return _queryAdapter.query('SELECT COUNT(*) FROM subject_teachers',
+        mapper: (Map<String, Object?> row) => row.values.first as int);
+  }
+
+  @override
+  Future<void> insertSubjectTeacher(SubjectTeacher subjectTeacher) async {
+    await _subjectTeacherInsertionAdapter.insert(
+        subjectTeacher, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> updateSubjectTeacher(SubjectTeacher subjectTeacher) {
+    return _subjectTeacherUpdateAdapter.updateAndReturnChangedRows(
+        subjectTeacher, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> deleteSubjectTeacher(SubjectTeacher subjectTeacher) {
+    return _subjectTeacherDeletionAdapter
+        .deleteAndReturnChangedRows(subjectTeacher);
   }
 }
 

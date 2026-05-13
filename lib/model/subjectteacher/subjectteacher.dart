@@ -1,20 +1,46 @@
+import 'package:floor/floor.dart';
+
+@Entity(tableName: 'subject_teachers')
 class SubjectTeacher {
+  @PrimaryKey()
   final String id;
+
   // campos de Subject (denormalizados para mostrar sin join)
+  @ColumnInfo(name: 'subject_id')
   final String subjectId;
+
+  @ColumnInfo(name: 'subject_nombre')
   final String subjectNombre;
+
+  @ColumnInfo(name: 'subject_creditos')
   final int subjectCreditos;
+
+  @ColumnInfo(name: 'subject_horas')
   final int subjectHoras;
+
   // campos de Teacher
+  @ColumnInfo(name: 'teacher_id')
   final String teacherId;
+
+  @ColumnInfo(name: 'teacher_name')
   final String teacherName;
+
+  @ColumnInfo(name: 'teacher_email')
   final String teacherEmail;
 
+  @ColumnInfo(name: 'is_active')
   final bool isActive;
-  final DateTime createdAt;
-  final DateTime updatedAt;
 
-  const SubjectTeacher({
+  @ColumnInfo(name: 'created_at_ms')
+  final int createdAtMs;
+
+  @ColumnInfo(name: 'updated_at_ms')
+  final int updatedAtMs;
+
+  DateTime get createdAt => DateTime.fromMillisecondsSinceEpoch(createdAtMs);
+  DateTime get updatedAt => DateTime.fromMillisecondsSinceEpoch(updatedAtMs);
+
+  SubjectTeacher({
     required this.id,
     required this.subjectId,
     this.subjectNombre = '',
@@ -24,9 +50,14 @@ class SubjectTeacher {
     this.teacherName = '',
     this.teacherEmail = '',
     this.isActive = true,
-    required this.createdAt,
-    required this.updatedAt,
-  });
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    int? createdAtMs,
+    int? updatedAtMs,
+  })  : createdAtMs =
+            createdAtMs ?? (createdAt ?? DateTime.now()).millisecondsSinceEpoch,
+        updatedAtMs =
+            updatedAtMs ?? (updatedAt ?? DateTime.now()).millisecondsSinceEpoch;
 
   factory SubjectTeacher.fromJson(Map<String, dynamic> json) {
     return SubjectTeacher(
