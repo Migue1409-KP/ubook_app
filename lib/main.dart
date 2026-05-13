@@ -6,6 +6,7 @@ import 'package:ubook_app/repository/attachments/floor_attachment_repository.dar
 import 'package:ubook_app/repository/auth/auth_local_storage.dart';
 import 'package:ubook_app/repository/auth/floor_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
+import 'package:ubook_app/repository/process/floor_process_repository.dart';
 import 'package:ubook_app/repository/reviews/review_repository_provider.dart';
 import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
@@ -24,12 +25,14 @@ Future<void> main() async {
 
   final database = await $FloorAppDatabase
       .databaseBuilder('ubook_app.db')
-      .addMigrations([migration1to2, migration2to3])
+      .addMigrations([migration1to2, migration2to3, migration3to4])
       .build();
   final userRepository = FloorUserRepository.initialize(database);
   await userRepository.ensureInitialized();
   await ReviewRepositoryProvider.initialize(database);
   FloorAttachmentRepository.initialize(database);
+  final processRepository = FloorProcessRepository.initialize(database);
+  await processRepository.ensureInitialized();
 
   runApp(MyApp(database: database, userRepository: userRepository));
 }

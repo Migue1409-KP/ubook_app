@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../model/process/process_model.dart';
+import '../repository/process/floor_process_repository.dart';
 import '../repository/process/process_repository.dart';
 
 class ProcessViewModel extends ChangeNotifier {
@@ -11,7 +12,7 @@ class ProcessViewModel extends ChangeNotifier {
     this.careerName,
     this.subjectId,
     this.subjectName,
-  }) : _repository = repository ?? InMemoryProcessRepository() {
+  }) : _repository = repository ?? FloorProcessRepository.instance {
     loadProcesses();
   }
 
