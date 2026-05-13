@@ -1,18 +1,36 @@
+import 'package:floor/floor.dart';
+
 enum ProcessType {
   career, // Procesos de carrera
   subject, // Procesos de materia
   educationalCenter, // Procesos de centro educativo
 }
 
+@Entity(tableName: 'processes')
 class ProcessModel {
+  @PrimaryKey()
   final String id;
+
   final String name;
+
   final String description;
+
+  @ColumnInfo(name: 'required_documents_json')
   final List<String> requiredDocuments;
+
+  @ColumnInfo(name: 'process_type')
   final ProcessType processType;
+
+  @ColumnInfo(name: 'related_id')
   final String? relatedId;
+
+  @ColumnInfo(name: 'is_active')
   final bool isActive;
+
+  @ColumnInfo(name: 'created_at_ms')
   final DateTime? createdAt;
+
+  @ColumnInfo(name: 'updated_at_ms')
   final DateTime? updatedAt;
 
   const ProcessModel({

@@ -78,13 +78,15 @@ class _$AppDatabase extends AppDatabase {
 
   AttachmentDao? _attachmentDaoInstance;
 
+  ProcessDao? _processDaoInstance;
+
   Future<sqflite.Database> open(
     String path,
     List<Migration> migrations, [
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 3,
+      version: 4,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -105,6 +107,8 @@ class _$AppDatabase extends AppDatabase {
             'CREATE TABLE IF NOT EXISTS `reviews` (`id` TEXT NOT NULL, `entityId` TEXT NOT NULL, `entityType` TEXT NOT NULL, `userId` TEXT NOT NULL, `rating` INTEGER NOT NULL, `title` TEXT NOT NULL, `content` TEXT, `createdAtMs` INTEGER, `updatedAtMs` INTEGER, `metadataJson` TEXT, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `attachments` (`id` TEXT, `file_name` TEXT NOT NULL, `file_type` TEXT NOT NULL, `uploaded_by_id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `file_path` TEXT, `file_size` INTEGER, `uploaded_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `processes` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `required_documents_json` TEXT NOT NULL, `process_type` TEXT NOT NULL, `related_id` TEXT, `is_active` INTEGER NOT NULL, `created_at_ms` INTEGER, `updated_at_ms` INTEGER, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE UNIQUE INDEX `index_users_email` ON `users` (`email`)');
 
@@ -127,6 +131,11 @@ class _$AppDatabase extends AppDatabase {
   @override
   AttachmentDao get attachmentDao {
     return _attachmentDaoInstance ??= _$AttachmentDao(database, changeListener);
+  }
+
+  @override
+  ProcessDao get processDao {
+    return _processDaoInstance ??= _$ProcessDao(database, changeListener);
   }
 }
 
@@ -601,5 +610,111 @@ class _$AttachmentDao extends AttachmentDao {
   }
 }
 
+class _$ProcessDao extends ProcessDao {
+  _$ProcessDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _processModelInsertionAdapter = InsertionAdapter(
+            database,
+            'processes',
+            (ProcessModel item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'description': item.description,
+                  'required_documents_json':
+                      _stringListConverter.encode(item.requiredDocuments),
+                  'process_type':
+                      _processTypeConverter.encode(item.processType),
+                  'related_id': item.relatedId,
+                  'is_active': item.isActive ? 1 : 0,
+                  'created_at_ms':
+                      _nullableDateTimeConverter.encode(item.createdAt),
+                  'updated_at_ms':
+                      _nullableDateTimeConverter.encode(item.updatedAt)
+                }),
+        _processModelUpdateAdapter = UpdateAdapter(
+            database,
+            'processes',
+            ['id'],
+            (ProcessModel item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'description': item.description,
+                  'required_documents_json':
+                      _stringListConverter.encode(item.requiredDocuments),
+                  'process_type':
+                      _processTypeConverter.encode(item.processType),
+                  'related_id': item.relatedId,
+                  'is_active': item.isActive ? 1 : 0,
+                  'created_at_ms':
+                      _nullableDateTimeConverter.encode(item.createdAt),
+                  'updated_at_ms':
+                      _nullableDateTimeConverter.encode(item.updatedAt)
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<ProcessModel> _processModelInsertionAdapter;
+
+  final UpdateAdapter<ProcessModel> _processModelUpdateAdapter;
+
+  @override
+  Future<List<ProcessModel>> findAll() async {
+    return _queryAdapter.queryList('SELECT * FROM processes ORDER BY rowid ASC',
+        mapper: (Map<String, Object?> row) => ProcessModel(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            description: row['description'] as String,
+            requiredDocuments: _stringListConverter
+                .decode(row['required_documents_json'] as String),
+            processType:
+                _processTypeConverter.decode(row['process_type'] as String),
+            relatedId: row['related_id'] as String?,
+            isActive: (row['is_active'] as int) != 0,
+            createdAt:
+                _nullableDateTimeConverter.decode(row['created_at_ms'] as int?),
+            updatedAt: _nullableDateTimeConverter
+                .decode(row['updated_at_ms'] as int?)));
+  }
+
+  @override
+  Future<int?> countProcesses() async {
+    return _queryAdapter.query('SELECT COUNT(*) FROM processes',
+        mapper: (Map<String, Object?> row) => row.values.first as int);
+  }
+
+  @override
+  Future<void> deleteById(String id) async {
+    await _queryAdapter
+        .queryNoReturn('DELETE FROM processes WHERE id = ?1', arguments: [id]);
+  }
+
+  @override
+  Future<void> insertProcess(ProcessModel process) async {
+    await _processModelInsertionAdapter.insert(
+        process, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertProcesses(List<ProcessModel> processes) async {
+    await _processModelInsertionAdapter.insertList(
+        processes, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> updateProcess(ProcessModel process) {
+    return _processModelUpdateAdapter.updateAndReturnChangedRows(
+        process, OnConflictStrategy.abort);
+  }
+}
+
 // ignore_for_file: unused_element
 final _authProviderConverter = AuthProviderConverter();
+final _processTypeConverter = ProcessTypeConverter();
+final _stringListConverter = StringListConverter();
+final _nullableDateTimeConverter = NullableDateTimeConverter();
