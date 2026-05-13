@@ -48,9 +48,6 @@ class TeacherSubjectsPage extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Vista — consume el ViewModel via Provider, sin addListener ni setState manual
-// ---------------------------------------------------------------------------
 class _TeacherSubjectsView extends StatefulWidget {
   final Teacher? teacher;
   final Subject? subject;

@@ -4,11 +4,13 @@ import 'package:floor/floor.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:ubook_app/model/attachments/attachment_model.dart';
 import 'package:ubook_app/model/auth/user_model.dart';
+import 'package:ubook_app/model/career/career_entity.dart';
 import 'package:ubook_app/model/reviews/review.dart';
 import 'package:ubook_app/model/subjectteacher/subjectteacher.dart';
 import 'package:ubook_app/repository/attachments/attachment_dao.dart';
 import 'package:ubook_app/repository/auth/floor_converters.dart';
 import 'package:ubook_app/repository/auth/user_dao.dart';
+import 'package:ubook_app/repository/career/career_dao.dart';
 import 'package:ubook_app/repository/reviews/review_dao.dart';
 import 'package:ubook_app/repository/teacher_subject/subject_teacher_dao.dart';
 
@@ -57,10 +59,28 @@ final migration3to4 = Migration(3, 4, (database) async {
   );
 });
 
-@Database(version: 4, entities: [UserModel, Review, AttachmentModel, SubjectTeacher])
+
+final migration4to5 = Migration(4, 5, (database) async {
+  await database.execute(
+    'CREATE TABLE IF NOT EXISTS `careers` ('
+    '`id` TEXT NOT NULL, '
+    '`name` TEXT NOT NULL, '
+    '`educationalCenterId` TEXT NOT NULL, '
+    '`semesters` INTEGER NOT NULL, '
+    '`credits` INTEGER NOT NULL, '
+    '`subjects` TEXT NOT NULL, '
+    '`processes` TEXT NOT NULL, '
+    '`reviews` TEXT NOT NULL, '
+    'PRIMARY KEY (`id`)'
+    ')',
+  );
+});
+
+@Database(version: 5, entities: [UserModel, Review, AttachmentModel, SubjectTeacher, CareerEntity])
 abstract class AppDatabase extends FloorDatabase {
   UserDao get userDao;
   ReviewDao get reviewDao;
   AttachmentDao get attachmentDao;
+  CareerDao get careerDao;
   SubjectTeacherDao get subjectTeacherDao;
 }

@@ -4,9 +4,6 @@ import 'package:floor/floor.dart';
 class SubjectTeacher {
   @PrimaryKey()
   final String id;
-
-  // campos de Subject (denormalizados para mostrar sin join)
-  @ColumnInfo(name: 'subject_id')
   final String subjectId;
 
   @ColumnInfo(name: 'subject_nombre')
@@ -17,9 +14,6 @@ class SubjectTeacher {
 
   @ColumnInfo(name: 'subject_horas')
   final int subjectHoras;
-
-  // campos de Teacher
-  @ColumnInfo(name: 'teacher_id')
   final String teacherId;
 
   @ColumnInfo(name: 'teacher_name')
@@ -27,8 +21,7 @@ class SubjectTeacher {
 
   @ColumnInfo(name: 'teacher_email')
   final String teacherEmail;
-
-  @ColumnInfo(name: 'is_active')
+  
   final bool isActive;
 
   @ColumnInfo(name: 'created_at_ms')
@@ -88,15 +81,4 @@ class SubjectTeacher {
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt.toIso8601String(),
       };
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) || other is SubjectTeacher && other.id == id;
-
-  @override
-  int get hashCode => id.hashCode;
-
-  @override
-  String toString() =>
-      'SubjectTeacher(id: $id, teacher: $teacherName, subject: $subjectNombre)';
 }
