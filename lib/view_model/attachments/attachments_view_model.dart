@@ -112,7 +112,8 @@ class AttachmentsViewModel extends ChangeNotifier {
         knownExtensions = allowedExtensions
             .map((e) => e.toUpperCase())
             .toList();
-      } catch (_) {
+      } catch (e, st) {
+        debugPrint('Error al obtener extensiones permitidas: $e\n$st');
         // Si la API no responde, se permite cualquier tipo.
         allowedExtensions = null;
       }
