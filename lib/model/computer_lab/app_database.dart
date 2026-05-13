@@ -8,7 +8,13 @@ import 'computer_lab_dao.dart';
 
 part 'app_database.g.dart';
 
-@Database(version: 1, entities: [ComputerLab])
+final migration1to2 = Migration(1, 2, (database) async {
+  await database.execute(
+    "ALTER TABLE computer_labs ADD COLUMN city TEXT NOT NULL DEFAULT ''",
+  );
+});
+
+@Database(version: 2, entities: [ComputerLab])
 abstract class AppDatabase extends FloorDatabase {
   ComputerLabDao get computerLabDao;
 }

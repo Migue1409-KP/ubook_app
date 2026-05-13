@@ -76,7 +76,7 @@ class _$AppDatabase extends AppDatabase {
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 1,
+      version: 2,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -96,7 +96,7 @@ class _$AppDatabase extends AppDatabase {
       },
       onCreate: (database, version) async {
         await database.execute(
-          'CREATE TABLE IF NOT EXISTS `computer_labs` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `building` TEXT NOT NULL, `roomNumber` TEXT NOT NULL, `capacity` INTEGER NOT NULL, `available` INTEGER NOT NULL, `equipment` TEXT NOT NULL, `notes` TEXT NOT NULL, PRIMARY KEY (`id`))',
+          'CREATE TABLE IF NOT EXISTS `computer_labs` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `building` TEXT NOT NULL, `roomNumber` TEXT NOT NULL, `city` TEXT NOT NULL, `capacity` INTEGER NOT NULL, `available` INTEGER NOT NULL, `equipment` TEXT NOT NULL, `notes` TEXT NOT NULL, PRIMARY KEY (`id`))',
         );
 
         await callback?.onCreate?.call(database, version);
@@ -125,6 +125,7 @@ class _$ComputerLabDao extends ComputerLabDao {
           'name': item.name,
           'building': item.building,
           'roomNumber': item.roomNumber,
+          'city': item.city,
           'capacity': item.capacity,
           'available': item.available ? 1 : 0,
           'equipment': _stringListConverter.encode(item.equipment),
@@ -149,6 +150,7 @@ class _$ComputerLabDao extends ComputerLabDao {
         name: row['name'] as String,
         building: row['building'] as String,
         roomNumber: row['roomNumber'] as String,
+        city: row['city'] as String,
         capacity: row['capacity'] as int,
         available: (row['available'] as int) != 0,
         equipment: _stringListConverter.decode(row['equipment'] as String),

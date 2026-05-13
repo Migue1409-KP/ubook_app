@@ -13,6 +13,7 @@ class ComputerLab {
   final String name;
   final String building;
   final String roomNumber;
+  final String city;
   final int capacity;
   final bool available;
   final List<String> equipment; // e.g., ["Projector", "3D Printer"]
@@ -23,6 +24,7 @@ class ComputerLab {
     required this.name,
     required this.building,
     required this.roomNumber,
+    required this.city,
     required this.capacity,
     required this.available,
     required this.equipment,
@@ -34,6 +36,7 @@ class ComputerLab {
     String? name,
     String? building,
     String? roomNumber,
+    String? city,
     int? capacity,
     bool? available,
     List<String>? equipment,
@@ -44,6 +47,7 @@ class ComputerLab {
       name: name ?? this.name,
       building: building ?? this.building,
       roomNumber: roomNumber ?? this.roomNumber,
+      city: city ?? this.city,
       capacity: capacity ?? this.capacity,
       available: available ?? this.available,
       equipment: equipment ?? this.equipment,

@@ -12,7 +12,10 @@ class DatabaseService {
       return _database!;
     }
 
-    _database = await $FloorAppDatabase.databaseBuilder('ubook_app.db').build();
+    _database = await $FloorAppDatabase
+        .databaseBuilder('ubook_app.db')
+        .addMigrations([migration1to2])
+        .build();
     return _database!;
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../model/city/city.dart';
 import '../../view_model/computer_lab_form_view_model.dart';
 import '../../model/computer_lab/computer_lab.dart';
 import '../../model/computer_lab/computer_lab_repository.dart';
@@ -28,7 +29,12 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
     viewModel.addListener(_handleViewModelChange);
     _vm = viewModel;
     _didInitialize = true;
+    _loadCities();
     _loadSavedLabs();
+  }
+
+  Future<void> _loadCities() async {
+    await _vm?.loadCities();
   }
 
   Future<void> _loadSavedLabs() async {
@@ -53,6 +59,64 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  Widget _buildCityField(ComputerLabFormViewModel vm) {
+    if (vm.isLoadingCities) {
+      return const InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Ciudad',
+          hintText: 'Cargando ciudades...',
+        ),
+        child: LinearProgressIndicator(),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DropdownButtonFormField<City>(
+          key: ValueKey(vm.selectedCity?.daneCode ?? 'no-city'),
+          initialValue: vm.selectedCity,
+          isExpanded: true,
+          decoration: const InputDecoration(
+            labelText: 'Ciudad',
+            hintText: 'Selecciona una ciudad',
+          ),
+          items: vm.cities
+              .map(
+                (city) => DropdownMenuItem<City>(
+                  value: city,
+                  child: Text(
+                    city.displayName,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: vm.cities.isEmpty ? null : vm.selectCity,
+          validator: vm.validateCity,
+        ),
+        if (vm.citiesError != null) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  vm.citiesError!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: vm.loadCities,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
   }
 
   @override
@@ -140,7 +204,9 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                           leading: CircleAvatar(child: Text('${index + 1}')),
                           title: Text(lab.name),
                           subtitle: Text(
-                            '${lab.building} - ${lab.roomNumber}\n${lab.capacity} computadoras',
+                            '${lab.building} - ${lab.roomNumber}'
+                            '${lab.city.isEmpty ? '' : '\n${lab.city}'}'
+                            '\n${lab.capacity} computadoras',
                           ),
                           isThreeLine: true,
                           trailing: Icon(
@@ -174,6 +240,8 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
                 ),
                 validator: (v) => vm.validateRequired(v, field: 'Building'),
               ),
+              const SizedBox(height: 12),
+              _buildCityField(vm),
               const SizedBox(height: 12),
               TextFormField(
                 controller: vm.roomNumberController,
@@ -226,7 +294,8 @@ class _ComputerLabFormViewState extends State<ComputerLabFormView> {
               ),
               const SizedBox(height: 24),
               FilledButton.icon(
-                onPressed: vm.isSaving
+                onPressed:
+                    vm.isSaving || vm.isLoadingCities || vm.cities.isEmpty
                     ? null
                     : () async {
                         final counter = context.read<ComputerCountProvider>();

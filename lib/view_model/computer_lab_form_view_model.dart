@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import '../model/city/city.dart';
+import '../model/city/city_service.dart';
 import '../model/computer_lab/computer_lab.dart';
 import '../model/computer_lab/computer_lab_repository.dart';
 
 class ComputerLabFormViewModel extends ChangeNotifier {
-  ComputerLabFormViewModel({ComputerLabRepository? repository})
-    : _repository = repository;
+  ComputerLabFormViewModel({
+    ComputerLabRepository? repository,
+    CityService cityService = const CityService(),
+  }) : _repository = repository,
+       _cityService = cityService;
 
   final ComputerLabRepository? _repository;
+  final CityService _cityService;
 
   // Controllers
   final nameController = TextEditingController();
@@ -19,10 +25,37 @@ class ComputerLabFormViewModel extends ChangeNotifier {
   bool available = true;
   bool isSaving = false;
   bool isLoadingLabs = false;
+  bool isLoadingCities = false;
   int storedLabCount = 0;
   List<ComputerLab> savedLabs = const [];
+  List<City> cities = const [];
+  City? selectedCity;
+  String? citiesError;
 
   final formKey = GlobalKey<FormState>();
+
+  Future<void> loadCities() async {
+    isLoadingCities = true;
+    citiesError = null;
+    notifyListeners();
+
+    try {
+      cities = await _cityService.fetchCities();
+      if (selectedCity != null && !cities.contains(selectedCity)) {
+        selectedCity = null;
+      }
+      if (cities.isEmpty) {
+        citiesError = 'No hay ciudades disponibles.';
+      }
+    } on Exception catch (error) {
+      cities = const [];
+      selectedCity = null;
+      citiesError = error.toString();
+    } finally {
+      isLoadingCities = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> loadSavedLabs() async {
     final repository = _repository;
@@ -49,6 +82,16 @@ class ComputerLabFormViewModel extends ChangeNotifier {
     return null;
   }
 
+  String? validateCity(City? value) {
+    if (isLoadingCities) {
+      return 'Espera a que carguen las ciudades';
+    }
+    if (value == null) {
+      return 'Ciudad es requerida';
+    }
+    return null;
+  }
+
   String? validatePositiveInt(String? value, {String field = 'Capacity'}) {
     if (value == null || value.trim().isEmpty) {
       return '$field is required';
@@ -60,6 +103,11 @@ class ComputerLabFormViewModel extends ChangeNotifier {
     return null;
   }
 
+  void selectCity(City? city) {
+    selectedCity = city;
+    notifyListeners();
+  }
+
   Future<ComputerLab?> submit() async {
     final repository = _repository;
     if (repository == null) {
@@ -68,7 +116,9 @@ class ComputerLabFormViewModel extends ChangeNotifier {
       );
     }
 
-    if (!(formKey.currentState?.validate() ?? false)) return null;
+    if (!(formKey.currentState?.validate() ?? false) || selectedCity == null) {
+      return null;
+    }
     isSaving = true;
     notifyListeners();
 
@@ -83,6 +133,7 @@ class ComputerLabFormViewModel extends ChangeNotifier {
       name: nameController.text.trim(),
       building: buildingController.text.trim(),
       roomNumber: roomNumberController.text.trim(),
+      city: selectedCity!.displayName,
       capacity: int.parse(capacityController.text.trim()),
       available: available,
       equipment: equipment,
@@ -105,6 +156,7 @@ class ComputerLabFormViewModel extends ChangeNotifier {
     capacityController.clear();
     equipmentController.clear();
     notesController.clear();
+    selectedCity = null;
     available = true;
     formKey.currentState?.reset();
     notifyListeners();
