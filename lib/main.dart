@@ -25,7 +25,7 @@ Future<void> main() async {
 
   final database = await $FloorAppDatabase
       .databaseBuilder('ubook_app.db')
-      .addMigrations([migration1to2, migration2to3, migration3to4])
+      .addMigrations([migration1to2, migration2to3, migration5to6])
       .build();
   final userRepository = FloorUserRepository.initialize(database);
   await userRepository.ensureInitialized();
