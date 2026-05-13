@@ -40,7 +40,7 @@ final migration2to3 = Migration(2, 3, (database) async {
   );
 });
 
-final migration3to4 = Migration(3, 4, (database) async {
+final migration5to6 = Migration(5, 6, (database) async {
   await database.execute(
     'CREATE TABLE IF NOT EXISTS `processes` ('
     '`id` TEXT NOT NULL, '
@@ -63,7 +63,7 @@ final migration3to4 = Migration(3, 4, (database) async {
   StringListConverter,
   NullableDateTimeConverter,
 ])
-@Database(version: 4, entities: [UserModel, Review, AttachmentModel, ProcessModel])
+@Database(version: 6, entities: [UserModel, Review, AttachmentModel, ProcessModel])
 abstract class AppDatabase extends FloorDatabase {
   UserDao get userDao;
   ReviewDao get reviewDao;
