@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../model/teachers/teacher.dart';
+import '../../repository/teachers/sqlite_teacher_repository.dart';
+import '../../repository/teachers/teacher_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TeacherListViewModel extends ChangeNotifier {
   List<Teacher> _allTeachers = [];
@@ -15,71 +18,51 @@ class TeacherListViewModel extends ChangeNotifier {
     _loadTeachers();
   }
 
-  void _loadTeachers() {
-    _allTeachers = [
-      Teacher(
-        id: 'TCH-001',
-        firstName: 'Juan',
-        lastName: 'Pablo',
-        email: 'juan.pablo@uco.edu',
-        phone: '809-555-0101',
-        age: 25,
-        department: 'Ingeniería de Sistemas',
-        specialty: 'Desarrollo Móvil',
-        subjects: ['Ingeniería de Software 3', 'Ingeniería de Software Avanzada 2'],
-        profileImageUrl: 'https://example.com/avatars/juan.jpg',
-        isActive: true,
-        createdAt: DateTime(2024, 1, 15),
-        updatedAt: DateTime(2024, 6, 10),
-      ),
-      Teacher(
-        id: 'TCH-002',
-        firstName: 'Maria',
-        lastName: 'Lopez',
-        email: 'maria.lopez@uco.edu',
-        phone: '809-555-0102',
-        age: 34,
-        department: 'Ingeniería de Sistemas',
-        specialty: 'Inteligencia Artificial',
-        subjects: ['Fundamentos de IA', 'Aprendizaje Automático'],
-        profileImageUrl: 'https://example.com/avatars/maria.jpg',
-        isActive: true,
-        createdAt: DateTime(2023, 8, 20),
-        updatedAt: DateTime(2024, 5, 5),
-      ),
-      Teacher(
-        id: 'TCH-003',
-        firstName: 'Carlos',
-        lastName: 'Mendez',
-        email: 'carlos.mendez@uco.edu',
-        phone: '809-555-0103',
-        age: 45,
-        department: 'Matemáticas',
-        specialty: 'Ciencias Exactas',
-        subjects: ['Cálculo I', 'Álgebra Lineal', 'Estadística'],
-        profileImageUrl: 'https://example.com/avatars/carlos.jpg',
-        isActive: true,
-        createdAt: DateTime(2022, 3, 1),
-        updatedAt: DateTime(2024, 4, 18),
-      ),
-      Teacher(
-        id: 'TCH-004',
-        firstName: 'Ana',
-        lastName: 'Rivera',
-        email: 'ana.rivera@uco.edu',
-        phone: '809-555-0104',
-        age: 39,
-        department: 'Ingeniería de Sistemas',
-        specialty: 'Desarrollo Web',
-        subjects: ['Desarrollo Web', 'Diseño de Bases de Datos'],
-        profileImageUrl: 'https://example.com/avatars/ana.jpg',
-        isActive: true,
-        createdAt: DateTime(2023, 1, 10),
-        updatedAt: DateTime(2024, 7, 22),
-      ),
-    ];
+  Future<void> _loadTeachers() async {
+    _allTeachers = await SqliteTeacherRepository.instance.getAll();
+    if (_allTeachers.isEmpty) {
+      // Initialize with dummy data if empty
+      _allTeachers = [
+        Teacher(
+          id: 'TCH-001',
+          firstName: 'Juan',
+          lastName: 'Pablo',
+          email: 'juan.pablo@uco.edu',
+          phone: '809-555-0101',
+          age: 25,
+          department: 'Ingeniería de Sistemas',
+          specialty: 'Desarrollo Móvil',
+          subjects: ['Ingeniería de Software 3', 'Ingeniería de Software Avanzada 2'],
+          profileImageUrl: 'https://example.com/avatars/juan.jpg',
+          isActive: true,
+          createdAt: DateTime(2024, 1, 15),
+          updatedAt: DateTime(2024, 6, 10),
+        ),
+      ];
+      for (var t in _allTeachers) {
+        await SqliteTeacherRepository.instance.save(t);
+      }
+    }
+    _applySortAndFilter();
+  }
+
+  Future<void> _applySortAndFilter() async {
+    final prefs = await TeacherPreferences.init();
+    final ascending = prefs.getSortAscending();
+    
     _filteredTeachers = List.from(_allTeachers);
-    notifyListeners();
+    _filteredTeachers.sort((a, b) {
+      final comp = a.fullName.compareTo(b.fullName);
+      return ascending ? comp : -comp;
+    });
+    
+    search(_searchQuery);
+  }
+
+  Future<void> toggleSortOrder() async {
+    final prefs = await TeacherPreferences.init();
+    await prefs.setSortAscending(!prefs.getSortAscending());
+    _applySortAndFilter();
   }
 
   void search(String query) {
@@ -97,18 +80,18 @@ class TeacherListViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addTeacher(Teacher teacher) {
-    _allTeachers.add(teacher);
-    search(_searchQuery);
+  Future<void> addTeacher(Teacher teacher) async {
+    await SqliteTeacherRepository.instance.save(teacher);
+    await _loadTeachers();
   }
 
-  void updateTeacher(Teacher teacher) {
-    final index = _allTeachers.indexWhere((t) => t.id == teacher.id);
-    if (index >= 0) _allTeachers[index] = teacher;
-    search(_searchQuery);
+  Future<void> updateTeacher(Teacher teacher) async {
+    await SqliteTeacherRepository.instance.save(teacher);
+    await _loadTeachers();
   }
 
   void deleteTeacher(String id) {
+    // SQLite deletion logic should go here if implemented, for now memory
     _allTeachers.removeWhere((t) => t.id == id);
     search(_searchQuery);
   }

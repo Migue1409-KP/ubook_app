@@ -1,17 +1,70 @@
 import 'package:flutter/material.dart';
 import '../../model/teachers/teacher.dart';
 import '../../model/teachers/teacher_repository.dart';
+import '../../repository/teachers/sqlite_teacher_repository.dart';
+import '../../repository/teachers/country_api_service.dart';
 
 class TeacherFormViewModel extends ChangeNotifier {
   TeacherFormViewModel({
     TeacherRepository? repository,
     Teacher? initial,
-  }) : _repository = repository ?? InMemoryTeacherRepository.instance,
+  }) : _repository = repository ?? SqliteTeacherRepository.instance,
        _editingId = initial?.id {
     if (initial != null) _populate(initial);
+    _loadCountries();
   }
 
   final TeacherRepository _repository;
+  final CountryApiService _countryApiService = CountryApiService();
+
+  List<CountryPhoneCode> countries = [];
+  bool isLoadingCountries = false;
+  CountryPhoneCode? selectedCountry;
+
+  Future<void> _loadCountries() async {
+    isLoadingCountries = true;
+    notifyListeners();
+    try {
+      countries = await _countryApiService.fetchCountries();
+    } catch (e) {
+      countries = _countryApiService.getFallbackCountries();
+    }
+    
+    if (countries.isNotEmpty) {
+      // Find Colombia as default if available, or first item
+      selectedCountry = countries.firstWhere(
+        (c) => c.code == 'CO', 
+        orElse: () => countries.first,
+      );
+      
+      // If editing, try to guess the country based on the phone string if it contains a dialCode
+      if (_editingId != null && phoneController.text.isNotEmpty) {
+        for (var c in countries) {
+          if (phoneController.text.startsWith(c.dialCode)) {
+            selectedCountry = c;
+            // Optionally remove dial code from text field if you want to keep them separated
+            break;
+          }
+        }
+      } else {
+        // If creating new, optionally set the phone prefix automatically
+        if (phoneController.text.isEmpty && selectedCountry != null) {
+          phoneController.text = selectedCountry!.dialCode + ' ';
+        }
+      }
+    }
+    
+    isLoadingCountries = false;
+    notifyListeners();
+  }
+
+  void onCountryChanged(CountryPhoneCode? newCountry) {
+    if (newCountry == null) return;
+    selectedCountry = newCountry;
+    // Set the prefix in the text field if empty or replace old prefix
+    phoneController.text = newCountry.dialCode + ' ';
+    notifyListeners();
+  }
   final String? _editingId;
 
   bool get isEditing => _editingId != null;
