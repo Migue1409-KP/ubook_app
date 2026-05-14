@@ -13,6 +13,7 @@ import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
 import 'view/auth/profile_view.dart';
 import 'view/auth/register_view.dart';
+import 'view/notification/notification_admin_view.dart';
 import 'view/pqrs/pqrs_page.dart';
 import 'view_model/pqrs/pqrs_viewmodel.dart';
 import 'view_model/auth/user_count_provider.dart';
@@ -27,7 +28,13 @@ Future<void> main() async {
 
   final database = await $FloorAppDatabase
       .databaseBuilder('ubook_app.db')
-      .addMigrations([migration1to2, migration2to3, migration3to4, migration4to5, migration5to6])
+      .addMigrations([
+        migration1to2,
+        migration2to3,
+        migration3to4,
+        migration4to5,
+        migration5to6,
+      ])
       .build();
   final userRepository = FloorUserRepository.initialize(database);
   await userRepository.ensureInitialized();
@@ -71,6 +78,7 @@ class MyApp extends StatelessWidget {
           '/register': (context) => const RegisterView(),
           '/profile': (context) => const ProfileView(),
           '/dashboard': (context) => const DashboardView(),
+          '/admin_notifications': (context) => const NotificationAdminView(),
           '/pqrs': (context) => ChangeNotifierProvider(
             create: (_) => PQRSViewModel(),
             child: const PQRSPage(),
