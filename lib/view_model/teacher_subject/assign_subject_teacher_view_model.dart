@@ -52,7 +52,6 @@ class AssignSubjectTeacherViewModel extends ChangeNotifier {
   String? busyKey;
   String? errorMessage;
 
-  /// Mensaje no-bloqueante: la BD local funciona aunque la API esté caída.
   String? apiWarning;
 
   String _searchTeacher = '';
@@ -189,7 +188,6 @@ class AssignSubjectTeacherViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Asigna o desasigna una pareja profesor↔materia en el periodo seleccionado.
   Future<bool> toggle(String teacherId, String subjectId) async {
     final key = _linkKey(teacherId, subjectId);
     busyKey = key;

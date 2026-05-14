@@ -97,10 +97,6 @@ final migration5to6 = Migration(5, 6, (database) async {
   );
 });
 
-/// Añade a `subject_teachers` el periodo académico al que pertenece la
-/// asignación. El catálogo de periodos se obtiene desde la API remota
-/// (https://my-json-server.typicode.com/cristiancamilo62/api/periodosAcademicos).
-/// Las columnas son nullable para preservar las asignaciones ya creadas.
 final migration6to7 = Migration(6, 7, (database) async {
   await database.execute(
     'ALTER TABLE `subject_teachers` ADD COLUMN `periodo_academico_id` TEXT',
@@ -110,12 +106,6 @@ final migration6to7 = Migration(6, 7, (database) async {
   );
 });
 
-/// Arregla un esquema inconsistente preexistente: el modelo no tenía
-/// `@ColumnInfo(name: ...)` para subjectId/teacherId, así que Floor creaba
-/// la tabla desde cero con `subjectId`/`teacherId` (sin underscore) mientras
-/// que las queries del DAO usaban `subject_id`/`teacher_id` (con underscore).
-/// El RENAME falla silenciosamente si las columnas ya tienen el nombre
-/// correcto (BD que vino de migración manual antigua).
 final migration7to8 = Migration(7, 8, (database) async {
   try {
     await database.execute(

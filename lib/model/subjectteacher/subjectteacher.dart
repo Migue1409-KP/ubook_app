@@ -28,13 +28,9 @@ class SubjectTeacher {
 
   final bool isActive;
 
-  /// Periodo académico en el que se da la asignación. Cargado desde la API
-  /// remota (ver [AcademicPeriodApiRepository]). Nullable para mantener
-  /// compatibilidad con asignaciones creadas antes de la migración v6→v7.
   @ColumnInfo(name: 'periodo_academico_id')
   final String? periodoAcademicoId;
 
-  /// Etiqueta cacheada del periodo (ej. "2026-1") para mostrar sin re-fetch.
   @ColumnInfo(name: 'periodo_etiqueta')
   final String? periodoEtiqueta;
 

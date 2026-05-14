@@ -103,8 +103,6 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
 
   List<SubjectTeacher> get subjectLinks => _filteredLinks;
 
-  /// Devuelve el link específico para una materia, en el periodo activo.
-  /// Útil para mostrar el periodo junto al item de la lista.
   SubjectTeacher? linkForSubject(String subjectId) {
     for (final l in _filteredLinks) {
       if (l.subjectId == subjectId && l.teacherId == teacher?.id) {
