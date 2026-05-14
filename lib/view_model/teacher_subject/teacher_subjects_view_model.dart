@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../model/teachers/teacher.dart';
 import '../../model/subjectteacher/subjectteacher.dart';
+import '../../model/subjectteacher/academic_period.dart';
 import '../../model/subjects/subjects.dart';
 import '../../repository/teacher_subject/floor_subject_teacher_repository.dart';
+import '../../repository/teacher_subject/academic_period_api_repository.dart';
 import '../../repository/teacher_subject/subject_teacher_repository.dart';
 
 /// Catálogo de fallback usado cuando el caller no inyecta [allSubjects].
@@ -23,12 +25,15 @@ final List<Subject> _fallbackSubjects = [
 /// - Modo materia : lista profesores asignados a una materia.
 ///
 /// La persistencia se hace via [SubjectTeacherRepository] (Floor + SQLite).
+/// El catálogo de periodos académicos se obtiene desde la API remota
+/// (ver [AcademicPeriodApiRepository]).
 class TeacherSubjectsViewModel extends ChangeNotifier {
   final Teacher? teacher;
   final Subject? subject;
   final List<Subject> allSubjects;
   final List<Teacher> allTeachers;
   final SubjectTeacherRepository _repository;
+  final AcademicPeriodApiRepository _periodoApi;
 
   TeacherSubjectsViewModel({
     this.teacher,
@@ -36,7 +41,9 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
     this.allSubjects = const [],
     this.allTeachers = const [],
     SubjectTeacherRepository? repository,
+    AcademicPeriodApiRepository? periodoApi,
   })  : _repository = repository ?? FloorSubjectTeacherRepository.instance,
+        _periodoApi = periodoApi ?? AcademicPeriodApiRepository.instance,
         assert(teacher != null || subject != null) {
     _load();
   }
@@ -46,12 +53,18 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
   bool isInitialLoading = true;
   bool isBusy = false;
   String? errorMessage;
+  String? apiWarning;
   String _searchQuery = '';
+
+  List<AcademicPeriod> _periodos = const [];
+  AcademicPeriod? _selectedPeriodo;
 
   int get storedLinkCount => _links.length;
 
   String get searchQuery => _searchQuery;
   bool get isTeacherMode => teacher != null;
+  List<AcademicPeriod> get periodos => _periodos;
+  AcademicPeriod? get selectedPeriodo => _selectedPeriodo;
 
   String get pageTitle => isTeacherMode
       ? 'Materias de ${teacher!.firstName}'
@@ -60,8 +73,19 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
   List<Subject> get _effectiveSubjects =>
       allSubjects.isNotEmpty ? allSubjects : _fallbackSubjects;
 
-  Set<String> get _assignedIds =>
-      _links.where((l) => l.teacherId == teacher?.id).map((l) => l.subjectId).toSet();
+  /// Asignaciones del periodo seleccionado. Si no hay periodo seleccionado
+  /// (porque la API falló) se devuelven todos los links.
+  List<SubjectTeacher> get _filteredLinks {
+    if (_selectedPeriodo == null) return _links;
+    return _links
+        .where((l) => l.periodoAcademicoId == _selectedPeriodo!.id)
+        .toList();
+  }
+
+  Set<String> get _assignedIds => _filteredLinks
+      .where((l) => l.teacherId == teacher?.id)
+      .map((l) => l.subjectId)
+      .toSet();
 
   List<Subject> get assignedSubjects =>
       _effectiveSubjects.where((s) => _assignedIds.contains(s.id)).toList();
@@ -77,7 +101,18 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
   int get totalCredits =>
       assignedSubjects.fold(0, (sum, s) => sum + s.creditos);
 
-  List<SubjectTeacher> get subjectLinks => _links;
+  List<SubjectTeacher> get subjectLinks => _filteredLinks;
+
+  /// Devuelve el link específico para una materia, en el periodo activo.
+  /// Útil para mostrar el periodo junto al item de la lista.
+  SubjectTeacher? linkForSubject(String subjectId) {
+    for (final l in _filteredLinks) {
+      if (l.subjectId == subjectId && l.teacherId == teacher?.id) {
+        return l;
+      }
+    }
+    return null;
+  }
 
   List<Subject> _applySearch(List<Subject> list) {
     if (_searchQuery.isEmpty) return list;
@@ -90,20 +125,46 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void selectPeriodo(AcademicPeriod periodo) {
+    _selectedPeriodo = periodo;
+    notifyListeners();
+  }
+
   Future<void> _load() async {
     isInitialLoading = true;
     errorMessage = null;
+    apiWarning = null;
     notifyListeners();
+
+    // Paso 1: BD local (crítico). Si falla aquí no podemos mostrar nada.
     try {
       _links = isTeacherMode
           ? await _repository.findByTeacherId(teacher!.id)
           : await _repository.findBySubjectId(subject!.id);
     } catch (_) {
       errorMessage = 'No se pudo cargar la información. Intenta de nuevo.';
-    } finally {
       isInitialLoading = false;
       notifyListeners();
+      return;
     }
+
+    // Paso 2: API (no crítico). Si falla mostramos warning pero no bloqueamos.
+    try {
+      _periodos = await _periodoApi.fetchPeriods();
+      if (_periodos.isNotEmpty) {
+        _selectedPeriodo = _periodos.firstWhere(
+          (p) => p.estaActivo,
+          orElse: () => _periodos.first,
+        );
+      }
+    } catch (_) {
+      _periodos = const [];
+      apiWarning = 'Sin conexión al catálogo de periodos. '
+          'Mostrando todas las asignaciones.';
+    }
+
+    isInitialLoading = false;
+    notifyListeners();
   }
 
   Future<void> refresh() async {
@@ -127,6 +188,8 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
         teacherId: teacher!.id,
         teacherName: teacher!.fullName,
         teacherEmail: teacher!.email,
+        periodoAcademicoId: _selectedPeriodo?.id,
+        periodoEtiqueta: _selectedPeriodo?.etiqueta,
         createdAt: now,
         updatedAt: now,
       );
@@ -147,7 +210,7 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
     isBusy = true;
     notifyListeners();
     try {
-      final link = _links.firstWhere(
+      final link = _filteredLinks.firstWhere(
         (l) => l.subjectId == subject.id && l.teacherId == teacher!.id,
       );
       await _repository.deleteById(link.id);
