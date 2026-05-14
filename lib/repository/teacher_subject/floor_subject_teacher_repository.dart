@@ -61,6 +61,20 @@ class FloorSubjectTeacherRepository implements SubjectTeacherRepository {
   }
 
   @override
+  Future<List<SubjectTeacher>> findByTeacherIdAndPeriodo(
+    String teacherId,
+    String periodoId,
+  ) {
+    return _database.subjectTeacherDao
+        .findByTeacherIdAndPeriodo(teacherId, periodoId);
+  }
+
+  @override
+  Future<List<SubjectTeacher>> findByPeriodo(String periodoId) {
+    return _database.subjectTeacherDao.findByPeriodo(periodoId);
+  }
+
+  @override
   Future<void> insertSubjectTeacher(SubjectTeacher subjectTeacher) {
     return _database.subjectTeacherDao.insertSubjectTeacher(subjectTeacher);
   }

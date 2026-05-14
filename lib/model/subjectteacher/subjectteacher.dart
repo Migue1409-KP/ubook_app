@@ -4,6 +4,8 @@ import 'package:floor/floor.dart';
 class SubjectTeacher {
   @PrimaryKey()
   final String id;
+
+  @ColumnInfo(name: 'subject_id')
   final String subjectId;
 
   @ColumnInfo(name: 'subject_nombre')
@@ -14,6 +16,8 @@ class SubjectTeacher {
 
   @ColumnInfo(name: 'subject_horas')
   final int subjectHoras;
+
+  @ColumnInfo(name: 'teacher_id')
   final String teacherId;
 
   @ColumnInfo(name: 'teacher_name')
@@ -21,8 +25,18 @@ class SubjectTeacher {
 
   @ColumnInfo(name: 'teacher_email')
   final String teacherEmail;
-  
+
   final bool isActive;
+
+  /// Periodo académico en el que se da la asignación. Cargado desde la API
+  /// remota (ver [AcademicPeriodApiRepository]). Nullable para mantener
+  /// compatibilidad con asignaciones creadas antes de la migración v6→v7.
+  @ColumnInfo(name: 'periodo_academico_id')
+  final String? periodoAcademicoId;
+
+  /// Etiqueta cacheada del periodo (ej. "2026-1") para mostrar sin re-fetch.
+  @ColumnInfo(name: 'periodo_etiqueta')
+  final String? periodoEtiqueta;
 
   @ColumnInfo(name: 'created_at_ms')
   final int createdAtMs;
@@ -43,6 +57,8 @@ class SubjectTeacher {
     this.teacherName = '',
     this.teacherEmail = '',
     this.isActive = true,
+    this.periodoAcademicoId,
+    this.periodoEtiqueta,
     DateTime? createdAt,
     DateTime? updatedAt,
     int? createdAtMs,
@@ -63,6 +79,8 @@ class SubjectTeacher {
       teacherName: json['teacher_name'] as String? ?? '',
       teacherEmail: json['teacher_email'] as String? ?? '',
       isActive: json['is_active'] as bool? ?? true,
+      periodoAcademicoId: json['periodo_academico_id'] as String?,
+      periodoEtiqueta: json['periodo_etiqueta'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -78,6 +96,8 @@ class SubjectTeacher {
         'teacher_name': teacherName,
         'teacher_email': teacherEmail,
         'is_active': isActive,
+        'periodo_academico_id': periodoAcademicoId,
+        'periodo_etiqueta': periodoEtiqueta,
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt.toIso8601String(),
       };
