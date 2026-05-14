@@ -5,6 +5,11 @@ abstract class SubjectTeacherRepository {
   Future<List<SubjectTeacher>> findAll();
   Future<List<SubjectTeacher>> findByTeacherId(String teacherId);
   Future<List<SubjectTeacher>> findBySubjectId(String subjectId);
+  Future<List<SubjectTeacher>> findByTeacherIdAndPeriodo(
+    String teacherId,
+    String periodoId,
+  );
+  Future<List<SubjectTeacher>> findByPeriodo(String periodoId);
 
   Future<void> insertSubjectTeacher(SubjectTeacher subjectTeacher);
   Future<int> updateSubjectTeacher(SubjectTeacher subjectTeacher);

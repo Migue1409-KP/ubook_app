@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ubook_app/model/subjectteacher/academic_period.dart';
 import 'package:ubook_app/model/subjectteacher/subjectteacher.dart';
 import 'package:ubook_app/view/teacher_subject/assign_subject_teacher_page.dart';
 import '../../model/reviews/review.dart';
@@ -180,6 +181,8 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
     return Column(
       children: [
         _buildTeacherHeader(vm),
+        if (vm.apiWarning != null) _buildApiWarningBanner(vm),
+        if (vm.periodos.isNotEmpty) _buildPeriodoSelector(vm),
         _buildSearchBar(vm),
         const SizedBox(height: 4),
         if (vm.errorMessage != null) _buildErrorBanner(vm),
@@ -196,6 +199,73 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
       ],
     );
   }
+
+  Widget _buildPeriodoSelector(TeacherSubjectsViewModel vm) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.06),
+        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.event_note_rounded, color: AppColors.primary, size: 18),
+          const SizedBox(width: 8),
+          Text('Periodo:',
+              style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: DropdownButton<AcademicPeriod>(
+              isExpanded: true,
+              value: vm.selectedPeriodo,
+              underline: const SizedBox.shrink(),
+              items: vm.periodos
+                  .map((p) => DropdownMenuItem(
+                        value: p,
+                        child: Text(
+                          '${p.etiqueta}${p.estaActivo ? " • activo" : ""}',
+                          style: TextStyle(
+                              color: AppColors.textPrimary, fontSize: 13),
+                        ),
+                      ))
+                  .toList(),
+              onChanged: (p) {
+                if (p != null) vm.selectPeriodo(p);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApiWarningBanner(TeacherSubjectsViewModel vm) => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.1),
+          border: Border.all(color: Colors.orange.withOpacity(0.4)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.cloud_off_rounded,
+                color: Colors.orange, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                vm.apiWarning!,
+                style: const TextStyle(color: Colors.orange, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildReviewsTab() {
     final reviewsVm = _reviewsViewModel;
@@ -418,6 +488,8 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
     return Column(
       children: [
         _buildSubjectHeader(vm),
+        if (vm.apiWarning != null) _buildApiWarningBanner(vm),
+        if (vm.periodos.isNotEmpty) _buildPeriodoSelector(vm),
         if (vm.errorMessage != null) _buildErrorBanner(vm),
         links.isEmpty
             ? Expanded(child: _buildEmpty())
@@ -458,10 +530,12 @@ class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
       itemCount: subjects.length,
       itemBuilder: (_, i) {
         final s = subjects[i];
+        final link = assigned ? vm.linkForSubject(s.id) : null;
         return _SubjectCard(
           subject: s,
           isAssigned: assigned,
           isLoading: _busySubjectId == s.id,
+          periodoEtiqueta: link?.periodoEtiqueta,
           onToggle: _busySubjectId != null
               ? null
               : assigned
@@ -824,6 +898,7 @@ class _SubjectCard extends StatelessWidget {
   final Subject subject;
   final bool isAssigned;
   final bool isLoading;
+  final String? periodoEtiqueta;
   final VoidCallback? onToggle;
   final VoidCallback? onAdjuntos;
 
@@ -831,6 +906,7 @@ class _SubjectCard extends StatelessWidget {
     required this.subject,
     required this.isAssigned,
     required this.isLoading,
+    this.periodoEtiqueta,
     this.onToggle,
     this.onAdjuntos,
   });
@@ -914,6 +990,14 @@ class _SubjectCard extends StatelessWidget {
                     ),
                   ),
           ),
+          if (isAssigned && periodoEtiqueta != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 6),
+              child: _MetaChip(
+                icon: Icons.event_note_rounded,
+                label: periodoEtiqueta!,
+              ),
+            ),
           if (isAssigned && onAdjuntos != null)
             Padding(
               padding: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
@@ -984,9 +1068,23 @@ class _TeacherLinkCard extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        subtitle: Text(
-          link.teacherEmail,
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              link.teacherEmail,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+            if (link.periodoEtiqueta != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: _MetaChip(
+                  icon: Icons.event_note_rounded,
+                  label: link.periodoEtiqueta!,
+                ),
+              ),
+          ],
         ),
         trailing: isBusy
             ? SizedBox(
@@ -1130,6 +1228,40 @@ class _Badge extends StatelessWidget {
       ),
     ),
   );
+}
+
+// ── Meta chip (periodo / modalidad) ───────────────────────────────────────
+class _MetaChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _MetaChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: AppColors.primary),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Empty state ───────────────────────────────────────────────────────────

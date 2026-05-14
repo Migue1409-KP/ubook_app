@@ -97,13 +97,35 @@ final migration5to6 = Migration(5, 6, (database) async {
   );
 });
 
+final migration6to7 = Migration(6, 7, (database) async {
+  await database.execute(
+    'ALTER TABLE `subject_teachers` ADD COLUMN `periodo_academico_id` TEXT',
+  );
+  await database.execute(
+    'ALTER TABLE `subject_teachers` ADD COLUMN `periodo_etiqueta` TEXT',
+  );
+});
+
+final migration7to8 = Migration(7, 8, (database) async {
+  try {
+    await database.execute(
+      'ALTER TABLE `subject_teachers` RENAME COLUMN `subjectId` TO `subject_id`',
+    );
+  } catch (_) {}
+  try {
+    await database.execute(
+      'ALTER TABLE `subject_teachers` RENAME COLUMN `teacherId` TO `teacher_id`',
+    );
+  } catch (_) {}
+});
+
 @TypeConverters([
   AuthProviderConverter,
   ProcessTypeConverter,
   StringListConverter,
   NullableDateTimeConverter,
 ])
-@Database(version: 6, entities: [UserModel, Review, AttachmentModel, SubjectTeacher, CareerEntity, ProcessModel])
+@Database(version: 8, entities: [UserModel, Review, AttachmentModel, SubjectTeacher, CareerEntity, ProcessModel])
 abstract class AppDatabase extends FloorDatabase {
   UserDao get userDao;
   ReviewDao get reviewDao;

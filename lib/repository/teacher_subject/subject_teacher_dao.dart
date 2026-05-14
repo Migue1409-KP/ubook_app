@@ -15,6 +15,18 @@ abstract class SubjectTeacherDao {
   @Query('SELECT * FROM subject_teachers WHERE subject_id = :subjectId')
   Future<List<SubjectTeacher>> findBySubjectId(String subjectId);
 
+  @Query(
+    'SELECT * FROM subject_teachers '
+    'WHERE teacher_id = :teacherId AND periodo_academico_id = :periodoId',
+  )
+  Future<List<SubjectTeacher>> findByTeacherIdAndPeriodo(
+    String teacherId,
+    String periodoId,
+  );
+
+  @Query('SELECT * FROM subject_teachers WHERE periodo_academico_id = :periodoId')
+  Future<List<SubjectTeacher>> findByPeriodo(String periodoId);
+
   @insert
   Future<void> insertSubjectTeacher(SubjectTeacher subjectTeacher);
 

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../model/teachers/teacher.dart';
 import '../../model/subjectteacher/subjectteacher.dart';
+import '../../model/subjectteacher/academic_period.dart';
 import '../../model/subjects/subjects.dart';
 import '../../repository/teacher_subject/floor_subject_teacher_repository.dart';
+import '../../repository/teacher_subject/academic_period_api_repository.dart';
 import '../../repository/teacher_subject/subject_teacher_repository.dart';
 import '../../repository/teacher_subject/teacher_subject_prefs.dart';
 
@@ -28,32 +30,42 @@ class AssignSubjectTeacherViewModel extends ChangeNotifier {
   final List<Subject> allSubjects;
   final SubjectTeacherRepository _repository;
   final TeacherSubjectPrefs _prefs;
+  final AcademicPeriodApiRepository _periodoApi;
 
   AssignSubjectTeacherViewModel({
     this.allTeachers = const [],
     this.allSubjects = const [],
     SubjectTeacherRepository? repository,
     TeacherSubjectPrefs? prefs,
+    AcademicPeriodApiRepository? periodoApi,
   })  : _repository = repository ?? FloorSubjectTeacherRepository.instance,
-        _prefs = prefs ?? TeacherSubjectPrefs() {
+        _prefs = prefs ?? TeacherSubjectPrefs(),
+        _periodoApi = periodoApi ?? AcademicPeriodApiRepository.instance {
     _load();
   }
 
-  /// teacherId_subjectId → linkId. Permite saber si una pareja está asignada
-  /// y obtener el linkId para borrarla sin re-consultar.
+  /// teacherId_subjectId_periodoId → linkId. Permite saber si una pareja está
+  /// asignada en el periodo seleccionado y obtener el linkId para borrarla.
   final Map<String, String?> _linkMap = {};
 
   bool isLoading = true;
   String? busyKey;
   String? errorMessage;
 
+  String? apiWarning;
+
   String _searchTeacher = '';
   String _searchSubject = '';
   String? _selectedTeacherId;
 
+  List<AcademicPeriod> _periodos = const [];
+  AcademicPeriod? _selectedPeriodo;
+
   String get searchTeacher => _searchTeacher;
   String get searchSubject => _searchSubject;
   String? get selectedTeacherId => _selectedTeacherId;
+  List<AcademicPeriod> get periodos => _periodos;
+  AcademicPeriod? get selectedPeriodo => _selectedPeriodo;
 
   List<Teacher> get _effectiveTeachers =>
       allTeachers.isNotEmpty ? allTeachers : _fallbackTeachers;
@@ -88,26 +100,49 @@ class AssignSubjectTeacherViewModel extends ChangeNotifier {
   }
 
   bool isAssigned(String teacherId, String subjectId) =>
-      _linkMap['${teacherId}_$subjectId'] != null;
+      _linkMap[_linkKey(teacherId, subjectId)] != null;
+
+  String _linkKey(String teacherId, String subjectId) {
+    final periodoId = _selectedPeriodo?.id ?? '_no_periodo_';
+    return '${teacherId}_${subjectId}_$periodoId';
+  }
 
   Future<void> _load() async {
     isLoading = true;
     notifyListeners();
     try {
-      final links = await _repository.findAll();
-      _linkMap.clear();
-      for (final l in links) {
-        _linkMap['${l.teacherId}_${l.subjectId}'] = l.id;
+      // Cargar el catálogo remoto en paralelo con la BD local. Si la API
+      // falla, mostramos un warning pero NO bloqueamos: la app sigue
+      // funcionando con la BD local (sin el filtro de periodo).
+      final results = await Future.wait([
+        _repository.findAll(),
+        _periodoApi.fetchPeriods().catchError((_) => <AcademicPeriod>[]),
+      ]);
+
+      final links = results[0] as List<SubjectTeacher>;
+      _periodos = results[1] as List<AcademicPeriod>;
+
+      apiWarning = _periodos.isEmpty
+          ? 'No se pudo cargar el catálogo de periodos. '
+              'La asignación seguirá funcionando localmente.'
+          : null;
+
+      // Periodo activo por defecto, o el primero si ninguno está activo.
+      if (_periodos.isNotEmpty) {
+        _selectedPeriodo = _periodos.firstWhere(
+          (p) => p.estaActivo,
+          orElse: () => _periodos.first,
+        );
       }
-      // Restaurar el último profesor seleccionado desde SharedPreferences.
-      // Si el id guardado ya no existe en el catálogo (ej. fue eliminado),
-      // hacemos fallback al primero.
+
+      _rebuildLinkMap(links);
+
+      // Restaurar el último profesor seleccionado.
       if (_selectedTeacherId == null && _effectiveTeachers.isNotEmpty) {
         final savedId = await _prefs.getLastSelectedTeacherId();
         final exists =
             savedId != null && _effectiveTeachers.any((t) => t.id == savedId);
-        _selectedTeacherId =
-            exists ? savedId : _effectiveTeachers.first.id;
+        _selectedTeacherId = exists ? savedId : _effectiveTeachers.first.id;
       }
       errorMessage = null;
     } catch (_) {
@@ -118,11 +153,28 @@ class AssignSubjectTeacherViewModel extends ChangeNotifier {
     }
   }
 
+  void _rebuildLinkMap(List<SubjectTeacher> links) {
+    _linkMap.clear();
+    for (final l in links) {
+      // Una asignación cuenta para el periodo seleccionado solo si su
+      // periodoAcademicoId coincide. Las asignaciones legadas (sin periodo)
+      // se asocian al sentinel '_no_periodo_' para que no contaminen los
+      // periodos remotos.
+      final periodoKey = l.periodoAcademicoId ?? '_no_periodo_';
+      final key = '${l.teacherId}_${l.subjectId}_$periodoKey';
+      _linkMap[key] = l.id;
+    }
+  }
+
   void selectTeacher(String teacherId) {
     _selectedTeacherId = teacherId;
     _searchSubject = '';
-    // Persistir asíncronamente; no bloqueamos la UI.
     _prefs.saveLastSelectedTeacherId(teacherId);
+    notifyListeners();
+  }
+
+  void selectPeriodo(AcademicPeriod periodo) {
+    _selectedPeriodo = periodo;
     notifyListeners();
   }
 
@@ -137,7 +189,7 @@ class AssignSubjectTeacherViewModel extends ChangeNotifier {
   }
 
   Future<bool> toggle(String teacherId, String subjectId) async {
-    final key = '${teacherId}_$subjectId';
+    final key = _linkKey(teacherId, subjectId);
     busyKey = key;
     notifyListeners();
     try {
@@ -159,6 +211,8 @@ class AssignSubjectTeacherViewModel extends ChangeNotifier {
           teacherId: teacher.id,
           teacherName: teacher.fullName,
           teacherEmail: teacher.email,
+          periodoAcademicoId: _selectedPeriodo?.id,
+          periodoEtiqueta: _selectedPeriodo?.etiqueta,
           createdAt: now,
           updatedAt: now,
         );
