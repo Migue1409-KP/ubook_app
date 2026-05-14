@@ -247,8 +247,11 @@ class _LoginViewState extends State<LoginView> {
                     SocialAuthButton(
                       label: 'Iniciar sesión con Google',
                       assetImage: 'assets/images/auth/logo-google.png',
-                      onPressed: () {
-                        // TODO: Implementar login con Google
+                      onPressed: () async {
+                        final success = await _vm.loginWithGoogle();
+                        if (success && context.mounted) {
+                          Navigator.pushNamed(context, '/dashboard');
+                        }
                       },
                       animationDuration: const Duration(milliseconds: 1700),
                     ),

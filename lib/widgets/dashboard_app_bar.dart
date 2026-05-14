@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:ubook_app/repository/auth/auth_local_storage.dart';
+import 'package:ubook_app/repository/auth/firebase_auth_service.dart';
 import '../theme/app_colors.dart';
 import 'notification/notification_bell.dart';
 
@@ -250,7 +250,7 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
   }
 
   Future<void> _logout(BuildContext context) async {
-    await AuthLocalStorage().setHasActiveSession(false);
+    await FirebaseAuthService.instance.signOut();
 
     if (!context.mounted) return;
 

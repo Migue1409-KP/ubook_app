@@ -1,15 +1,18 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:ubook_app/model/auth/auth_provider.dart';
+import 'package:ubook_app/model/auth/auth_provider.dart' as app_auth;
 import 'package:ubook_app/model/auth/user_model.dart';
 import 'package:ubook_app/repository/auth/auth_local_storage.dart';
+import 'package:ubook_app/repository/auth/firebase_auth_service.dart';
 import 'package:ubook_app/repository/auth/floor_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
 
 class RegisterViewModel extends ChangeNotifier {
   final AuthLocalStorage _localStorage;
   final UserRepository _userRepository;
+  final FirebaseAuthService _authService;
 
   final name = TextEditingController();
   final emailController = TextEditingController();
@@ -30,8 +33,10 @@ class RegisterViewModel extends ChangeNotifier {
   RegisterViewModel({
     AuthLocalStorage? localStorage,
     UserRepository? userRepository,
+    FirebaseAuthService? authService,
   }) : _localStorage = localStorage ?? AuthLocalStorage(),
-       _userRepository = userRepository ?? FloorUserRepository.instance {
+       _userRepository = userRepository ?? FloorUserRepository.instance,
+       _authService = authService ?? FirebaseAuthService.instance {
     _restoreRegisterDraft();
     _attachDraftListeners();
   }
@@ -69,56 +74,36 @@ class RegisterViewModel extends ChangeNotifier {
     final draft = await _localStorage.getRegisterDraft();
     if (draft.isEmpty) return;
 
-    if (name.text.isEmpty) {
-      name.text = draft['name'] ?? '';
-    }
-    if (emailController.text.isEmpty) {
-      emailController.text = draft['email'] ?? '';
-    }
+    if (name.text.isEmpty) name.text = draft['name'] ?? '';
+    if (emailController.text.isEmpty) emailController.text = draft['email'] ?? '';
     if (educationalCenter.text.isEmpty) {
       educationalCenter.text = draft['educationalCenter'] ?? '';
     }
-    if (career.text.isEmpty) {
-      career.text = draft['career'] ?? '';
-    }
-    if (city.text.isEmpty) {
-      city.text = draft['city'] ?? '';
-    }
+    if (career.text.isEmpty) career.text = draft['career'] ?? '';
+    if (city.text.isEmpty) city.text = draft['city'] ?? '';
 
     notifyListeners();
   }
 
   String? validateName(String? value) {
     if (!submitted) return null;
-    if (value == null || value.trim().isEmpty) {
-      return 'Nombre es requerido';
-    }
-    if (value.trim().length < 4) {
-      return 'Nombre debe tener al menos 4 caracteres';
-    }
+    if (value == null || value.trim().isEmpty) return 'Nombre es requerido';
+    if (value.trim().length < 4) return 'Nombre debe tener al menos 4 caracteres';
     return null;
   }
 
   String? validateEmail(String? value) {
     if (!submitted) return null;
-    if (value == null || value.trim().isEmpty) {
-      return 'Correo es requerido';
-    }
+    if (value == null || value.trim().isEmpty) return 'Correo es requerido';
     final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-    if (!emailRegex.hasMatch(value.trim())) {
-      return 'Ingrese un correo válido';
-    }
+    if (!emailRegex.hasMatch(value.trim())) return 'Ingrese un correo válido';
     return null;
   }
 
   String? validatePassword(String? value) {
     if (!submitted) return null;
-    if (value == null || value.trim().isEmpty) {
-      return 'Contraseña es requerida';
-    }
-    if (value.trim().length < 8) {
-      return 'Contraseña debe tener al menos 8 caracteres';
-    }
+    if (value == null || value.trim().isEmpty) return 'Contraseña es requerida';
+    if (value.trim().length < 6) return 'Contraseña debe tener al menos 6 caracteres';
     return null;
   }
 
@@ -135,9 +120,7 @@ class RegisterViewModel extends ChangeNotifier {
 
   String? validateRequired(String? value, {String field = 'Este campo'}) {
     if (!submitted) return null;
-    if (value == null || value.trim().isEmpty) {
-      return '$field es requerido';
-    }
+    if (value == null || value.trim().isEmpty) return '$field es requerido';
     return null;
   }
 
@@ -153,9 +136,7 @@ class RegisterViewModel extends ChangeNotifier {
       city: city.text.trim(),
     );
 
-    if (!(formKey.currentState?.validate() ?? false)) {
-      return false;
-    }
+    if (!(formKey.currentState?.validate() ?? false)) return false;
 
     errorMessage = null;
     isLoading = true;
@@ -163,38 +144,51 @@ class RegisterViewModel extends ChangeNotifier {
 
     try {
       final email = emailController.text.trim();
-      final existingUser = await _userRepository.findByEmail(email);
-      if (existingUser != null) {
-        errorMessage = 'El correo ya está registrado';
+      final password = passwordController.text.trim();
+      final displayName = name.text.trim();
+
+      final firebaseUser = await _authService.registerWithEmail(
+        email: email,
+        password: password,
+        displayName: displayName,
+      );
+
+      if (firebaseUser == null) {
+        errorMessage = 'Error al registrar. Intenta nuevamente.';
         isLoading = false;
         notifyListeners();
         return false;
       }
 
       final now = DateTime.now();
-      final user = UserModel(
-        id: now.microsecondsSinceEpoch.toString(),
-        email: email,
-        name: name.text.trim(),
-        password: passwordController.text.trim(),
-        educationalCenter: educationalCenter.text.trim(),
-        career: career.text.trim(),
-        city: city.text.trim(),
-        authProvider: AuthProvider.emailPassword,
-        isActive: true,
-        createdAt: now.millisecondsSinceEpoch,
-        updatedAt: now.millisecondsSinceEpoch,
+      await _userRepository.insertUser(
+        UserModel(
+          id: firebaseUser.uid,
+          email: email,
+          name: displayName,
+          educationalCenter: educationalCenter.text.trim(),
+          career: career.text.trim(),
+          city: city.text.trim(),
+          authProvider: app_auth.AuthProvider.emailPassword,
+          isActive: true,
+          createdAt: now.millisecondsSinceEpoch,
+          updatedAt: now.millisecondsSinceEpoch,
+        ),
       );
 
-      await _userRepository.insertUser(user);
       await _localStorage.saveLastLoginEmail(email);
       await _localStorage.clearRegisterDraft();
 
       isLoading = false;
       notifyListeners();
       return true;
+    } on FirebaseAuthException catch (e) {
+      errorMessage = FirebaseAuthService.mapError(e);
+      isLoading = false;
+      notifyListeners();
+      return false;
     } catch (e) {
-      errorMessage = 'Error al registrar. Intente nuevamente.';
+      errorMessage = 'Error al registrar. Intenta nuevamente.';
       isLoading = false;
       notifyListeners();
       return false;
@@ -205,7 +199,6 @@ class RegisterViewModel extends ChangeNotifier {
   void dispose() {
     _draftDebounce?.cancel();
     _removeDraftListeners();
-
     name.dispose();
     emailController.dispose();
     passwordController.dispose();

@@ -116,69 +116,71 @@ class _ProfileViewState extends State<ProfileView> {
                   }
                 },
               ),
-              const SizedBox(height: 32),
-              const Divider(color: AppColors.divider),
-              const SizedBox(height: 20),
-              const Text(
-                'Cambiar contraseña',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+              if (!_vm.isGoogleUser) ...[
+                const SizedBox(height: 32),
+                const Divider(color: AppColors.divider),
+                const SizedBox(height: 20),
+                const Text(
+                  'Cambiar contraseña',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Form(
-                key: _vm.passwordFormKey,
-                autovalidateMode: AutovalidateMode.disabled,
-                child: Column(
-                  children: [
-                    AuthTextInput(
-                      controller: _vm.currentPasswordController,
-                      hint: 'Contraseña actual *',
-                      icon: Icons.lock_outline,
-                      obscureText: true,
-                      validator: _vm.validateCurrentPassword,
-                    ),
-                    const SizedBox(height: 12),
-                    AuthTextInput(
-                      controller: _vm.newPasswordController,
-                      hint: 'Nueva contraseña *',
-                      icon: Icons.shield_outlined,
-                      obscureText: true,
-                      validator: _vm.validateNewPassword,
-                    ),
-                    const SizedBox(height: 12),
-                    AuthTextInput(
-                      controller: _vm.confirmNewPasswordController,
-                      hint: 'Confirmar nueva contraseña *',
-                      icon: Icons.shield_outlined,
-                      obscureText: true,
-                      validator: _vm.validateConfirmNewPassword,
-                    ),
-                    if (_vm.passwordErrorMessage != null) ...[
+                const SizedBox(height: 12),
+                Form(
+                  key: _vm.passwordFormKey,
+                  autovalidateMode: AutovalidateMode.disabled,
+                  child: Column(
+                    children: [
+                      AuthTextInput(
+                        controller: _vm.currentPasswordController,
+                        hint: 'Contraseña actual *',
+                        icon: Icons.lock_outline,
+                        obscureText: true,
+                        validator: _vm.validateCurrentPassword,
+                      ),
                       const SizedBox(height: 12),
-                      ErrorMessage(message: _vm.passwordErrorMessage!),
+                      AuthTextInput(
+                        controller: _vm.newPasswordController,
+                        hint: 'Nueva contraseña *',
+                        icon: Icons.shield_outlined,
+                        obscureText: true,
+                        validator: _vm.validateNewPassword,
+                      ),
+                      const SizedBox(height: 12),
+                      AuthTextInput(
+                        controller: _vm.confirmNewPasswordController,
+                        hint: 'Confirmar nueva contraseña *',
+                        icon: Icons.shield_outlined,
+                        obscureText: true,
+                        validator: _vm.validateConfirmNewPassword,
+                      ),
+                      if (_vm.passwordErrorMessage != null) ...[
+                        const SizedBox(height: 12),
+                        ErrorMessage(message: _vm.passwordErrorMessage!),
+                      ],
+                      const SizedBox(height: 16),
+                      PrimaryButton(
+                        label: 'Actualizar contraseña',
+                        isLoading: _vm.isChangingPassword,
+                        onPressed: () async {
+                          final success = await _vm.changePassword();
+                          if (success && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Contraseña actualizada'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        },
+                      ),
                     ],
-                    const SizedBox(height: 16),
-                    PrimaryButton(
-                      label: 'Actualizar contraseña',
-                      isLoading: _vm.isChangingPassword,
-                      onPressed: () async {
-                        final success = await _vm.changePassword();
-                        if (success && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Contraseña actualizada'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
