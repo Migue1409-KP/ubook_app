@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:ubook_app/model/auth/user_model.dart';
 import 'package:ubook_app/repository/auth/firebase_auth_service.dart';
-import 'package:ubook_app/repository/auth/floor_user_repository.dart';
+import 'package:ubook_app/repository/auth/syncing_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
 
 class ProfileViewModel extends ChangeNotifier {
@@ -36,7 +36,7 @@ class ProfileViewModel extends ChangeNotifier {
   ProfileViewModel({
     UserRepository? userRepository,
     FirebaseAuthService? authService,
-  }) : _userRepository = userRepository ?? FloorUserRepository.instance,
+  }) : _userRepository = userRepository ?? SyncingUserRepository.instance,
        _authService = authService ?? FirebaseAuthService.instance {
     _loadCurrentUser();
   }

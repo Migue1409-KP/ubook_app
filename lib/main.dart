@@ -6,7 +6,9 @@ import 'package:ubook_app/database/app_database.dart';
 import 'package:ubook_app/firebase_options.dart';
 import 'package:ubook_app/view/subjects/subjects_view.dart';
 import 'package:ubook_app/repository/attachments/floor_attachment_repository.dart';
+import 'package:ubook_app/repository/auth/firestore_user_repository.dart';
 import 'package:ubook_app/repository/auth/floor_user_repository.dart';
+import 'package:ubook_app/repository/auth/syncing_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
 import 'package:ubook_app/repository/process/floor_process_repository.dart';
 import 'package:ubook_app/repository/reviews/review_repository_provider.dart';
@@ -41,7 +43,12 @@ Future<void> main() async {
         migration5to6,
       ])
       .build();
-  final userRepository = FloorUserRepository.initialize(database);
+  final localUserRepository = FloorUserRepository.initialize(database);
+  final remoteUserRepository = FirestoreUserRepository.initialize();
+  final userRepository = SyncingUserRepository.initialize(
+    localUserRepository,
+    remoteUserRepository,
+  );
   await userRepository.ensureInitialized();
   await ReviewRepositoryProvider.initialize(database);
   FloorAttachmentRepository.initialize(database);

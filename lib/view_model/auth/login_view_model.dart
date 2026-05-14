@@ -4,7 +4,7 @@ import 'package:ubook_app/model/auth/auth_provider.dart' as app_auth;
 import 'package:ubook_app/model/auth/user_model.dart';
 import 'package:ubook_app/repository/auth/auth_local_storage.dart';
 import 'package:ubook_app/repository/auth/firebase_auth_service.dart';
-import 'package:ubook_app/repository/auth/floor_user_repository.dart';
+import 'package:ubook_app/repository/auth/syncing_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
 
 class LoginViewModel extends ChangeNotifier {
@@ -26,7 +26,7 @@ class LoginViewModel extends ChangeNotifier {
     UserRepository? userRepository,
     FirebaseAuthService? authService,
   }) : _localStorage = localStorage ?? AuthLocalStorage(),
-       _userRepository = userRepository ?? FloorUserRepository.instance,
+       _userRepository = userRepository ?? SyncingUserRepository.instance,
        _authService = authService ?? FirebaseAuthService.instance {
     _restoreLastLoginEmail();
   }
