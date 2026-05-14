@@ -1,10 +1,14 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:ubook_app/database/app_database.dart';
+import 'package:ubook_app/firebase_options.dart';
 import 'package:ubook_app/view/subjects/subjects_view.dart';
 import 'package:ubook_app/repository/attachments/floor_attachment_repository.dart';
-import 'package:ubook_app/repository/auth/auth_local_storage.dart';
+import 'package:ubook_app/repository/auth/firestore_user_repository.dart';
 import 'package:ubook_app/repository/auth/floor_user_repository.dart';
+import 'package:ubook_app/repository/auth/syncing_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
 import 'package:ubook_app/repository/process/floor_process_repository.dart';
 import 'package:ubook_app/repository/reviews/review_repository_provider.dart';
@@ -25,6 +29,9 @@ import 'package:ubook_app/repository/career/career_repository_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   final database = await $FloorAppDatabase
       .databaseBuilder('ubook_app.db')
@@ -38,7 +45,12 @@ Future<void> main() async {
         migration7to8,
       ])
       .build();
-  final userRepository = FloorUserRepository.initialize(database);
+  final localUserRepository = FloorUserRepository.initialize(database);
+  final remoteUserRepository = FirestoreUserRepository.initialize();
+  final userRepository = SyncingUserRepository.initialize(
+    localUserRepository,
+    remoteUserRepository,
+  );
   await userRepository.ensureInitialized();
   await ReviewRepositoryProvider.initialize(database);
   FloorAttachmentRepository.initialize(database);
@@ -99,17 +111,15 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: AuthLocalStorage().getHasActiveSession(),
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
-
-        final hasActiveSession = snapshot.data ?? false;
-        return hasActiveSession ? const DashboardView() : const LoginView();
+        return snapshot.data != null ? const DashboardView() : const LoginView();
       },
     );
   }
