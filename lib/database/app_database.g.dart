@@ -112,7 +112,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `attachments` (`id` TEXT, `file_name` TEXT NOT NULL, `file_type` TEXT NOT NULL, `uploaded_by_id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `file_path` TEXT, `file_size` INTEGER, `uploaded_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `subject_teachers` (`id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `subject_nombre` TEXT NOT NULL, `subject_creditos` INTEGER NOT NULL, `subject_horas` INTEGER NOT NULL, `teacher_id` TEXT NOT NULL, `teacher_name` TEXT NOT NULL, `teacher_email` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `periodo_academico_id` TEXT, `periodo_etiqueta` TEXT, `created_at_ms` INTEGER NOT NULL, `updated_at_ms` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `subject_teachers` (`id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `subject_nombre` TEXT NOT NULL, `subject_creditos` INTEGER NOT NULL, `subject_horas` INTEGER NOT NULL, `teacher_id` TEXT NOT NULL, `teacher_name` TEXT NOT NULL, `teacher_email` TEXT NOT NULL, `is_active` INTEGER NOT NULL, `periodo_academico_id` TEXT, `periodo_etiqueta` TEXT, `created_at_ms` INTEGER NOT NULL, `updated_at_ms` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `careers` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `educationalCenterId` TEXT NOT NULL, `semesters` INTEGER NOT NULL, `credits` INTEGER NOT NULL, `subjects` TEXT NOT NULL, `processes` TEXT NOT NULL, `reviews` TEXT NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
@@ -867,7 +867,7 @@ class _$SubjectTeacherDao extends SubjectTeacherDao {
                   'teacher_id': item.teacherId,
                   'teacher_name': item.teacherName,
                   'teacher_email': item.teacherEmail,
-                  'isActive': item.isActive ? 1 : 0,
+                  'is_active': item.isActive ? 1 : 0,
                   'periodo_academico_id': item.periodoAcademicoId,
                   'periodo_etiqueta': item.periodoEtiqueta,
                   'created_at_ms': item.createdAtMs,
@@ -886,7 +886,7 @@ class _$SubjectTeacherDao extends SubjectTeacherDao {
                   'teacher_id': item.teacherId,
                   'teacher_name': item.teacherName,
                   'teacher_email': item.teacherEmail,
-                  'isActive': item.isActive ? 1 : 0,
+                  'is_active': item.isActive ? 1 : 0,
                   'periodo_academico_id': item.periodoAcademicoId,
                   'periodo_etiqueta': item.periodoEtiqueta,
                   'created_at_ms': item.createdAtMs,
@@ -905,7 +905,7 @@ class _$SubjectTeacherDao extends SubjectTeacherDao {
                   'teacher_id': item.teacherId,
                   'teacher_name': item.teacherName,
                   'teacher_email': item.teacherEmail,
-                  'isActive': item.isActive ? 1 : 0,
+                  'is_active': item.isActive ? 1 : 0,
                   'periodo_academico_id': item.periodoAcademicoId,
                   'periodo_etiqueta': item.periodoEtiqueta,
                   'created_at_ms': item.createdAtMs,
@@ -937,7 +937,7 @@ class _$SubjectTeacherDao extends SubjectTeacherDao {
             teacherId: row['teacher_id'] as String,
             teacherName: row['teacher_name'] as String,
             teacherEmail: row['teacher_email'] as String,
-            isActive: (row['isActive'] as int) != 0,
+            isActive: (row['is_active'] as int) != 0,
             periodoAcademicoId: row['periodo_academico_id'] as String?,
             periodoEtiqueta: row['periodo_etiqueta'] as String?,
             createdAtMs: row['created_at_ms'] as int?,
@@ -958,7 +958,7 @@ class _$SubjectTeacherDao extends SubjectTeacherDao {
             teacherId: row['teacher_id'] as String,
             teacherName: row['teacher_name'] as String,
             teacherEmail: row['teacher_email'] as String,
-            isActive: (row['isActive'] as int) != 0,
+            isActive: (row['is_active'] as int) != 0,
             periodoAcademicoId: row['periodo_academico_id'] as String?,
             periodoEtiqueta: row['periodo_etiqueta'] as String?,
             createdAtMs: row['created_at_ms'] as int?,
@@ -978,7 +978,7 @@ class _$SubjectTeacherDao extends SubjectTeacherDao {
             teacherId: row['teacher_id'] as String,
             teacherName: row['teacher_name'] as String,
             teacherEmail: row['teacher_email'] as String,
-            isActive: (row['isActive'] as int) != 0,
+            isActive: (row['is_active'] as int) != 0,
             periodoAcademicoId: row['periodo_academico_id'] as String?,
             periodoEtiqueta: row['periodo_etiqueta'] as String?,
             createdAtMs: row['created_at_ms'] as int?,
@@ -999,7 +999,7 @@ class _$SubjectTeacherDao extends SubjectTeacherDao {
             teacherId: row['teacher_id'] as String,
             teacherName: row['teacher_name'] as String,
             teacherEmail: row['teacher_email'] as String,
-            isActive: (row['isActive'] as int) != 0,
+            isActive: (row['is_active'] as int) != 0,
             periodoAcademicoId: row['periodo_academico_id'] as String?,
             periodoEtiqueta: row['periodo_etiqueta'] as String?,
             createdAtMs: row['created_at_ms'] as int?,
@@ -1014,7 +1014,7 @@ class _$SubjectTeacherDao extends SubjectTeacherDao {
   ) async {
     return _queryAdapter.queryList(
         'SELECT * FROM subject_teachers WHERE teacher_id = ?1 AND periodo_academico_id = ?2',
-        mapper: (Map<String, Object?> row) => SubjectTeacher(id: row['id'] as String, subjectId: row['subject_id'] as String, subjectNombre: row['subject_nombre'] as String, subjectCreditos: row['subject_creditos'] as int, subjectHoras: row['subject_horas'] as int, teacherId: row['teacher_id'] as String, teacherName: row['teacher_name'] as String, teacherEmail: row['teacher_email'] as String, isActive: (row['isActive'] as int) != 0, periodoAcademicoId: row['periodo_academico_id'] as String?, periodoEtiqueta: row['periodo_etiqueta'] as String?, createdAtMs: row['created_at_ms'] as int?, updatedAtMs: row['updated_at_ms'] as int?),
+        mapper: (Map<String, Object?> row) => SubjectTeacher(id: row['id'] as String, subjectId: row['subject_id'] as String, subjectNombre: row['subject_nombre'] as String, subjectCreditos: row['subject_creditos'] as int, subjectHoras: row['subject_horas'] as int, teacherId: row['teacher_id'] as String, teacherName: row['teacher_name'] as String, teacherEmail: row['teacher_email'] as String, isActive: (row['is_active'] as int) != 0, periodoAcademicoId: row['periodo_academico_id'] as String?, periodoEtiqueta: row['periodo_etiqueta'] as String?, createdAtMs: row['created_at_ms'] as int?, updatedAtMs: row['updated_at_ms'] as int?),
         arguments: [teacherId, periodoId]);
   }
 
@@ -1031,7 +1031,7 @@ class _$SubjectTeacherDao extends SubjectTeacherDao {
             teacherId: row['teacher_id'] as String,
             teacherName: row['teacher_name'] as String,
             teacherEmail: row['teacher_email'] as String,
-            isActive: (row['isActive'] as int) != 0,
+            isActive: (row['is_active'] as int) != 0,
             periodoAcademicoId: row['periodo_academico_id'] as String?,
             periodoEtiqueta: row['periodo_etiqueta'] as String?,
             createdAtMs: row['created_at_ms'] as int?,

@@ -26,6 +26,7 @@ class SubjectTeacher {
   @ColumnInfo(name: 'teacher_email')
   final String teacherEmail;
 
+  @ColumnInfo(name: 'is_active')
   final bool isActive;
 
   @ColumnInfo(name: 'periodo_academico_id')
@@ -59,10 +60,10 @@ class SubjectTeacher {
     DateTime? updatedAt,
     int? createdAtMs,
     int? updatedAtMs,
-  })  : createdAtMs =
-            createdAtMs ?? (createdAt ?? DateTime.now()).millisecondsSinceEpoch,
-        updatedAtMs =
-            updatedAtMs ?? (updatedAt ?? DateTime.now()).millisecondsSinceEpoch;
+  }) : createdAtMs =
+           createdAtMs ?? (createdAt ?? DateTime.now()).millisecondsSinceEpoch,
+       updatedAtMs =
+           updatedAtMs ?? (updatedAt ?? DateTime.now()).millisecondsSinceEpoch;
 
   factory SubjectTeacher.fromJson(Map<String, dynamic> json) {
     return SubjectTeacher(
@@ -83,18 +84,18 @@ class SubjectTeacher {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'subject_id': subjectId,
-        'subject_nombre': subjectNombre,
-        'subject_creditos': subjectCreditos,
-        'subject_horas': subjectHoras,
-        'teacher_id': teacherId,
-        'teacher_name': teacherName,
-        'teacher_email': teacherEmail,
-        'is_active': isActive,
-        'periodo_academico_id': periodoAcademicoId,
-        'periodo_etiqueta': periodoEtiqueta,
-        'created_at': createdAt.toIso8601String(),
-        'updated_at': updatedAt.toIso8601String(),
-      };
+    'id': id,
+    'subject_id': subjectId,
+    'subject_nombre': subjectNombre,
+    'subject_creditos': subjectCreditos,
+    'subject_horas': subjectHoras,
+    'teacher_id': teacherId,
+    'teacher_name': teacherName,
+    'teacher_email': teacherEmail,
+    'is_active': isActive,
+    'periodo_academico_id': periodoAcademicoId,
+    'periodo_etiqueta': periodoEtiqueta,
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+  };
 }
