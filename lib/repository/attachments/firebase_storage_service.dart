@@ -30,8 +30,20 @@ class FirebaseStorageService implements AttachmentStorageService {
 
   static const _basePath = 'attachments';
 
+  /// Límite máximo de descarga en bytes (100 MB). Previene OOM en archivos grandes.
+  static const int _maxDownloadBytes = 100 * 1024 * 1024;
+
   /// Referencia al bucket de Firebase Storage.
   FirebaseStorage get _storage => FirebaseStorage.instance;
+
+  // ── Helpers de normalización ──────────────────────────────────────────────
+
+  /// Normaliza una extensión de archivo: recorta espacios, elimina puntos
+  /// iniciales y convierte a minúsculas.
+  ///
+  /// Ejemplos: `'.PDF'` → `'pdf'`, `' .docx '` → `'docx'`, `'pdf'` → `'pdf'`
+  static String _normalizeExt(String fileType) =>
+      fileType.trim().replaceAll(RegExp(r'^\.+'), '').toLowerCase();
 
   // ── Mapa de extensión → MIME type ─────────────────────────────────────────
 
@@ -60,7 +72,7 @@ class FirebaseStorageService implements AttachmentStorageService {
   };
 
   String _contentType(String fileType) =>
-      _mimeTypes[fileType.toLowerCase()] ?? 'application/octet-stream';
+      _mimeTypes[_normalizeExt(fileType)] ?? 'application/octet-stream';
 
   // ── AttachmentStorageService ──────────────────────────────────────────────
 
@@ -77,7 +89,7 @@ class FirebaseStorageService implements AttachmentStorageService {
     required String uploadedById,
     required String subjectId,
   }) async {
-    final ext = fileType.toLowerCase();
+    final ext = _normalizeExt(fileType);
     final storagePath = '$_basePath/$uploadedById/$subjectId/$id.$ext';
     final ref = _storage.ref(storagePath);
     await ref.putData(
@@ -93,7 +105,7 @@ class FirebaseStorageService implements AttachmentStorageService {
   @override
   Future<Uint8List> downloadFile(String storagePath) async {
     final ref = _storage.ref(storagePath);
-    final data = await ref.getData();
+    final data = await ref.getData(_maxDownloadBytes);
     if (data == null) {
       throw FirebaseException(
         plugin: 'firebase_storage',

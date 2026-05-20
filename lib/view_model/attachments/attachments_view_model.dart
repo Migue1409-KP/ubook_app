@@ -205,11 +205,9 @@ class AttachmentsViewModel extends ChangeNotifier {
         if (bytes == null) return 'No se pudo descargar el archivo';
 
         final tmpDir = await getTemporaryDirectory();
+        final ext = p.extension(filePath).replaceFirst('.', '').toLowerCase();
         final tmpFile = File(
-          p.join(
-            tmpDir.path,
-            '${attachment.id}.${attachment.fileType.toLowerCase()}',
-          ),
+          p.join(tmpDir.path, '${attachment.id}.$ext'),
         );
         await tmpFile.writeAsBytes(bytes, flush: true);
         localPath = tmpFile.path;

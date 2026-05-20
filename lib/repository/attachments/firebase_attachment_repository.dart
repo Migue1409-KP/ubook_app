@@ -4,6 +4,7 @@ import 'package:ubook_app/database/app_database.dart';
 import 'package:ubook_app/model/attachments/attachment_model.dart';
 
 import 'attachment_repository.dart';
+import 'attachment_storage_service.dart';
 import 'firebase_storage_service.dart';
 
 /// Adaptador de salida de [AttachmentRepository] respaldado por Firebase Storage.
@@ -44,7 +45,7 @@ class FirebaseAttachmentRepository implements AttachmentRepository {
   /// [FirebaseStorageService.instance] (útil para tests con mocks).
   static FirebaseAttachmentRepository initialize(
     AppDatabase database, {
-    FirebaseStorageService? storageService,
+    AttachmentStorageService? storageService,
   }) {
     _instance = FirebaseAttachmentRepository._(
       database,
@@ -58,7 +59,7 @@ class FirebaseAttachmentRepository implements AttachmentRepository {
   static void resetForTesting() => _instance = null;
 
   final AppDatabase _database;
-  final FirebaseStorageService _storageService;
+  final AttachmentStorageService _storageService;
 
   // ── Consultas (delegan en el DAO de SQLite) ───────────────────────────────
 
@@ -121,8 +122,15 @@ class FirebaseAttachmentRepository implements AttachmentRepository {
     );
 
     // Persiste la metadata en SQLite con filePath = ruta de Firebase.
+    // Si la inserción en BD falla, elimina el archivo ya subido para evitar
+    // archivos huérfanos en Firebase Storage.
     final saved = attachment.copyWith(id: id, filePath: storagePath);
-    await _database.attachmentDao.insertAttachment(saved);
+    try {
+      await _database.attachmentDao.insertAttachment(saved);
+    } catch (e) {
+      await _storageService.deleteFile(storagePath);
+      rethrow;
+    }
     return saved;
   }
 
@@ -168,6 +176,7 @@ class FirebaseAttachmentRepository implements AttachmentRepository {
         debugPrint(
           'deleteAttachment: no se pudo eliminar $storagePath en Firebase – $e',
         );
+        rethrow;
       }
     }
     return _database.attachmentDao.deleteAttachment(attachment);
@@ -184,6 +193,7 @@ class FirebaseAttachmentRepository implements AttachmentRepository {
         debugPrint(
           'deleteById: no se pudo eliminar $storagePath en Firebase – $e',
         );
+        rethrow;
       }
     }
     return _database.attachmentDao.deleteById(id);
@@ -201,6 +211,7 @@ class FirebaseAttachmentRepository implements AttachmentRepository {
           debugPrint(
             'deleteAll: no se pudo eliminar $storagePath en Firebase – $e',
           );
+          rethrow;
         }
       }
     }

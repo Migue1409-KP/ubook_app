@@ -34,7 +34,15 @@ abstract class AttachmentRepository {
 
   /// Registra la implementación activa. Debe llamarse una sola vez al arrancar
   /// la app, desde main.dart.
-  static void setCurrent(AttachmentRepository repo) => _current = repo;
+  static void setCurrent(AttachmentRepository repo) {
+    if (_current != null) {
+      throw StateError(
+        'AttachmentRepository.setCurrent() ya fue llamado. '
+        'Llama resetForTesting() antes de registrar una nueva implementación.',
+      );
+    }
+    _current = repo;
+  }
 
   /// Resetea el locator. Solo para uso en tests.
   static void resetForTesting() => _current = null;
