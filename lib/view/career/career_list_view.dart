@@ -4,7 +4,7 @@ import 'package:ubook_app/model/career/career_model.dart';
 import 'package:ubook_app/view_model/career/career_view_model.dart';
 import 'package:ubook_app/widgets/career/career_table.dart';
 import 'package:ubook_app/widgets/career/search_bar.dart';
-
+import 'package:ubook_app/repository/career/career_repository_provider.dart';
 import 'career_create_view.dart';
 import 'career_detail_view.dart';
 import 'career_edit_view.dart';
@@ -22,7 +22,7 @@ class CareerListView extends StatefulWidget {
 }
 
 class _CareerListViewState extends State<CareerListView> {
-  final CareerViewModel vm = CareerViewModel();
+  final CareerViewModel vm = CareerViewModel(CareerRepositoryProvider.instance);
 
   @override
   void initState() {

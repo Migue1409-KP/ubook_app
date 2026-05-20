@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ubook_app/model/subjects/subjects.dart';
+import 'package:ubook_app/model/subjectteacher/academic_period.dart';
 import 'package:ubook_app/model/teachers/teacher.dart';
 import 'package:ubook_app/view_model/teacher_subject/assign_subject_teacher_view_model.dart';
 import '../../theme/app_colors.dart';
@@ -56,9 +57,53 @@ class _AssignSubjectTeacherPageState extends State<AssignSubjectTeacherPage> {
           ? Center(
               child: CircularProgressIndicator(color: AppColors.primary))
           : Column(children: [
+              if (_vm.apiWarning != null) _buildApiWarning(),
+              if (_vm.periodos.isNotEmpty) _buildPeriodoSelector(),
               if (_vm.errorMessage != null) _buildBanner(),
               Expanded(child: _buildBody()),
             ]),
+    );
+  }
+
+  Widget _buildPeriodoSelector() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.06),
+        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(children: [
+        Icon(Icons.event_note_rounded, color: AppColors.primary, size: 18),
+        const SizedBox(width: 8),
+        Text('Periodo:',
+            style: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+                fontSize: 13)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: DropdownButton<AcademicPeriod>(
+            isExpanded: true,
+            value: _vm.selectedPeriodo,
+            underline: const SizedBox.shrink(),
+            items: _vm.periodos
+                .map((p) => DropdownMenuItem(
+                      value: p,
+                      child: Text(
+                        '${p.etiqueta}${p.estaActivo ? " • activo" : ""}',
+                        style: TextStyle(
+                            color: AppColors.textPrimary, fontSize: 13),
+                      ),
+                    ))
+                .toList(),
+            onChanged: (p) {
+              if (p != null) _vm.selectPeriodo(p);
+            },
+          ),
+        ),
+      ]),
     );
   }
 
@@ -144,7 +189,9 @@ class _AssignSubjectTeacherPageState extends State<AssignSubjectTeacherPage> {
 
     return Column(children: [
       _SectionHeader(
-        title: 'Materias de ${_vm.selectedTeacher?.firstName ?? ''}',
+        title:
+            'Materias de ${_vm.selectedTeacher?.firstName ?? ''}'
+            '${_vm.selectedPeriodo != null ? " — ${_vm.selectedPeriodo!.etiqueta}" : ""}',
         count: _vm.filteredSubjects.length,
         extra: '${assigned.length} asignadas',
       ),
@@ -161,7 +208,8 @@ class _AssignSubjectTeacherPageState extends State<AssignSubjectTeacherPage> {
               ...assigned.map((s) => _SubjectToggleItem(
                     subject: s,
                     isAssigned: true,
-                    isBusy: _vm.busyKey == '${teacherId}_${s.id}',
+                    isBusy: _vm.busyKey ==
+                        '${teacherId}_${s.id}_${_vm.selectedPeriodo?.id ?? "_no_periodo_"}',
                     onTap: () => _toggle(teacherId, s.id, s.nombre),
                   )),
             ],
@@ -170,7 +218,8 @@ class _AssignSubjectTeacherPageState extends State<AssignSubjectTeacherPage> {
               ...available.map((s) => _SubjectToggleItem(
                     subject: s,
                     isAssigned: false,
-                    isBusy: _vm.busyKey == '${teacherId}_${s.id}',
+                    isBusy: _vm.busyKey ==
+                        '${teacherId}_${s.id}_${_vm.selectedPeriodo?.id ?? "_no_periodo_"}',
                     onTap: () => _toggle(teacherId, s.id, s.nombre),
                   )),
             ],
@@ -217,6 +266,24 @@ class _AssignSubjectTeacherPageState extends State<AssignSubjectTeacherPage> {
               child: Text(_vm.errorMessage!,
                   style: const TextStyle(
                       color: Colors.redAccent, fontSize: 12))),
+        ]),
+      );
+
+  Widget _buildApiWarning() => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+            color: Colors.orange.withOpacity(0.1),
+            border: Border.all(color: Colors.orange.withOpacity(0.4)),
+            borderRadius: BorderRadius.circular(8)),
+        child: Row(children: [
+          const Icon(Icons.cloud_off_rounded,
+              color: Colors.orange, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(_vm.apiWarning!,
+                  style: const TextStyle(
+                      color: Colors.orange, fontSize: 12))),
         ]),
       );
 }

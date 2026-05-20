@@ -1,11 +1,12 @@
-class Career {
+import 'package:flutter/foundation.dart';
 
+@immutable
+class Career {
   final String id;
   final String name;
   final String educationalCenterId;
   final int semesters;
   final int credits;
-
   final List<String> subjects;
   final List<String> processes;
   final List<String> reviews;
@@ -24,7 +25,6 @@ class Career {
         reviews = reviews ?? [];
 
   factory Career.fromJson(Map<String, dynamic> json) {
-
     return Career(
       id: json['id'],
       name: json['name'],
@@ -38,7 +38,6 @@ class Career {
   }
 
   Map<String, dynamic> toJson() {
-
     return {
       "id": id,
       "name": name,
@@ -60,7 +59,6 @@ class Career {
     List<String>? processes,
     List<String>? reviews,
   }) {
-
     return Career(
       id: id,
       name: name ?? this.name,

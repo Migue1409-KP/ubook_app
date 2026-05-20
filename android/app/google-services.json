@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "342045930924",
+    "project_id": "ubook-82861",
+    "storage_bucket": "ubook-82861.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:342045930924:android:bdd2eed9029bba9cabb609",
+        "android_client_info": {
+          "package_name": "com.example.ubook_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "342045930924-q8d6q5jqd6a13pd46snqp1nq7cgu9u8h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ubook_app",
+            "certificate_hash": "e3bef2e7f35b6fcff9e44c22de290bec82014ac6"
+          }
+        },
+        {
+          "client_id": "342045930924-97ufhqdooqnk50ktks3r8tco1g7787d1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUCnwpNra4Nk3faGLK3O0yts678ZAQmjc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "342045930924-97ufhqdooqnk50ktks3r8tco1g7787d1.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "342045930924-7lpsdi3d17vupa9kal2k6utvrgge5uim.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.ubookApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -35,6 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   animate_do: ^4.2.0
+  http: ^1.2.2
 
   # State management
   provider: ^6.1.2
@@ -51,6 +52,10 @@ dependencies:
   floor: ^1.5.0
   sqflite: ^2.4.1
   path: ^1.9.1
+  firebase_core: ^4.9.0
+  firebase_auth: ^6.5.1
+  google_sign_in: ^6.2.2
+  cloud_firestore: ^6.0.0
 
 dev_dependencies:
   flutter_test:
