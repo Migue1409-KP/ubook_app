@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import '../../model/notification/notification_model.dart';
 import '../../model/teachers/teacher.dart';
+import '../../service/notification_service.dart';
 
 class TeacherListViewModel extends ChangeNotifier {
   List<Teacher> _allTeachers = [];
@@ -109,7 +113,13 @@ class TeacherListViewModel extends ChangeNotifier {
   }
 
   void deleteTeacher(String id) {
+    final teacher = _allTeachers.firstWhere((t) => t.id == id);
     _allTeachers.removeWhere((t) => t.id == id);
     search(_searchQuery);
+    unawaited(NotificationService.push(
+      title: 'Docente eliminado',
+      message: 'El docente ${teacher.firstName} ${teacher.lastName} fue eliminado del sistema.',
+      type: NotificationType.other,
+    ));
   }
 }

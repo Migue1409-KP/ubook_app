@@ -84,13 +84,15 @@ class _$AppDatabase extends AppDatabase {
 
   SubjectTeacherDao? _subjectTeacherDaoInstance;
 
+  NotificationDao? _notificationDaoInstance;
+
   Future<sqflite.Database> open(
     String path,
     List<Migration> migrations, [
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 6,
+      version: 8,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -117,6 +119,8 @@ class _$AppDatabase extends AppDatabase {
             'CREATE TABLE IF NOT EXISTS `careers` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `educationalCenterId` TEXT NOT NULL, `semesters` INTEGER NOT NULL, `credits` INTEGER NOT NULL, `subjects` TEXT NOT NULL, `processes` TEXT NOT NULL, `reviews` TEXT NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `processes` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `required_documents_json` TEXT NOT NULL, `process_type` TEXT NOT NULL, `related_id` TEXT, `is_active` INTEGER NOT NULL, `created_at_ms` INTEGER, `updated_at_ms` INTEGER, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `notifications` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `message` TEXT NOT NULL, `notification_type` TEXT NOT NULL, `status` TEXT NOT NULL, `created_at_ms` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE UNIQUE INDEX `index_users_email` ON `users` (`email`)');
 
@@ -155,6 +159,12 @@ class _$AppDatabase extends AppDatabase {
   SubjectTeacherDao get subjectTeacherDao {
     return _subjectTeacherDaoInstance ??=
         _$SubjectTeacherDao(database, changeListener);
+  }
+
+  @override
+  NotificationDao get notificationDao {
+    return _notificationDaoInstance ??=
+        _$NotificationDao(database, changeListener);
   }
 }
 
@@ -1030,8 +1040,168 @@ class _$SubjectTeacherDao extends SubjectTeacherDao {
   }
 }
 
+class _$NotificationDao extends NotificationDao {
+  _$NotificationDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database, changeListener),
+        _notificationModelInsertionAdapter = InsertionAdapter(
+            database,
+            'notifications',
+            (NotificationModel item) => <String, Object?>{
+                  'id': item.id,
+                  'title': item.title,
+                  'message': item.message,
+                  'notification_type':
+                      _notificationTypeConverter.encode(item.type),
+                  'status': _notificationStatusConverter.encode(item.status),
+                  'created_at_ms': _dateTimeConverter.encode(item.createdAt)
+                },
+            changeListener),
+        _notificationModelUpdateAdapter = UpdateAdapter(
+            database,
+            'notifications',
+            ['id'],
+            (NotificationModel item) => <String, Object?>{
+                  'id': item.id,
+                  'title': item.title,
+                  'message': item.message,
+                  'notification_type':
+                      _notificationTypeConverter.encode(item.type),
+                  'status': _notificationStatusConverter.encode(item.status),
+                  'created_at_ms': _dateTimeConverter.encode(item.createdAt)
+                },
+            changeListener),
+        _notificationModelDeletionAdapter = DeletionAdapter(
+            database,
+            'notifications',
+            ['id'],
+            (NotificationModel item) => <String, Object?>{
+                  'id': item.id,
+                  'title': item.title,
+                  'message': item.message,
+                  'notification_type':
+                      _notificationTypeConverter.encode(item.type),
+                  'status': _notificationStatusConverter.encode(item.status),
+                  'created_at_ms': _dateTimeConverter.encode(item.createdAt)
+                },
+            changeListener);
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<NotificationModel> _notificationModelInsertionAdapter;
+
+  final UpdateAdapter<NotificationModel> _notificationModelUpdateAdapter;
+
+  final DeletionAdapter<NotificationModel> _notificationModelDeletionAdapter;
+
+  @override
+  Future<List<NotificationModel>> findAll() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM notifications ORDER BY created_at_ms DESC',
+        mapper: (Map<String, Object?> row) => NotificationModel(
+            id: row['id'] as String,
+            title: row['title'] as String,
+            message: row['message'] as String,
+            type: _notificationTypeConverter
+                .decode(row['notification_type'] as String),
+            status:
+                _notificationStatusConverter.decode(row['status'] as String),
+            createdAt: _dateTimeConverter.decode(row['created_at_ms'] as int)));
+  }
+
+  @override
+  Stream<List<NotificationModel>> watchAll() {
+    return _queryAdapter.queryListStream(
+        'SELECT * FROM notifications ORDER BY created_at_ms DESC',
+        mapper: (Map<String, Object?> row) => NotificationModel(
+            id: row['id'] as String,
+            title: row['title'] as String,
+            message: row['message'] as String,
+            type: _notificationTypeConverter
+                .decode(row['notification_type'] as String),
+            status:
+                _notificationStatusConverter.decode(row['status'] as String),
+            createdAt: _dateTimeConverter.decode(row['created_at_ms'] as int)),
+        queryableName: 'notifications',
+        isView: false);
+  }
+
+  @override
+  Future<NotificationModel?> findById(String id) async {
+    return _queryAdapter.query(
+        'SELECT * FROM notifications WHERE id = ?1 LIMIT 1',
+        mapper: (Map<String, Object?> row) => NotificationModel(
+            id: row['id'] as String,
+            title: row['title'] as String,
+            message: row['message'] as String,
+            type: _notificationTypeConverter
+                .decode(row['notification_type'] as String),
+            status:
+                _notificationStatusConverter.decode(row['status'] as String),
+            createdAt: _dateTimeConverter.decode(row['created_at_ms'] as int)),
+        arguments: [id]);
+  }
+
+  @override
+  Future<int?> countNotifications() async {
+    return _queryAdapter.query('SELECT COUNT(*) FROM notifications',
+        mapper: (Map<String, Object?> row) => row.values.first as int);
+  }
+
+  @override
+  Future<void> deleteById(String id) async {
+    await _queryAdapter.queryNoReturn('DELETE FROM notifications WHERE id = ?1',
+        arguments: [id]);
+  }
+
+  @override
+  Future<void> deleteByStatus(String status) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM notifications WHERE status = ?1',
+        arguments: [status]);
+  }
+
+  @override
+  Future<void> deleteAllNotifications() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM notifications');
+  }
+
+  @override
+  Future<void> insertNotification(NotificationModel notification) async {
+    await _notificationModelInsertionAdapter.insert(
+        notification, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertNotifications(
+      List<NotificationModel> notifications) async {
+    await _notificationModelInsertionAdapter.insertList(
+        notifications, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> updateNotification(NotificationModel notification) {
+    return _notificationModelUpdateAdapter.updateAndReturnChangedRows(
+        notification, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> deleteNotification(NotificationModel notification) {
+    return _notificationModelDeletionAdapter
+        .deleteAndReturnChangedRows(notification);
+  }
+}
+
 // ignore_for_file: unused_element
 final _authProviderConverter = AuthProviderConverter();
 final _processTypeConverter = ProcessTypeConverter();
 final _stringListConverter = StringListConverter();
+final _dateTimeConverter = DateTimeConverter();
 final _nullableDateTimeConverter = NullableDateTimeConverter();
+final _notificationTypeConverter = NotificationTypeConverter();
+final _notificationStatusConverter = NotificationStatusConverter();

@@ -14,7 +14,7 @@ class NotificationView extends StatelessWidget {
     return Consumer<NotificationViewModel>(
       builder: (context, viewModel, _) {
         return Container(
-          width: 360,
+          width: double.infinity,
           decoration: BoxDecoration(
             color: AppColors.background,
             borderRadius: BorderRadius.circular(16),
@@ -44,46 +44,62 @@ class NotificationView extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context, NotificationViewModel viewModel) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 8, 8),
+      padding: const EdgeInsets.fromLTRB(16, 12, 4, 8),
       child: Row(
         children: [
-          const Text(
-            'Notificaciones',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+          Expanded(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    'Notificaciones',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (viewModel.unreadCount > 0) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${viewModel.unreadCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          if (viewModel.unreadCount > 0) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${viewModel.unreadCount}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-          const Spacer(),
           if (viewModel.unreadCount > 0)
             TextButton(
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
               onPressed: viewModel.markAllAsRead,
               child: const Text(
-                'Marcar todo leído',
-                style: TextStyle(color: AppColors.primary, fontSize: 13),
+                'Marcar leído',
+                style: TextStyle(color: AppColors.primary, fontSize: 12),
               ),
             ),
           IconButton(
-            icon: const Icon(Icons.close, color: AppColors.textPrimary),
+            constraints: const BoxConstraints(),
+            padding: const EdgeInsets.all(8),
+            icon: const Icon(Icons.close, size: 20, color: AppColors.textPrimary),
             onPressed: onClose ?? () => Navigator.pop(context),
           ),
         ],

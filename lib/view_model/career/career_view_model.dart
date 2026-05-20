@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:ubook_app/model/career/career_model.dart';
+import 'package:ubook_app/model/notification/notification_model.dart';
 import 'package:ubook_app/repository/career/career_prefs.dart';
 import 'package:ubook_app/repository/career/career_repository.dart';
+import 'package:ubook_app/service/notification_service.dart';
 
 class CareerViewModel extends ChangeNotifier {
   final CareerRepository _repository;
@@ -59,17 +63,32 @@ class CareerViewModel extends ChangeNotifier {
   Future<void> addCareer(Career career) async {
     await _repository.save(career);
     await loadCareers();
+    unawaited(NotificationService.push(
+      title: 'Nueva carrera registrada',
+      message: 'La carrera "${career.name}" fue registrada en el sistema.',
+      type: NotificationType.other,
+    ));
   }
 
   Future<void> updateCareer(Career updatedCareer) async {
     await _repository.save(updatedCareer);
     await loadCareers();
+    unawaited(NotificationService.push(
+      title: 'Carrera actualizada',
+      message: 'La carrera "${updatedCareer.name}" fue actualizada.',
+      type: NotificationType.other,
+    ));
   }
 
   Future<void> deleteCareer(String id) async {
     final career = _careers.firstWhere((c) => c.id == id);
     await _repository.delete(career);
     await loadCareers();
+    unawaited(NotificationService.push(
+      title: 'Carrera eliminada',
+      message: 'La carrera "${career.name}" fue eliminada del sistema.',
+      type: NotificationType.other,
+    ));
   }
 
   // ─── FILTROS ──────────────────────────────────────────────────

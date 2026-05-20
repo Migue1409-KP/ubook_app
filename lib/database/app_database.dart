@@ -6,6 +6,7 @@ import 'package:floor/floor.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:ubook_app/model/attachments/attachment_model.dart';
 import 'package:ubook_app/model/auth/user_model.dart';
+import 'package:ubook_app/model/notification/notification_model.dart';
 import 'package:ubook_app/model/process/process_model.dart';
 import 'package:ubook_app/model/career/career_entity.dart';
 import 'package:ubook_app/model/reviews/review.dart';
@@ -13,9 +14,11 @@ import 'package:ubook_app/model/subjectteacher/subjectteacher.dart';
 import 'package:ubook_app/repository/attachments/attachment_dao.dart';
 import 'package:ubook_app/repository/auth/floor_converters.dart';
 import 'package:ubook_app/repository/auth/user_dao.dart';
+import 'package:ubook_app/repository/career/career_dao.dart';
+import 'package:ubook_app/repository/notification/notification_dao.dart';
+import 'package:ubook_app/repository/notification/notification_floor_converters.dart';
 import 'package:ubook_app/repository/process/process_dao.dart';
 import 'package:ubook_app/repository/process/process_floor_converters.dart';
-import 'package:ubook_app/repository/career/career_dao.dart';
 import 'package:ubook_app/repository/reviews/review_dao.dart';
 import 'package:ubook_app/repository/teacher_subject/subject_teacher_dao.dart';
 
@@ -63,7 +66,6 @@ final migration3to4 = Migration(3, 4, (database) async {
   );
 });
 
-
 final migration4to5 = Migration(4, 5, (database) async {
   await database.execute(
     'CREATE TABLE IF NOT EXISTS `careers` ('
@@ -97,13 +99,46 @@ final migration5to6 = Migration(5, 6, (database) async {
   );
 });
 
+final migration6to7 = Migration(6, 7, (database) async {
+  await database.execute(
+    'CREATE TABLE IF NOT EXISTS `notifications` ('
+    '`id` TEXT NOT NULL, '
+    '`title` TEXT NOT NULL, '
+    '`message` TEXT NOT NULL, '
+    '`notification_type` TEXT NOT NULL, '
+    '`status` TEXT NOT NULL, '
+    '`created_at_ms` INTEGER, '
+    'PRIMARY KEY (`id`)'
+    ')',
+  );
+});
+
+// Limpia el seed falso para que solo queden notificaciones generadas por eventos reales.
+final migration7to8 = Migration(7, 8, (database) async {
+  await database.execute('DELETE FROM notifications');
+});
+
 @TypeConverters([
   AuthProviderConverter,
   ProcessTypeConverter,
   StringListConverter,
+  DateTimeConverter,
   NullableDateTimeConverter,
+  NotificationTypeConverter,
+  NotificationStatusConverter,
 ])
-@Database(version: 6, entities: [UserModel, Review, AttachmentModel, SubjectTeacher, CareerEntity, ProcessModel])
+@Database(
+  version: 8,
+  entities: [
+    UserModel,
+    Review,
+    AttachmentModel,
+    SubjectTeacher,
+    CareerEntity,
+    ProcessModel,
+    NotificationModel,
+  ],
+)
 abstract class AppDatabase extends FloorDatabase {
   UserDao get userDao;
   ReviewDao get reviewDao;
@@ -111,4 +146,5 @@ abstract class AppDatabase extends FloorDatabase {
   ProcessDao get processDao;
   CareerDao get careerDao;
   SubjectTeacherDao get subjectTeacherDao;
+  NotificationDao get notificationDao;
 }

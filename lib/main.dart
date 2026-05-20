@@ -6,6 +6,8 @@ import 'package:ubook_app/repository/attachments/floor_attachment_repository.dar
 import 'package:ubook_app/repository/auth/auth_local_storage.dart';
 import 'package:ubook_app/repository/auth/floor_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
+import 'package:ubook_app/repository/notification/floor_notification_repository.dart';
+import 'package:ubook_app/view_model/notification/notification_view_model.dart';
 import 'package:ubook_app/repository/process/floor_process_repository.dart';
 import 'package:ubook_app/repository/reviews/review_repository_provider.dart';
 import 'package:ubook_app/repository/teacher_subject/floor_subject_teacher_repository.dart';
@@ -26,18 +28,22 @@ import 'package:ubook_app/repository/career/career_repository_provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final database = await $FloorAppDatabase
-      .databaseBuilder('ubook_app.db')
-      .addMigrations([
+  final database =
+      await $FloorAppDatabase.databaseBuilder('ubook_app.db').addMigrations([
         migration1to2,
         migration2to3,
         migration3to4,
         migration4to5,
         migration5to6,
-      ])
-      .build();
+        migration6to7,
+        migration7to8,
+      ]).build();
   final userRepository = FloorUserRepository.initialize(database);
   await userRepository.ensureInitialized();
+  final notificationRepository = FloorNotificationRepository.initialize(
+    database,
+  );
+  await notificationRepository.ensureInitialized();
   await ReviewRepositoryProvider.initialize(database);
   FloorAttachmentRepository.initialize(database);
   final processRepository = FloorProcessRepository.initialize(database);
@@ -61,6 +67,7 @@ class MyApp extends StatelessWidget {
         if (database != null) Provider<AppDatabase>.value(value: database!),
         if (userRepository != null)
           Provider<UserRepository>.value(value: userRepository!),
+        ChangeNotifierProvider(create: (_) => NotificationViewModel()),
         ChangeNotifierProvider(create: (_) => UserCountProvider()),
         ChangeNotifierProvider(create: (_) => TeacherCountProvider()),
         ChangeNotifierProvider(create: (_) => EducationalCenterCountProvider()),
