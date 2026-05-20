@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:ubook_app/database/app_database.dart';
 import 'package:ubook_app/firebase_options.dart';
 import 'package:ubook_app/view/subjects/subjects_view.dart';
+import 'package:ubook_app/repository/attachments/attachment_repository.dart';
 import 'package:ubook_app/repository/attachments/floor_attachment_repository.dart';
 import 'package:ubook_app/repository/auth/firestore_user_repository.dart';
 import 'package:ubook_app/repository/auth/floor_user_repository.dart';
@@ -53,7 +54,24 @@ Future<void> main() async {
   );
   await userRepository.ensureInitialized();
   await ReviewRepositoryProvider.initialize(database);
-  FloorAttachmentRepository.initialize(database);
+
+  // ── Repositorio de adjuntos ───────────────────────────────────────────────
+  // Implementación activa: almacenamiento local (Floor + SQLite).
+  //
+  // TODO: cuando la cuenta de Firebase Storage esté disponible, reemplazar
+  // estas dos líneas por la implementación Firebase:
+  //
+  //   import 'package:ubook_app/repository/attachments/firebase_attachment_repository.dart';
+  //
+  //   AttachmentRepository.setCurrent(
+  //     FirebaseAttachmentRepository.initialize(database),
+  //   );
+  //
+  // Firebase.initializeApp() ya se llama arriba, así que no se necesita
+  // ningún cambio adicional fuera de este bloque.
+  AttachmentRepository.setCurrent(
+    FloorAttachmentRepository.initialize(database),
+  );
   final processRepository = FloorProcessRepository.initialize(database);
   await processRepository.ensureInitialized();
   await CareerRepositoryProvider.initialize(database);
