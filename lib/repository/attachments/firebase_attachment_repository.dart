@@ -127,9 +127,18 @@ class FirebaseAttachmentRepository implements AttachmentRepository {
     final saved = attachment.copyWith(id: id, filePath: storagePath);
     try {
       await _database.attachmentDao.insertAttachment(saved);
-    } catch (e) {
-      await _storageService.deleteFile(storagePath);
-      rethrow;
+    } catch (e, st) {
+      // La inserción en BD falló: intenta limpiar el archivo ya subido para
+      // evitar huérfanos en Firebase Storage, pero sin ocultar la causa real.
+      try {
+        await _storageService.deleteFile(storagePath);
+      } catch (cleanupError, cleanupSt) {
+        debugPrint(
+          'saveFile: cleanup de $storagePath falló tras error en insertAttachment'
+          ' – $cleanupError\n$cleanupSt',
+        );
+      }
+      Error.throwWithStackTrace(e, st);
     }
     return saved;
   }
