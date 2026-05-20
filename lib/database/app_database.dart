@@ -18,6 +18,8 @@ import 'package:ubook_app/repository/process/process_floor_converters.dart';
 import 'package:ubook_app/repository/career/career_dao.dart';
 import 'package:ubook_app/repository/reviews/review_dao.dart';
 import 'package:ubook_app/repository/teacher_subject/subject_teacher_dao.dart';
+import 'package:ubook_app/model/teachers/teacher.dart';
+import 'package:ubook_app/repository/teachers/teacher_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -119,13 +121,35 @@ final migration7to8 = Migration(7, 8, (database) async {
   } catch (_) {}
 });
 
+final migration8to9 = Migration(8, 9, (database) async {
+  await database.execute(
+    'CREATE TABLE IF NOT EXISTS `teachers` ('
+    '`id` TEXT NOT NULL, '
+    '`first_name` TEXT NOT NULL, '
+    '`last_name` TEXT NOT NULL, '
+    '`email` TEXT NOT NULL, '
+    '`phone` TEXT NOT NULL, '
+    '`age` INTEGER NOT NULL, '
+    '`department` TEXT NOT NULL, '
+    '`specialty` TEXT NOT NULL, '
+    '`subjects` TEXT NOT NULL, '
+    '`profile_image_url` TEXT NOT NULL, '
+    '`is_active` INTEGER NOT NULL, '
+    '`created_at` INTEGER NOT NULL, '
+    '`updated_at` INTEGER NOT NULL, '
+    'PRIMARY KEY (`id`)'
+    ')',
+  );
+});
+
 @TypeConverters([
   AuthProviderConverter,
   ProcessTypeConverter,
   StringListConverter,
+  DateTimeConverter,
   NullableDateTimeConverter,
 ])
-@Database(version: 8, entities: [UserModel, Review, AttachmentModel, SubjectTeacher, CareerEntity, ProcessModel])
+@Database(version: 9, entities: [UserModel, Review, AttachmentModel, SubjectTeacher, CareerEntity, ProcessModel, Teacher])
 abstract class AppDatabase extends FloorDatabase {
   UserDao get userDao;
   ReviewDao get reviewDao;
@@ -133,4 +157,5 @@ abstract class AppDatabase extends FloorDatabase {
   ProcessDao get processDao;
   CareerDao get careerDao;
   SubjectTeacherDao get subjectTeacherDao;
+  TeacherDao get teacherDao;
 }

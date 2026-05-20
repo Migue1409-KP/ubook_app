@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../model/teachers/teacher.dart';
 import '../../model/teachers/teacher_repository.dart';
-import '../../repository/teachers/sqlite_teacher_repository.dart';
+import '../../repository/teachers/floor_teacher_repository.dart';
 import '../../repository/teachers/country_api_service.dart';
+import '../../repository/teachers/teacher_preferences.dart';
 
 class TeacherFormViewModel extends ChangeNotifier {
   TeacherFormViewModel({
     TeacherRepository? repository,
     Teacher? initial,
-  }) : _repository = repository ?? SqliteTeacherRepository.instance,
+  }) : _repository = repository ?? FloorTeacherRepository.instance,
        _editingId = initial?.id {
     if (initial != null) _populate(initial);
     _loadCountries();
@@ -31,10 +32,16 @@ class TeacherFormViewModel extends ChangeNotifier {
     }
     
     if (countries.isNotEmpty) {
-      // Find Colombia as default if available, or first item
+      // Use preferences or default to CO
+      final prefs = await TeacherPreferences.init();
+      final defaultCode = prefs.getDefaultCountryCode();
+      
       selectedCountry = countries.firstWhere(
-        (c) => c.code == 'CO', 
-        orElse: () => countries.first,
+        (c) => c.dialCode == defaultCode || c.code == defaultCode, 
+        orElse: () => countries.firstWhere(
+          (c) => c.code == 'CO',
+          orElse: () => countries.first,
+        ),
       );
       
       // If editing, try to guess the country based on the phone string if it contains a dialCode
@@ -58,9 +65,14 @@ class TeacherFormViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void onCountryChanged(CountryPhoneCode? newCountry) {
+  void onCountryChanged(CountryPhoneCode? newCountry) async {
     if (newCountry == null) return;
     selectedCountry = newCountry;
+    
+    // Save to preferences
+    final prefs = await TeacherPreferences.init();
+    await prefs.setDefaultCountryCode(newCountry.dialCode);
+    
     // Set the prefix in the text field if empty or replace old prefix
     phoneController.text = newCountry.dialCode + ' ';
     notifyListeners();

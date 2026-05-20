@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../model/teachers/teacher.dart';
-import '../../repository/teachers/sqlite_teacher_repository.dart';
+import '../../repository/teachers/floor_teacher_repository.dart';
 import '../../repository/teachers/teacher_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,7 +19,7 @@ class TeacherListViewModel extends ChangeNotifier {
   }
 
   Future<void> _loadTeachers() async {
-    _allTeachers = await SqliteTeacherRepository.instance.getAll();
+    _allTeachers = await FloorTeacherRepository.instance.getAll();
     if (_allTeachers.isEmpty) {
       // Initialize with dummy data if empty
       _allTeachers = [
@@ -40,7 +40,7 @@ class TeacherListViewModel extends ChangeNotifier {
         ),
       ];
       for (var t in _allTeachers) {
-        await SqliteTeacherRepository.instance.save(t);
+        await FloorTeacherRepository.instance.save(t);
       }
     }
     _applySortAndFilter();
@@ -81,18 +81,18 @@ class TeacherListViewModel extends ChangeNotifier {
   }
 
   Future<void> addTeacher(Teacher teacher) async {
-    await SqliteTeacherRepository.instance.save(teacher);
+    await FloorTeacherRepository.instance.save(teacher);
     await _loadTeachers();
   }
 
   Future<void> updateTeacher(Teacher teacher) async {
-    await SqliteTeacherRepository.instance.save(teacher);
+    await FloorTeacherRepository.instance.save(teacher);
     await _loadTeachers();
   }
 
-  void deleteTeacher(String id) {
-    // SQLite deletion logic should go here if implemented, for now memory
-    _allTeachers.removeWhere((t) => t.id == id);
-    search(_searchQuery);
+  Future<void> deleteTeacher(String id) async {
+    final t = _allTeachers.firstWhere((t) => t.id == id);
+    await FloorTeacherRepository.instance.deleteTeacher(t);
+    await _loadTeachers();
   }
 }
