@@ -101,6 +101,25 @@ final migration5to6 = Migration(5, 6, (database) async {
 
 final migration6to7 = Migration(6, 7, (database) async {
   await database.execute(
+    'ALTER TABLE `subject_teachers` ADD COLUMN `periodo_academico_id` TEXT',
+  );
+  await database.execute(
+    'ALTER TABLE `subject_teachers` ADD COLUMN `periodo_etiqueta` TEXT',
+  );
+});
+
+final migration7to8 = Migration(7, 8, (database) async {
+  try {
+    await database.execute(
+      'ALTER TABLE `subject_teachers` RENAME COLUMN `subjectId` TO `subject_id`',
+    );
+  } catch (_) {}
+  try {
+    await database.execute(
+      'ALTER TABLE `subject_teachers` RENAME COLUMN `teacherId` TO `teacher_id`',
+    );
+  } catch (_) {}
+  await database.execute(
     'CREATE TABLE IF NOT EXISTS `notifications` ('
     '`id` TEXT NOT NULL, '
     '`title` TEXT NOT NULL, '
@@ -111,10 +130,6 @@ final migration6to7 = Migration(6, 7, (database) async {
     'PRIMARY KEY (`id`)'
     ')',
   );
-});
-
-// Limpia el seed falso para que solo queden notificaciones generadas por eventos reales.
-final migration7to8 = Migration(7, 8, (database) async {
   await database.execute('DELETE FROM notifications');
 });
 
