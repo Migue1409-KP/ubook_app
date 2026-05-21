@@ -11,6 +11,8 @@ class CareerEntity {
   final String educationalCenterId;
   final int semesters;
   final int credits;
+  final int? modalityId;
+  final String? modalityName;
   final String subjects;   // JSON string
   final String processes;  // JSON string
   final String reviews;    // JSON string
@@ -21,6 +23,8 @@ class CareerEntity {
     required this.educationalCenterId,
     required this.semesters,
     required this.credits,
+    this.modalityId,
+    this.modalityName,
     required this.subjects,
     required this.processes,
     required this.reviews,
@@ -32,6 +36,8 @@ class CareerEntity {
         educationalCenterId: career.educationalCenterId,
         semesters: career.semesters,
         credits: career.credits,
+        modalityId: career.modalityId,
+        modalityName: career.modalityName,
         subjects: jsonEncode(career.subjects),
         processes: jsonEncode(career.processes),
         reviews: jsonEncode(career.reviews),
@@ -43,6 +49,8 @@ class CareerEntity {
         educationalCenterId: educationalCenterId,
         semesters: semesters,
         credits: credits,
+        modalityId: modalityId,
+        modalityName: modalityName,
         subjects: List<String>.from(jsonDecode(subjects) as List),
         processes: List<String>.from(jsonDecode(processes) as List),
         reviews: List<String>.from(jsonDecode(reviews) as List),

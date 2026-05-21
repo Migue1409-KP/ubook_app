@@ -156,6 +156,15 @@ final migration8to9 = Migration(8, 9, (database) async {
   );
 });
 
+final migration8to9 = Migration(8, 9, (database) async {
+  await database.execute(
+    'ALTER TABLE `careers` ADD COLUMN `modalityId` INTEGER',
+  );
+  await database.execute(
+    'ALTER TABLE `careers` ADD COLUMN `modalityName` TEXT',
+  );
+});
+
 @TypeConverters([
   AuthProviderConverter,
   ProcessTypeConverter,
