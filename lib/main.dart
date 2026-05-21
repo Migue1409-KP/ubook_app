@@ -13,6 +13,7 @@ import 'package:ubook_app/repository/auth/user_repository.dart';
 import 'package:ubook_app/repository/process/floor_process_repository.dart';
 import 'package:ubook_app/repository/reviews/review_repository_provider.dart';
 import 'package:ubook_app/repository/teacher_subject/floor_subject_teacher_repository.dart';
+import 'package:ubook_app/repository/teachers/floor_teacher_repository.dart';
 import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
 import 'view/auth/profile_view.dart';
@@ -43,6 +44,7 @@ Future<void> main() async {
         migration5to6,
         migration6to7,
         migration7to8,
+        migration8to9,
       ])
       .build();
   final localUserRepository = FloorUserRepository.initialize(database);
@@ -58,6 +60,7 @@ Future<void> main() async {
   await processRepository.ensureInitialized();
   await CareerRepositoryProvider.initialize(database);
   FloorSubjectTeacherRepository.initialize(database);
+  FloorTeacherRepository.initialize(database);
 
   runApp(MyApp(database: database, userRepository: userRepository));
 }
