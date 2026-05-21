@@ -1,11 +1,15 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:open_file/open_file.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../model/attachments/attachment_model.dart';
 import '../../repository/attachments/attachment_local_storage.dart';
+import '../../repository/attachments/attachment_repository.dart';
 import '../../repository/attachments/file_type_repository.dart';
-import '../../repository/attachments/floor_attachment_repository.dart';
 
 class AttachmentsViewModel extends ChangeNotifier {
   AttachmentsViewModel._(this._contextKey) {
@@ -77,7 +81,7 @@ class AttachmentsViewModel extends ChangeNotifier {
   }
 
   Future<void> addAttachment(AttachmentModel attachment) async {
-    final saved = await FloorAttachmentRepository.instance.saveFile(attachment);
+    final saved = await AttachmentRepository.current.saveFile(attachment);
     _attachments.add(saved);
     notifyListeners();
   }
@@ -87,14 +91,14 @@ class AttachmentsViewModel extends ChangeNotifier {
     _attachments
       ..clear()
       ..addAll(
-        await FloorAttachmentRepository.instance.findBySubjectId(subjectId),
+        await AttachmentRepository.current.findBySubjectId(subjectId),
       );
     notifyListeners();
   }
 
   Future<void> deleteAttachment(int index) async {
     final attachment = _attachments[index];
-    await FloorAttachmentRepository.instance.deleteAttachment(attachment);
+    await AttachmentRepository.current.deleteAttachment(attachment);
     _attachments.removeAt(index);
     notifyListeners();
   }
@@ -182,16 +186,38 @@ class AttachmentsViewModel extends ChangeNotifier {
     if (kIsWeb) return 'Download is not available in the web version';
 
     final filePath = attachment.filePath;
-    if (filePath == null) return 'File does not have saved content locally';
+    if (filePath == null) return 'El archivo no tiene contenido guardado';
 
     openingId = attachment.id;
     notifyListeners();
     try {
-      final result = await OpenFile.open(filePath);
+      String localPath;
+
+      // Las rutas absolutas apuntan al filesystem local → abrir directamente.
+      // Las rutas relativas apuntan a Firebase Storage → descargar primero.
+      if (p.isAbsolute(filePath)) {
+        localPath = filePath;
+      } else {
+        // Descarga desde Firebase Storage al directorio temporal del dispositivo.
+        // El SO puede limpiar estos archivos; no consumen espacio permanente.
+        final bytes =
+            await AttachmentRepository.current.downloadFileBytes(attachment);
+        if (bytes == null) return 'No se pudo descargar el archivo';
+
+        final tmpDir = await getTemporaryDirectory();
+        final extWithDot = p.extension(filePath).toLowerCase();
+        final tmpFile = File(
+          p.join(tmpDir.path, '${attachment.id}$extWithDot'),
+        );
+        await tmpFile.writeAsBytes(bytes, flush: true);
+        localPath = tmpFile.path;
+      }
+
+      final result = await OpenFile.open(localPath);
       if (result.type != ResultType.done) return result.message;
       return null;
     } catch (e) {
-      return 'Could not open file: $e';
+      return 'No se pudo abrir el archivo: $e';
     } finally {
       openingId = null;
       notifyListeners();
