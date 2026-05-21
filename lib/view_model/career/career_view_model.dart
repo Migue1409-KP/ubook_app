@@ -1,28 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:ubook_app/model/career/career_model.dart';
+import 'package:ubook_app/model/career/modality.dart';
 import 'package:ubook_app/repository/career/career_prefs.dart';
 import 'package:ubook_app/repository/career/career_repository.dart';
+import 'package:ubook_app/repository/career/modality_api_repository.dart';
 
 class CareerViewModel extends ChangeNotifier {
   final CareerRepository _repository;
   final CareerPrefs _prefs = CareerPrefs();
+  final ModalityApiRepository _modalityApi;
 
   final List<Career> _careers = [];
+  List<Modality> _modalities = const [];
+  String? _modalitiesWarning;
+  bool _modalitiesLoading = false;
   String _searchQuery = '';
   String _sortOrder = 'name';
 
   List<Career> get careers => _careers;
+  List<Modality> get modalities => _modalities;
+  String? get modalitiesWarning => _modalitiesWarning;
+  bool get modalitiesLoading => _modalitiesLoading;
   String get sortOrder => _sortOrder;
 
-  CareerViewModel(this._repository) {
+  CareerViewModel(
+    this._repository, {
+    ModalityApiRepository? modalityApi,
+  }) : _modalityApi = modalityApi ?? ModalityApiRepository.instance {
     _loadSortOrder(); // SharedPreferences — preferencia de UI
     loadCareers();    // Floor — datos reales
+    loadModalities(); // API remota — catálogo
   }
 
   // ─── PERSISTENCIA UI (SharedPreferences) ─────────────────────
 
   Future<void> _loadSortOrder() async {
-    final saved = await _prefs.getSortOrder(); // ← cambio
+    final saved = await _prefs.getSortOrder();
     if (saved != null) {
       _sortOrder = saved;
       notifyListeners();
@@ -31,7 +44,7 @@ class CareerViewModel extends ChangeNotifier {
 
   Future<void> setSortOrder(String order) async {
     _sortOrder = order;
-    await _prefs.saveSortOrder(order); // ← cambio
+    await _prefs.saveSortOrder(order);
     _applySortOrder();
     notifyListeners();
   }
@@ -70,6 +83,33 @@ class CareerViewModel extends ChangeNotifier {
     final career = _careers.firstWhere((c) => c.id == id);
     await _repository.delete(career);
     await loadCareers();
+  }
+
+  // ─── CATÁLOGO REMOTO (API modalidades) ───────────────────────
+
+  Future<void> loadModalities() async {
+    _modalitiesLoading = true;
+    notifyListeners();
+    try {
+      _modalities = await _modalityApi.fetchModalities();
+      _modalitiesWarning = null;
+    } catch (e, st) {
+      _modalities = const [];
+      _modalitiesWarning =
+          'No se pudo cargar el catálogo de modalidades: $e';
+      debugPrint('[CareerViewModel] loadModalities failed: $e\n$st');
+    } finally {
+      _modalitiesLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Modality? findModalityById(int? id) {
+    if (id == null) return null;
+    for (final m in _modalities) {
+      if (m.id == id) return m;
+    }
+    return null;
   }
 
   // ─── FILTROS ──────────────────────────────────────────────────

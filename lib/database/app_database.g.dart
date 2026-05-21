@@ -90,7 +90,7 @@ class _$AppDatabase extends AppDatabase {
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 8,
+      version: 9,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -746,6 +746,8 @@ class _$CareerDao extends CareerDao {
                   'educationalCenterId': item.educationalCenterId,
                   'semesters': item.semesters,
                   'credits': item.credits,
+                  'modalityId': item.modalityId,
+                  'modalityName': item.modalityName,
                   'subjects': item.subjects,
                   'processes': item.processes,
                   'reviews': item.reviews
@@ -760,6 +762,8 @@ class _$CareerDao extends CareerDao {
                   'educationalCenterId': item.educationalCenterId,
                   'semesters': item.semesters,
                   'credits': item.credits,
+                  'modalityId': item.modalityId,
+                  'modalityName': item.modalityName,
                   'subjects': item.subjects,
                   'processes': item.processes,
                   'reviews': item.reviews
@@ -774,6 +778,8 @@ class _$CareerDao extends CareerDao {
                   'educationalCenterId': item.educationalCenterId,
                   'semesters': item.semesters,
                   'credits': item.credits,
+                  'modalityId': item.modalityId,
+                  'modalityName': item.modalityName,
                   'subjects': item.subjects,
                   'processes': item.processes,
                   'reviews': item.reviews
@@ -800,6 +806,8 @@ class _$CareerDao extends CareerDao {
             educationalCenterId: row['educationalCenterId'] as String,
             semesters: row['semesters'] as int,
             credits: row['credits'] as int,
+            modalityId: row['modalityId'] as int?,
+            modalityName: row['modalityName'] as String?,
             subjects: row['subjects'] as String,
             processes: row['processes'] as String,
             reviews: row['reviews'] as String));
@@ -814,6 +822,8 @@ class _$CareerDao extends CareerDao {
             educationalCenterId: row['educationalCenterId'] as String,
             semesters: row['semesters'] as int,
             credits: row['credits'] as int,
+            modalityId: row['modalityId'] as int?,
+            modalityName: row['modalityName'] as String?,
             subjects: row['subjects'] as String,
             processes: row['processes'] as String,
             reviews: row['reviews'] as String),

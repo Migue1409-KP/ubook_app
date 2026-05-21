@@ -43,6 +43,7 @@ Future<void> main() async {
         migration5to6,
         migration6to7,
         migration7to8,
+        migration8to9,
       ])
       .build();
   final localUserRepository = FloorUserRepository.initialize(database);

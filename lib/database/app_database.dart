@@ -119,13 +119,22 @@ final migration7to8 = Migration(7, 8, (database) async {
   } catch (_) {}
 });
 
+final migration8to9 = Migration(8, 9, (database) async {
+  await database.execute(
+    'ALTER TABLE `careers` ADD COLUMN `modalityId` INTEGER',
+  );
+  await database.execute(
+    'ALTER TABLE `careers` ADD COLUMN `modalityName` TEXT',
+  );
+});
+
 @TypeConverters([
   AuthProviderConverter,
   ProcessTypeConverter,
   StringListConverter,
   NullableDateTimeConverter,
 ])
-@Database(version: 8, entities: [UserModel, Review, AttachmentModel, SubjectTeacher, CareerEntity, ProcessModel])
+@Database(version: 9, entities: [UserModel, Review, AttachmentModel, SubjectTeacher, CareerEntity, ProcessModel])
 abstract class AppDatabase extends FloorDatabase {
   UserDao get userDao;
   ReviewDao get reviewDao;
