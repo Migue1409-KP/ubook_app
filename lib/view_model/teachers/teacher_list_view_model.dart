@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import '../../model/notification/notification_model.dart';
 import '../../model/teachers/teacher.dart';
+import '../../service/notification_service.dart';
 import '../../repository/teachers/floor_teacher_repository.dart';
 import '../../repository/teachers/teacher_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -90,9 +94,14 @@ class TeacherListViewModel extends ChangeNotifier {
     await _loadTeachers();
   }
 
-  Future<void> deleteTeacher(String id) async {
-    final t = _allTeachers.firstWhere((t) => t.id == id);
-    await FloorTeacherRepository.instance.deleteTeacher(t);
-    await _loadTeachers();
+  void deleteTeacher(String id) {
+    final teacher = _allTeachers.firstWhere((t) => t.id == id);
+    _allTeachers.removeWhere((t) => t.id == id);
+    search(_searchQuery);
+    unawaited(NotificationService.push(
+      title: 'Docente eliminado',
+      message: 'El docente ${teacher.firstName} ${teacher.lastName} fue eliminado del sistema.',
+      type: NotificationType.other,
+    ));
   }
 }

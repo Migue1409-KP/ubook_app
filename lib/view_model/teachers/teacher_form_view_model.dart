@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import '../../model/notification/notification_model.dart';
 import '../../model/teachers/teacher.dart';
 import '../../model/teachers/teacher_repository.dart';
+import '../../service/notification_service.dart';
 import '../../repository/teachers/floor_teacher_repository.dart';
 import '../../repository/teachers/country_api_service.dart';
 import '../../repository/teachers/teacher_preferences.dart';
@@ -155,6 +159,22 @@ class TeacherFormViewModel extends ChangeNotifier {
     );
 
     final saved = await _repository.save(teacher);
+
+    if (isEditing) {
+      unawaited(NotificationService.push(
+        title: 'Docente actualizado',
+        message:
+            'El docente ${teacher.firstName} ${teacher.lastName} fue actualizado.',
+        type: NotificationType.other,
+      ));
+    } else {
+      unawaited(NotificationService.push(
+        title: 'Nuevo docente registrado',
+        message:
+            'El docente ${teacher.firstName} ${teacher.lastName} fue registrado en el sistema.',
+        type: NotificationType.other,
+      ));
+    }
 
     isSaving = false;
     notifyListeners();

@@ -62,7 +62,9 @@ class _NotificationAdminViewState extends State<NotificationAdminView> {
         actions: [
           IconButton(
             tooltip: 'Restaurar demo',
-            onPressed: _vm.restoreDemoData,
+            onPressed: () {
+              _vm.restoreDemoData();
+            },
             icon: const Icon(Icons.restart_alt_outlined),
           ),
           IconButton(
@@ -267,7 +269,9 @@ class _NotificationAdminViewState extends State<NotificationAdminView> {
         ElevatedButton.icon(
           onPressed: _vm.filteredNotifications.isEmpty
               ? null
-              : _vm.markFilteredAsRead,
+              : () {
+                  _vm.markFilteredAsRead();
+                },
           icon: const Icon(Icons.done_all_outlined, color: Colors.white),
           label: const Text(
             'Marcar filtradas',
@@ -280,7 +284,9 @@ class _NotificationAdminViewState extends State<NotificationAdminView> {
         ),
         OutlinedButton.icon(
           onPressed: _vm.canClearReadNotifications
-              ? _vm.clearReadNotifications
+              ? () {
+                  _vm.clearReadNotifications();
+                }
               : null,
           icon: const Icon(Icons.delete_outline),
           label: const Text('Eliminar leídas'),
@@ -300,6 +306,24 @@ class _NotificationAdminViewState extends State<NotificationAdminView> {
   }
 
   Widget _buildHistorySection() {
+    if (_vm.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_vm.errorMessage != null) {
+      return _EmptyState(
+        title: 'No se pudieron cargar las notificaciones',
+        message: _vm.errorMessage!,
+        actionLabel: 'Reintentar',
+        onAction: () {
+          _vm.restoreDemoData();
+        },
+      );
+    }
+
     final notifications = _vm.filteredNotifications;
 
     if (notifications.isEmpty) {
@@ -471,7 +495,7 @@ class _NotificationAdminViewState extends State<NotificationAdminView> {
                   child: const Text('Cancelar'),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     final title = titleController.text.trim();
                     final message = messageController.text.trim();
                     if (title.isEmpty || message.isEmpty) {
@@ -483,7 +507,7 @@ class _NotificationAdminViewState extends State<NotificationAdminView> {
                       return;
                     }
 
-                    _vm.createNotification(
+                    await _vm.createNotification(
                       title: title,
                       message: message,
                       type: selectedType,

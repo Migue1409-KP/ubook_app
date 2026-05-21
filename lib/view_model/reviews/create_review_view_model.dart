@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../../model/notification/notification_model.dart';
 import '../../model/reviews/review.dart';
 import '../../repository/reviews/review_repository.dart';
 import '../../repository/reviews/review_repository_provider.dart';
+import '../../service/notification_service.dart';
 
 class CreateReviewViewModel extends ChangeNotifier {
   CreateReviewViewModel({ReviewRepository? repository})
@@ -48,6 +52,11 @@ class CreateReviewViewModel extends ChangeNotifier {
       );
 
       await _repository.createReview(review);
+      unawaited(NotificationService.push(
+        title: 'Nueva reseña registrada',
+        message: 'Se registró una nueva reseña para "$entityId".',
+        type: NotificationType.reviewCreated,
+      ));
     } finally {
       _isLoading = false;
       notifyListeners();
