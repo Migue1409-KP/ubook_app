@@ -139,7 +139,24 @@ class _EducationalCenterFormState extends State<EducationalCenterForm> {
             foregroundColor: AppColors.onPrimary,
           ),
           onPressed: () {
-            // luego irá el backend
+            // TODO: implementar guardado en backend.
+            // Cuando esté listo, agregar la notificación así:
+            //
+            // import 'dart:async';
+            // import '../../model/notification/notification_model.dart';
+            // import '../../service/notification_service.dart';
+            //
+            // final name = nameController.text.trim();
+            // unawaited(NotificationService.push(
+            //   title: widget.isEditing
+            //       ? 'Centro educativo actualizado'
+            //       : 'Nuevo centro educativo registrado',
+            //   message: widget.isEditing
+            //       ? 'El centro educativo "$name" fue actualizado.'
+            //       : 'El centro educativo "$name" fue registrado en el sistema.',
+            //   type: NotificationType.other,
+            // ));
+            Navigator.pop(context);
           },
           child: const Text("Guardar"),
         ),

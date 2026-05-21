@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:ubook_app/model/career/career_model.dart';
 import 'package:ubook_app/model/career/modality.dart';
+import 'package:ubook_app/model/notification/notification_model.dart';
 import 'package:ubook_app/repository/career/career_prefs.dart';
 import 'package:ubook_app/repository/career/career_repository.dart';
 import 'package:ubook_app/repository/career/modality_api_repository.dart';
+import 'package:ubook_app/service/notification_service.dart';
 
 class CareerViewModel extends ChangeNotifier {
   final CareerRepository _repository;
@@ -63,8 +67,9 @@ class CareerViewModel extends ChangeNotifier {
 
   Future<void> loadCareers() async {
     final result = await _repository.getAll();
-    _careers.clear();
-    _careers.addAll(result);
+    _careers
+      ..clear()
+      ..addAll(result);
     _applySortOrder();
     notifyListeners();
   }
@@ -72,17 +77,32 @@ class CareerViewModel extends ChangeNotifier {
   Future<void> addCareer(Career career) async {
     await _repository.save(career);
     await loadCareers();
+    unawaited(NotificationService.push(
+      title: 'Nueva carrera registrada',
+      message: 'La carrera "${career.name}" fue registrada en el sistema.',
+      type: NotificationType.other,
+    ));
   }
 
   Future<void> updateCareer(Career updatedCareer) async {
     await _repository.save(updatedCareer);
     await loadCareers();
+    unawaited(NotificationService.push(
+      title: 'Carrera actualizada',
+      message: 'La carrera "${updatedCareer.name}" fue actualizada.',
+      type: NotificationType.other,
+    ));
   }
 
   Future<void> deleteCareer(String id) async {
     final career = _careers.firstWhere((c) => c.id == id);
     await _repository.delete(career);
     await loadCareers();
+    unawaited(NotificationService.push(
+      title: 'Carrera eliminada',
+      message: 'La carrera "${career.name}" fue eliminada del sistema.',
+      type: NotificationType.other,
+    ));
   }
 
   // ─── CATÁLOGO REMOTO (API modalidades) ───────────────────────
@@ -95,8 +115,7 @@ class CareerViewModel extends ChangeNotifier {
       _modalitiesWarning = null;
     } catch (e, st) {
       _modalities = const [];
-      _modalitiesWarning =
-          'No se pudo cargar el catálogo de modalidades: $e';
+      _modalitiesWarning = 'No se pudo cargar el catálogo de modalidades: $e';
       debugPrint('[CareerViewModel] loadModalities failed: $e\n$st');
     } finally {
       _modalitiesLoading = false;
@@ -120,14 +139,13 @@ class CareerViewModel extends ChangeNotifier {
   }
 
   List<Career> getFilteredCareersByCenter(String? centerId) {
-    List<Career> filtered = _careers;
+    var filtered = _careers;
     if (centerId != null) {
       filtered = filtered.where((c) => c.educationalCenterId == centerId).toList();
     }
     if (_searchQuery.isNotEmpty) {
-      filtered = filtered
-          .where((c) => c.name.toLowerCase().contains(_searchQuery.toLowerCase()))
-          .toList();
+      final q = _searchQuery.toLowerCase();
+      filtered = filtered.where((c) => c.name.toLowerCase().contains(q)).toList();
     }
     return filtered;
   }

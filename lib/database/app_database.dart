@@ -6,6 +6,7 @@ import 'package:floor/floor.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:ubook_app/model/attachments/attachment_model.dart';
 import 'package:ubook_app/model/auth/user_model.dart';
+import 'package:ubook_app/model/notification/notification_model.dart';
 import 'package:ubook_app/model/process/process_model.dart';
 import 'package:ubook_app/model/career/career_entity.dart';
 import 'package:ubook_app/model/reviews/review.dart';
@@ -13,11 +14,15 @@ import 'package:ubook_app/model/subjectteacher/subjectteacher.dart';
 import 'package:ubook_app/repository/attachments/attachment_dao.dart';
 import 'package:ubook_app/repository/auth/floor_converters.dart';
 import 'package:ubook_app/repository/auth/user_dao.dart';
+import 'package:ubook_app/repository/career/career_dao.dart';
+import 'package:ubook_app/repository/notification/notification_dao.dart';
+import 'package:ubook_app/repository/notification/notification_floor_converters.dart';
 import 'package:ubook_app/repository/process/process_dao.dart';
 import 'package:ubook_app/repository/process/process_floor_converters.dart';
-import 'package:ubook_app/repository/career/career_dao.dart';
 import 'package:ubook_app/repository/reviews/review_dao.dart';
 import 'package:ubook_app/repository/teacher_subject/subject_teacher_dao.dart';
+import 'package:ubook_app/model/teachers/teacher.dart';
+import 'package:ubook_app/repository/teachers/teacher_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -62,7 +67,6 @@ final migration3to4 = Migration(3, 4, (database) async {
     ')',
   );
 });
-
 
 final migration4to5 = Migration(4, 5, (database) async {
   await database.execute(
@@ -117,6 +121,39 @@ final migration7to8 = Migration(7, 8, (database) async {
       'ALTER TABLE `subject_teachers` RENAME COLUMN `teacherId` TO `teacher_id`',
     );
   } catch (_) {}
+  await database.execute(
+    'CREATE TABLE IF NOT EXISTS `notifications` ('
+    '`id` TEXT NOT NULL, '
+    '`title` TEXT NOT NULL, '
+    '`message` TEXT NOT NULL, '
+    '`notification_type` TEXT NOT NULL, '
+    '`status` TEXT NOT NULL, '
+    '`created_at_ms` INTEGER, '
+    'PRIMARY KEY (`id`)'
+    ')',
+  );
+  await database.execute('DELETE FROM notifications');
+});
+
+final migration8to9 = Migration(8, 9, (database) async {
+  await database.execute(
+    'CREATE TABLE IF NOT EXISTS `teachers` ('
+    '`id` TEXT NOT NULL, '
+    '`first_name` TEXT NOT NULL, '
+    '`last_name` TEXT NOT NULL, '
+    '`email` TEXT NOT NULL, '
+    '`phone` TEXT NOT NULL, '
+    '`age` INTEGER NOT NULL, '
+    '`department` TEXT NOT NULL, '
+    '`specialty` TEXT NOT NULL, '
+    '`subjects` TEXT NOT NULL, '
+    '`profile_image_url` TEXT NOT NULL, '
+    '`is_active` INTEGER NOT NULL, '
+    '`created_at` INTEGER NOT NULL, '
+    '`updated_at` INTEGER NOT NULL, '
+    'PRIMARY KEY (`id`)'
+    ')',
+  );
 });
 
 final migration8to9 = Migration(8, 9, (database) async {
@@ -132,9 +169,24 @@ final migration8to9 = Migration(8, 9, (database) async {
   AuthProviderConverter,
   ProcessTypeConverter,
   StringListConverter,
+  DateTimeConverter,
   NullableDateTimeConverter,
+  NotificationTypeConverter,
+  NotificationStatusConverter,
 ])
-@Database(version: 9, entities: [UserModel, Review, AttachmentModel, SubjectTeacher, CareerEntity, ProcessModel])
+@Database(
+  version: 9,
+  entities: [
+    UserModel,
+    Review,
+    AttachmentModel,
+    SubjectTeacher,
+    CareerEntity,
+    ProcessModel,
+    Teacher,
+    NotificationModel
+  ],
+)
 abstract class AppDatabase extends FloorDatabase {
   UserDao get userDao;
   ReviewDao get reviewDao;
@@ -142,4 +194,6 @@ abstract class AppDatabase extends FloorDatabase {
   ProcessDao get processDao;
   CareerDao get careerDao;
   SubjectTeacherDao get subjectTeacherDao;
+  NotificationDao get notificationDao;
+  TeacherDao get teacherDao;
 }

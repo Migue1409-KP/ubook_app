@@ -5,14 +5,18 @@ import 'package:provider/provider.dart';
 import 'package:ubook_app/database/app_database.dart';
 import 'package:ubook_app/firebase_options.dart';
 import 'package:ubook_app/view/subjects/subjects_view.dart';
+import 'package:ubook_app/repository/attachments/attachment_repository.dart';
 import 'package:ubook_app/repository/attachments/floor_attachment_repository.dart';
 import 'package:ubook_app/repository/auth/firestore_user_repository.dart';
 import 'package:ubook_app/repository/auth/floor_user_repository.dart';
 import 'package:ubook_app/repository/auth/syncing_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
+import 'package:ubook_app/repository/notification/floor_notification_repository.dart';
+import 'package:ubook_app/view_model/notification/notification_view_model.dart';
 import 'package:ubook_app/repository/process/floor_process_repository.dart';
 import 'package:ubook_app/repository/reviews/review_repository_provider.dart';
 import 'package:ubook_app/repository/teacher_subject/floor_subject_teacher_repository.dart';
+import 'package:ubook_app/repository/teachers/floor_teacher_repository.dart';
 import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
 import 'view/auth/profile_view.dart';
@@ -33,9 +37,8 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  final database = await $FloorAppDatabase
-      .databaseBuilder('ubook_app.db')
-      .addMigrations([
+  final database =
+      await $FloorAppDatabase.databaseBuilder('ubook_app.db').addMigrations([
         migration1to2,
         migration2to3,
         migration3to4,
@@ -53,12 +56,34 @@ Future<void> main() async {
     remoteUserRepository,
   );
   await userRepository.ensureInitialized();
+  final notificationRepository = FloorNotificationRepository.initialize(
+    database,
+  );
+  await notificationRepository.ensureInitialized();
   await ReviewRepositoryProvider.initialize(database);
-  FloorAttachmentRepository.initialize(database);
+
+  // ── Repositorio de adjuntos ───────────────────────────────────────────────
+  // Implementación activa: almacenamiento local (Floor + SQLite).
+  //
+  // TODO: cuando la cuenta de Firebase Storage esté disponible, reemplazar
+  // estas dos líneas por la implementación Firebase:
+  //
+  //   import 'package:ubook_app/repository/attachments/firebase_attachment_repository.dart';
+  //
+  //   AttachmentRepository.setCurrent(
+  //     FirebaseAttachmentRepository.initialize(database),
+  //   );
+  //
+  // Firebase.initializeApp() ya se llama arriba, así que no se necesita
+  // ningún cambio adicional fuera de este bloque.
+  AttachmentRepository.setCurrent(
+    FloorAttachmentRepository.initialize(database),
+  );
   final processRepository = FloorProcessRepository.initialize(database);
   await processRepository.ensureInitialized();
   await CareerRepositoryProvider.initialize(database);
   FloorSubjectTeacherRepository.initialize(database);
+  FloorTeacherRepository.initialize(database);
 
   runApp(MyApp(database: database, userRepository: userRepository));
 }
@@ -76,6 +101,7 @@ class MyApp extends StatelessWidget {
         if (database != null) Provider<AppDatabase>.value(value: database!),
         if (userRepository != null)
           Provider<UserRepository>.value(value: userRepository!),
+        ChangeNotifierProvider(create: (_) => NotificationViewModel()),
         ChangeNotifierProvider(create: (_) => UserCountProvider()),
         ChangeNotifierProvider(create: (_) => TeacherCountProvider()),
         ChangeNotifierProvider(create: (_) => EducationalCenterCountProvider()),

@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../model/notification/notification_model.dart';
+import '../../repository/notification/floor_notification_repository.dart';
 import '../../repository/notification/notification_admin_prefs.dart';
+import '../../repository/notification/notification_repository.dart';
 
 enum NotificationAdminStatusFilter { all, unread, read }
 
@@ -12,12 +14,18 @@ enum NotificationAdminDateFilter { all, today, week, month }
 enum NotificationAdminSortOption { newest, oldest }
 
 class NotificationAdminViewModel extends ChangeNotifier {
-  NotificationAdminViewModel() : _notifications = _buildSeedNotifications() {
+  NotificationAdminViewModel({NotificationRepository? repository})
+    : _repository = repository ?? FloorNotificationRepository.instance,
+      _notifications = [] {
     _loadSavedFilters();
+    _loadNotifications();
   }
 
+  final NotificationRepository _repository;
   final NotificationAdminPrefs _prefs = NotificationAdminPrefs();
   List<NotificationModel> _notifications;
+  bool isLoading = true;
+  String? errorMessage;
 
   String _searchQuery = '';
   NotificationAdminStatusFilter _statusFilter =
@@ -25,101 +33,6 @@ class NotificationAdminViewModel extends ChangeNotifier {
   NotificationType? _typeFilter;
   NotificationAdminDateFilter _dateFilter = NotificationAdminDateFilter.all;
   NotificationAdminSortOption _sortOption = NotificationAdminSortOption.newest;
-
-  static List<NotificationModel> _buildSeedNotifications() {
-    final now = DateTime.now();
-    return [
-      NotificationModel(
-        id: 'notif-1',
-        title: 'Nueva asignatura creada',
-        message:
-            'Se registró la asignatura Cálculo Diferencial en Ingeniería de Sistemas.',
-        type: NotificationType.subjectCreated,
-        status: NotificationStatus.initial,
-        createdAt: now.subtract(const Duration(minutes: 12)),
-      ),
-      NotificationModel(
-        id: 'notif-2',
-        title: 'Nueva reseña aprobada',
-        message:
-            'La reseña de Carlos Rodríguez fue revisada y quedó visible para estudiantes.',
-        type: NotificationType.reviewCreated,
-        status: NotificationStatus.read,
-        createdAt: now.subtract(const Duration(hours: 2)),
-      ),
-      NotificationModel(
-        id: 'notif-3',
-        title: 'Cambio de estado de notificación',
-        message:
-            'La notificación de matrícula fue marcada como leída por un administrador.',
-        type: NotificationType.other,
-        status: NotificationStatus.initial,
-        createdAt: now.subtract(const Duration(hours: 5)),
-      ),
-      NotificationModel(
-        id: 'notif-4',
-        title: 'Nueva asignatura creada',
-        message:
-            'Programación I fue creada en la facultad de Sistemas con el plan vigente.',
-        type: NotificationType.subjectCreated,
-        status: NotificationStatus.read,
-        createdAt: now.subtract(const Duration(days: 1, hours: 3)),
-      ),
-      NotificationModel(
-        id: 'notif-5',
-        title: 'Nueva reseña de docente',
-        message:
-            'El docente Carlos Rodríguez recibió una nueva reseña con puntaje alto.',
-        type: NotificationType.reviewCreated,
-        status: NotificationStatus.initial,
-        createdAt: now.subtract(const Duration(days: 1, hours: 6)),
-      ),
-      NotificationModel(
-        id: 'notif-6',
-        title: 'Recordatorio académico',
-        message:
-            'Se publicó un recordatorio de cierre de proceso para revisión de materias.',
-        type: NotificationType.other,
-        status: NotificationStatus.read,
-        createdAt: now.subtract(const Duration(days: 3)),
-      ),
-      NotificationModel(
-        id: 'notif-7',
-        title: 'Nueva asignatura creada',
-        message:
-            'Matemáticas Básicas fue registrada para la cohorte del semestre actual.',
-        type: NotificationType.subjectCreated,
-        status: NotificationStatus.initial,
-        createdAt: now.subtract(const Duration(days: 5)),
-      ),
-      NotificationModel(
-        id: 'notif-8',
-        title: 'Nueva reseña de docente',
-        message: 'Se recibió una nueva reseña para el profesor Jonathan Pérez.',
-        type: NotificationType.reviewCreated,
-        status: NotificationStatus.read,
-        createdAt: now.subtract(const Duration(days: 8)),
-      ),
-      NotificationModel(
-        id: 'notif-9',
-        title: 'Actualización interna',
-        message:
-            'El equipo de administración dejó un comentario interno en PQRS.',
-        type: NotificationType.other,
-        status: NotificationStatus.initial,
-        createdAt: now.subtract(const Duration(days: 12)),
-      ),
-      NotificationModel(
-        id: 'notif-10',
-        title: 'Nueva asignatura creada',
-        message:
-            'Arquitectura de Software quedó disponible para el siguiente ciclo.',
-        type: NotificationType.subjectCreated,
-        status: NotificationStatus.read,
-        createdAt: now.subtract(const Duration(days: 18)),
-      ),
-    ];
-  }
 
   String get searchQuery => _searchQuery;
   NotificationAdminStatusFilter get statusFilter => _statusFilter;
@@ -238,7 +151,7 @@ class NotificationAdminViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void markAsRead(String id) {
+  Future<void> markAsRead(String id) async {
     final notification = _findById(id);
     if (notification == null ||
         notification.status == NotificationStatus.read) {
@@ -246,10 +159,11 @@ class NotificationAdminViewModel extends ChangeNotifier {
     }
 
     notification.status = NotificationStatus.read;
+    await _repository.update(notification);
     notifyListeners();
   }
 
-  void markAsUnread(String id) {
+  Future<void> markAsUnread(String id) async {
     final notification = _findById(id);
     if (notification == null ||
         notification.status == NotificationStatus.initial) {
@@ -257,44 +171,46 @@ class NotificationAdminViewModel extends ChangeNotifier {
     }
 
     notification.status = NotificationStatus.initial;
+    await _repository.update(notification);
     notifyListeners();
   }
 
-  void markFilteredAsRead() {
+  Future<void> markFilteredAsRead() async {
     var changed = false;
     for (final notification in filteredNotifications) {
       if (notification.status == NotificationStatus.initial) {
-        notification.status = NotificationStatus.read;
+        final updated = notification.copyWith(status: NotificationStatus.read);
+        await _repository.update(updated);
         changed = true;
       }
     }
 
     if (changed) {
-      notifyListeners();
+      await _loadNotifications();
     }
   }
 
-  void clearReadNotifications() {
-    _notifications.removeWhere(
-      (notification) => notification.status == NotificationStatus.read,
-    );
-    notifyListeners();
+  Future<void> clearReadNotifications() async {
+    await _repository.deleteReadNotifications();
+    await _loadNotifications();
   }
 
-  void deleteNotification(String id) {
-    _notifications.removeWhere((notification) => notification.id == id);
-    notifyListeners();
+  Future<void> deleteNotification(String id) async {
+    final notification = _findById(id);
+    if (notification == null) return;
+
+    await _repository.delete(notification);
+    await _loadNotifications();
   }
 
-  void createNotification({
+  Future<void> createNotification({
     required String title,
     required String message,
     required NotificationType type,
     NotificationStatus status = NotificationStatus.initial,
-  }) {
+  }) async {
     final now = DateTime.now();
-    _notifications.insert(
-      0,
+    await _repository.insert(
       NotificationModel(
         id: 'notif-${now.microsecondsSinceEpoch}',
         title: title,
@@ -304,12 +220,27 @@ class NotificationAdminViewModel extends ChangeNotifier {
         createdAt: now,
       ),
     );
-    notifyListeners();
+    await _loadNotifications();
   }
 
-  void restoreDemoData() {
-    _notifications = _buildSeedNotifications();
+  Future<void> restoreDemoData() async {
+    await _repository.resetToSeedData();
+    await _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    isLoading = true;
+    errorMessage = null;
     notifyListeners();
+
+    try {
+      _notifications = await _repository.getAll();
+    } catch (_) {
+      errorMessage = 'No se pudieron cargar las notificaciones';
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   NotificationModel? _findById(String id) {
