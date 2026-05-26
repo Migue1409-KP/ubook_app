@@ -154,9 +154,6 @@ final migration8to9 = Migration(8, 9, (database) async {
     'PRIMARY KEY (`id`)'
     ')',
   );
-});
-
-final migration8to9 = Migration(8, 9, (database) async {
   await database.execute(
     'ALTER TABLE `careers` ADD COLUMN `modalityId` INTEGER',
   );
