@@ -249,22 +249,7 @@ class _AttachmentFormState extends State<_AttachmentForm> {
                       ? widget.vm.formattedFileSize
                       : null,
                   isLoading: widget.vm.isSelecting,
-                  onSelect: () => widget.vm.selectFile(
-                    allowedExtensions: [
-                      'pdf',
-                      'doc',
-                      'docx',
-                      'ppt',
-                      'pptx',
-                      'xls',
-                      'xlsx',
-                      'jpg',
-                      'jpeg',
-                      'png',
-                      'zip',
-                      'rar',
-                    ],
-                  ),
+                  onSelect: () => widget.vm.selectFile(),
                 ),
               ),
               const SizedBox(height: 16),

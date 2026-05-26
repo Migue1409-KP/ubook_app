@@ -4,6 +4,7 @@ import '../../theme/app_colors.dart';
 import '../../view_model/teachers/teacher_form_view_model.dart';
 import '../../view_model/teachers/teacher_count_provider.dart';
 import '../../model/teachers/teacher.dart';
+import '../../repository/teachers/country_api_service.dart';
 import '../../widgets/teachers/teacher_form_field.dart';
 import '../../widgets/teachers/teacher_active_switch.dart';
 
@@ -129,6 +130,32 @@ class _TeacherFormViewState extends State<TeacherFormView> {
                 keyboardType: TextInputType.emailAddress,
                 validator: _vm.validateEmail,
               ),
+              if (_vm.isLoadingCountries)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_vm.countries.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: DropdownButtonFormField(
+                    value: _vm.selectedCountry,
+                    decoration: InputDecoration(
+                      labelText: 'País (Prefijo telefónico)',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    items: _vm.countries.map((c) {
+                      return DropdownMenuItem(
+                        value: c,
+                        child: Text('${c.name} (${c.dialCode})'),
+                      );
+                    }).toList(),
+                    onChanged: (val) => _vm.onCountryChanged(val as CountryPhoneCode),
+                  ),
+                ),
               TeacherFormField(
                 controller: _vm.phoneController,
                 label: 'Teléfono',

@@ -6,27 +6,15 @@ import '../../view_model/notification/notification_view_model.dart';
 
 /// Campanita de notificaciones con badge de no leídas.
 /// Al presionarla despliega un panel flotante justo debajo del ícono (estilo Facebook).
-class NotificationBell extends StatelessWidget {
+/// Usa el NotificationViewModel registrado a nivel app en main.dart.
+class NotificationBell extends StatefulWidget {
   const NotificationBell({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => NotificationViewModel(),
-      child: const _NotificationBellContent(),
-    );
-  }
+  State<NotificationBell> createState() => _NotificationBellState();
 }
 
-class _NotificationBellContent extends StatefulWidget {
-  const _NotificationBellContent();
-
-  @override
-  State<_NotificationBellContent> createState() =>
-      _NotificationBellContentState();
-}
-
-class _NotificationBellContentState extends State<_NotificationBellContent> {
+class _NotificationBellState extends State<NotificationBell> {
   final GlobalKey _bellKey = GlobalKey();
   OverlayEntry? _overlayEntry;
 
@@ -56,10 +44,15 @@ class _NotificationBellContentState extends State<_NotificationBellContent> {
     final screenWidth = MediaQuery.of(context).size.width;
     final viewModel = context.read<NotificationViewModel>();
 
+    const panelMaxWidth = 360.0;
+    const horizontalMargin = 8.0;
+    final panelWidth = (screenWidth - horizontalMargin * 2).clamp(0.0, panelMaxWidth);
+    final rawRight = screenWidth - offset.dx - bellSize.width;
+    final panelRight = rawRight.clamp(horizontalMargin, screenWidth - panelWidth - horizontalMargin);
+
     _overlayEntry = OverlayEntry(
       builder: (overlayContext) => Stack(
         children: [
-          // Barrier invisible — cierra el panel al tocar fuera
           Positioned.fill(
             child: GestureDetector(
               onTap: _removePanel,
@@ -67,10 +60,10 @@ class _NotificationBellContentState extends State<_NotificationBellContent> {
               child: const ColoredBox(color: Colors.transparent),
             ),
           ),
-          // Panel de notificaciones posicionado debajo del ícono
           Positioned(
             top: offset.dy + bellSize.height,
-            right: screenWidth - offset.dx - bellSize.width,
+            right: panelRight,
+            width: panelWidth,
             child: Material(
               color: Colors.transparent,
               child: ChangeNotifierProvider.value(

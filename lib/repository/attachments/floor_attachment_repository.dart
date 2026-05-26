@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:ubook_app/database/app_database.dart';
@@ -86,8 +87,12 @@ class FloorAttachmentRepository implements AttachmentRepository {
     if (!await destDir.exists()) await destDir.create(recursive: true);
     // Nombre físico = id + extensión → evita colisiones entre archivos
     // con el mismo nombre de usuario (ej. dos "tarea.pdf" distintos).
+    // Usa el generador de IDs del SDK de Firestore (cálculo 100% local,
+    // sin llamada de red). Produce un string de 20 chars alfanumérico,
+    // globalmente único y ordenado cronológicamente — mismo estilo que
+    // los UIDs de Firebase Authentication.
     final id =
-        attachment.id ?? DateTime.now().microsecondsSinceEpoch.toString();
+        attachment.id ?? FirebaseFirestore.instance.collection('_').doc().id;
     final ext = attachment.fileType
         .toLowerCase(); // usar fileType; no depender del nombre del archivo
     final filePath = p.join(destDir.path, '$id.$ext');
@@ -156,5 +161,18 @@ class FloorAttachmentRepository implements AttachmentRepository {
   @override
   Future<int> count() async {
     return await _database.attachmentDao.count() ?? 0;
+  }
+
+  /// Lee los bytes del archivo desde el filesystem local.
+  ///
+  /// [AttachmentModel.filePath] debe ser una ruta absoluta válida.
+  /// Devuelve `null` si [filePath] es `null` o el archivo no existe en disco.
+  @override
+  Future<Uint8List?> downloadFileBytes(AttachmentModel attachment) async {
+    final path = attachment.filePath;
+    if (path == null) return null;
+    final file = File(path);
+    if (!await file.exists()) return null;
+    return file.readAsBytes();
   }
 }

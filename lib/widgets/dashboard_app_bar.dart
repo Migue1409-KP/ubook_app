@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:ubook_app/repository/auth/auth_local_storage.dart';
+import 'package:ubook_app/repository/auth/firebase_auth_service.dart';
 import '../theme/app_colors.dart';
 import 'notification/notification_bell.dart';
 
@@ -92,6 +92,9 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
               case 'users':
                 Navigator.pushNamed(context, '/admin_user');
                 break;
+              case 'notifications':
+                Navigator.pushNamed(context, '/admin_notifications');
+                break;
               case 'pqrs':
                 Navigator.pushNamed(context, '/pqrs');
                 break;
@@ -132,6 +135,23 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
                     SizedBox(width: 12),
                     Text(
                       'Administrar Usuarios',
+                      style: TextStyle(color: AppColors.textPrimary),
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'notifications',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.notifications_active_outlined,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Administrar Notificaciones',
                       style: TextStyle(color: AppColors.textPrimary),
                     ),
                   ],
@@ -230,7 +250,7 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
   }
 
   Future<void> _logout(BuildContext context) async {
-    await AuthLocalStorage().setHasActiveSession(false);
+    await FirebaseAuthService.instance.signOut();
 
     if (!context.mounted) return;
 

@@ -1,10 +1,15 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:open_file/open_file.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../model/attachments/attachment_model.dart';
 import '../../repository/attachments/attachment_local_storage.dart';
-import '../../repository/attachments/floor_attachment_repository.dart';
+import '../../repository/attachments/attachment_repository.dart';
+import '../../repository/attachments/file_type_repository.dart';
 
 class AttachmentsViewModel extends ChangeNotifier {
   AttachmentsViewModel._(this._contextKey) {
@@ -65,20 +70,7 @@ class AttachmentsViewModel extends ChangeNotifier {
     return '${(size / 1048576).toStringAsFixed(1)} MB';
   }
 
-  static const _knownExtensions = [
-    'PDF',
-    'DOC',
-    'DOCX',
-    'PPT',
-    'PPTX',
-    'XLS',
-    'XLSX',
-    'JPG',
-    'JPEG',
-    'PNG',
-    'ZIP',
-    'RAR',
-  ];
+  final _fileTypeRepo = FileTypeRepository.instance;
 
   /// Libera la instancia asociada a un contexto cuando ya no se necesita.
   /// Llamar desde el [State.dispose] de la vista si no se va a reutilizar.
@@ -89,7 +81,7 @@ class AttachmentsViewModel extends ChangeNotifier {
   }
 
   Future<void> addAttachment(AttachmentModel attachment) async {
-    final saved = await FloorAttachmentRepository.instance.saveFile(attachment);
+    final saved = await AttachmentRepository.current.saveFile(attachment);
     _attachments.add(saved);
     notifyListeners();
   }
@@ -99,22 +91,37 @@ class AttachmentsViewModel extends ChangeNotifier {
     _attachments
       ..clear()
       ..addAll(
-        await FloorAttachmentRepository.instance.findBySubjectId(subjectId),
+        await AttachmentRepository.current.findBySubjectId(subjectId),
       );
     notifyListeners();
   }
 
   Future<void> deleteAttachment(int index) async {
     final attachment = _attachments[index];
-    await FloorAttachmentRepository.instance.deleteAttachment(attachment);
+    await AttachmentRepository.current.deleteAttachment(attachment);
     _attachments.removeAt(index);
     notifyListeners();
   }
 
-  Future<void> selectFile({List<String>? allowedExtensions}) async {
+  /// Abre el selector de archivos usando las extensiones permitidas obtenidas
+  /// desde la API. Si la consulta falla, se usa [FileType.any] como fallback.
+  Future<void> selectFile() async {
     isSelecting = true;
     notifyListeners();
     try {
+      List<String>? allowedExtensions;
+      List<String> knownExtensions = [];
+      try {
+        allowedExtensions = await _fileTypeRepo.fetchAllowedExtensions();
+        knownExtensions = allowedExtensions
+            .map((e) => e.toUpperCase())
+            .toList();
+      } catch (e, st) {
+        debugPrint('Error al obtener extensiones permitidas: $e\n$st');
+        // Si la API no responde, se permite cualquier tipo.
+        allowedExtensions = null;
+      }
+
       final result = await FilePicker.platform.pickFiles(
         type: allowedExtensions != null ? FileType.custom : FileType.any,
         allowedExtensions: allowedExtensions,
@@ -127,7 +134,7 @@ class AttachmentsViewModel extends ChangeNotifier {
         fileName = file.name;
         customFileName = file.name; // auto-rellena; el usuario puede cambiarlo
         fileSize = file.size;
-        detectedType = _knownExtensions.contains(ext) ? ext : 'OTHER';
+        detectedType = knownExtensions.contains(ext) ? ext : 'OTHER';
         await _storage.saveCustomFileName(
           customFileName,
           contextKey: _contextKey,
@@ -179,16 +186,38 @@ class AttachmentsViewModel extends ChangeNotifier {
     if (kIsWeb) return 'Download is not available in the web version';
 
     final filePath = attachment.filePath;
-    if (filePath == null) return 'File does not have saved content locally';
+    if (filePath == null) return 'El archivo no tiene contenido guardado';
 
     openingId = attachment.id;
     notifyListeners();
     try {
-      final result = await OpenFile.open(filePath);
+      String localPath;
+
+      // Las rutas absolutas apuntan al filesystem local → abrir directamente.
+      // Las rutas relativas apuntan a Firebase Storage → descargar primero.
+      if (p.isAbsolute(filePath)) {
+        localPath = filePath;
+      } else {
+        // Descarga desde Firebase Storage al directorio temporal del dispositivo.
+        // El SO puede limpiar estos archivos; no consumen espacio permanente.
+        final bytes =
+            await AttachmentRepository.current.downloadFileBytes(attachment);
+        if (bytes == null) return 'No se pudo descargar el archivo';
+
+        final tmpDir = await getTemporaryDirectory();
+        final extWithDot = p.extension(filePath).toLowerCase();
+        final tmpFile = File(
+          p.join(tmpDir.path, '${attachment.id}$extWithDot'),
+        );
+        await tmpFile.writeAsBytes(bytes, flush: true);
+        localPath = tmpFile.path;
+      }
+
+      final result = await OpenFile.open(localPath);
       if (result.type != ResultType.done) return result.message;
       return null;
     } catch (e) {
-      return 'Could not open file: $e';
+      return 'No se pudo abrir el archivo: $e';
     } finally {
       openingId = null;
       notifyListeners();

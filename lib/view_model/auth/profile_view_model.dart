@@ -1,12 +1,13 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:ubook_app/model/auth/user_model.dart';
-import 'package:ubook_app/repository/auth/auth_local_storage.dart';
-import 'package:ubook_app/repository/auth/floor_user_repository.dart';
+import 'package:ubook_app/repository/auth/firebase_auth_service.dart';
+import 'package:ubook_app/repository/auth/syncing_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
 
 class ProfileViewModel extends ChangeNotifier {
-  final AuthLocalStorage _localStorage;
   final UserRepository _userRepository;
+  final FirebaseAuthService _authService;
 
   final nameController = TextEditingController();
   final emailController = TextEditingController();
@@ -30,20 +31,22 @@ class ProfileViewModel extends ChangeNotifier {
 
   UserModel? _currentUser;
 
+  bool get isGoogleUser => _authService.isGoogleUser;
+
   ProfileViewModel({
-    AuthLocalStorage? localStorage,
     UserRepository? userRepository,
-  }) : _localStorage = localStorage ?? AuthLocalStorage(),
-       _userRepository = userRepository ?? FloorUserRepository.instance {
+    FirebaseAuthService? authService,
+  }) : _userRepository = userRepository ?? SyncingUserRepository.instance,
+       _authService = authService ?? FirebaseAuthService.instance {
     _loadCurrentUser();
   }
 
   Future<void> _loadCurrentUser() async {
-    final lastEmail = await _localStorage.getLastLoginEmail();
+    final firebaseUser = _authService.currentUser;
     UserModel? user;
 
-    if (lastEmail != null && lastEmail.isNotEmpty) {
-      user = await _userRepository.findByEmail(lastEmail);
+    if (firebaseUser?.email != null) {
+      user = await _userRepository.findByEmail(firebaseUser!.email!);
     }
 
     user ??= await _userRepository.findMostRecentUser();
@@ -60,15 +63,10 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Reutilizar validadores de RegisterViewModel con submittedPersonal
   String? validateName(String? value) {
     if (!submittedPersonal) return null;
-    if (value == null || value.trim().isEmpty) {
-      return 'Nombre es requerido';
-    }
-    if (value.trim().length < 4) {
-      return 'Nombre debe tener al menos 4 caracteres';
-    }
+    if (value == null || value.trim().isEmpty) return 'Nombre es requerido';
+    if (value.trim().length < 4) return 'Nombre debe tener al menos 4 caracteres';
     return null;
   }
 
@@ -82,11 +80,9 @@ class ProfileViewModel extends ChangeNotifier {
 
   String? validateNewPassword(String? value) {
     if (!submittedPassword) return null;
-    if (value == null || value.trim().isEmpty) {
-      return 'Nueva contraseña es requerida';
-    }
-    if (value.trim().length < 8) {
-      return 'Nueva contraseña debe tener al menos 8 caracteres';
+    if (value == null || value.trim().isEmpty) return 'Nueva contraseña es requerida';
+    if (value.trim().length < 6) {
+      return 'Nueva contraseña debe tener al menos 6 caracteres';
     }
     return null;
   }
@@ -106,9 +102,7 @@ class ProfileViewModel extends ChangeNotifier {
     submittedPersonal = true;
     notifyListeners();
 
-    if (!(personalFormKey.currentState?.validate() ?? false)) {
-      return false;
-    }
+    if (!(personalFormKey.currentState?.validate() ?? false)) return false;
 
     final currentUser = _currentUser;
     if (currentUser == null) {
@@ -131,6 +125,8 @@ class ProfileViewModel extends ChangeNotifier {
     await _userRepository.updateUser(updatedUser);
     _currentUser = updatedUser;
 
+    await _authService.currentUser?.updateDisplayName(nameController.text.trim());
+
     await Future<void>.delayed(const Duration(milliseconds: 300));
 
     isSavingProfile = false;
@@ -142,45 +138,37 @@ class ProfileViewModel extends ChangeNotifier {
     submittedPassword = true;
     notifyListeners();
 
-    if (!(passwordFormKey.currentState?.validate() ?? false)) {
-      return false;
-    }
-
-    final currentUser = _currentUser;
-    if (currentUser == null) {
-      passwordErrorMessage = 'No se encontró el usuario activo';
-      notifyListeners();
-      return false;
-    }
-
-    if (currentPasswordController.text.trim() != currentUser.password) {
-      passwordErrorMessage = 'La contraseña actual no es correcta';
-      notifyListeners();
-      return false;
-    }
+    if (!(passwordFormKey.currentState?.validate() ?? false)) return false;
 
     passwordErrorMessage = null;
     isChangingPassword = true;
     notifyListeners();
 
-    final updatedUser = currentUser.copyWith(
-      password: newPasswordController.text.trim(),
-      updatedAt: DateTime.now(),
-    );
+    try {
+      await _authService.reauthenticateWithPassword(
+        currentPasswordController.text.trim(),
+      );
+      await _authService.updatePassword(newPasswordController.text.trim());
 
-    await _userRepository.updateUser(updatedUser);
-    _currentUser = updatedUser;
+      currentPasswordController.clear();
+      newPasswordController.clear();
+      confirmNewPasswordController.clear();
 
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-
-    currentPasswordController.clear();
-    newPasswordController.clear();
-    confirmNewPasswordController.clear();
-
-    isChangingPassword = false;
-    submittedPassword = false;
-    notifyListeners();
-    return true;
+      isChangingPassword = false;
+      submittedPassword = false;
+      notifyListeners();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      passwordErrorMessage = FirebaseAuthService.mapError(e);
+      isChangingPassword = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      passwordErrorMessage = 'Error al cambiar contraseña. Intenta nuevamente.';
+      isChangingPassword = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   @override
