@@ -19,6 +19,9 @@ abstract class ProcessDao {
   @update
   Future<int> updateProcess(ProcessModel process);
 
+  @Query('SELECT * FROM processes WHERE id = :id LIMIT 1')
+  Future<ProcessModel?> findById(String id);
+
   @Query('DELETE FROM processes WHERE id = :id')
   Future<void> deleteById(String id);
 }

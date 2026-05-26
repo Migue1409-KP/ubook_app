@@ -85,6 +85,7 @@ class _$AppDatabase extends AppDatabase {
   SubjectTeacherDao? _subjectTeacherDaoInstance;
 
   NotificationDao? _notificationDaoInstance;
+
   TeacherDao? _teacherDaoInstance;
 
   Future<sqflite.Database> open(
@@ -117,12 +118,13 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `subject_teachers` (`id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `subject_nombre` TEXT NOT NULL, `subject_creditos` INTEGER NOT NULL, `subject_horas` INTEGER NOT NULL, `teacher_id` TEXT NOT NULL, `teacher_name` TEXT NOT NULL, `teacher_email` TEXT NOT NULL, `is_active` INTEGER NOT NULL, `periodo_academico_id` TEXT, `periodo_etiqueta` TEXT, `created_at_ms` INTEGER NOT NULL, `updated_at_ms` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `careers` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `educationalCenterId` TEXT NOT NULL, `semesters` INTEGER NOT NULL, `credits` INTEGER NOT NULL, `subjects` TEXT NOT NULL, `processes` TEXT NOT NULL, `reviews` TEXT NOT NULL, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `careers` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `educationalCenterId` TEXT NOT NULL, `semesters` INTEGER NOT NULL, `credits` INTEGER NOT NULL, `modalityId` INTEGER, `modalityName` TEXT, `subjects` TEXT NOT NULL, `processes` TEXT NOT NULL, `reviews` TEXT NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `processes` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `required_documents_json` TEXT NOT NULL, `process_type` TEXT NOT NULL, `related_id` TEXT, `is_active` INTEGER NOT NULL, `created_at_ms` INTEGER, `updated_at_ms` INTEGER, PRIMARY KEY (`id`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `notifications` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `message` TEXT NOT NULL, `notification_type` TEXT NOT NULL, `status` TEXT NOT NULL, `created_at_ms` INTEGER NOT NULL, PRIMARY KEY (`id`))');
             'CREATE TABLE IF NOT EXISTS `teachers` (`id` TEXT NOT NULL, `first_name` TEXT NOT NULL, `last_name` TEXT NOT NULL, `email` TEXT NOT NULL, `phone` TEXT NOT NULL, `age` INTEGER NOT NULL, `department` TEXT NOT NULL, `specialty` TEXT NOT NULL, `subjects` TEXT NOT NULL, `profile_image_url` TEXT NOT NULL, `is_active` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `notifications` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `message` TEXT NOT NULL, `notification_type` TEXT NOT NULL, `status` TEXT NOT NULL, `created_at_ms` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE UNIQUE INDEX `index_users_email` ON `users` (`email`)');
 
@@ -167,6 +169,9 @@ class _$AppDatabase extends AppDatabase {
   NotificationDao get notificationDao {
     return _notificationDaoInstance ??=
         _$NotificationDao(database, changeListener);
+  }
+
+  @override
   TeacherDao get teacherDao {
     return _teacherDaoInstance ??= _$TeacherDao(database, changeListener);
   }
@@ -722,6 +727,26 @@ class _$ProcessDao extends ProcessDao {
   }
 
   @override
+  Future<ProcessModel?> findById(String id) async {
+    return _queryAdapter.query('SELECT * FROM processes WHERE id = ?1 LIMIT 1',
+        mapper: (Map<String, Object?> row) => ProcessModel(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            description: row['description'] as String,
+            requiredDocuments: _stringListConverter
+                .decode(row['required_documents_json'] as String),
+            processType:
+                _processTypeConverter.decode(row['process_type'] as String),
+            relatedId: row['related_id'] as String?,
+            isActive: (row['is_active'] as int) != 0,
+            createdAt:
+                _nullableDateTimeConverter.decode(row['created_at_ms'] as int?),
+            updatedAt: _nullableDateTimeConverter
+                .decode(row['updated_at_ms'] as int?)),
+        arguments: [id]);
+  }
+
+  @override
   Future<void> deleteById(String id) async {
     await _queryAdapter
         .queryNoReturn('DELETE FROM processes WHERE id = ?1', arguments: [id]);
@@ -1146,67 +1171,6 @@ class _$NotificationDao extends NotificationDao {
                   'created_at_ms': _dateTimeConverter.encode(item.createdAt)
                 },
             changeListener);
-class _$TeacherDao extends TeacherDao {
-  _$TeacherDao(
-    this.database,
-    this.changeListener,
-  )   : _queryAdapter = QueryAdapter(database),
-        _teacherInsertionAdapter = InsertionAdapter(
-            database,
-            'teachers',
-            (Teacher item) => <String, Object?>{
-                  'id': item.id,
-                  'first_name': item.firstName,
-                  'last_name': item.lastName,
-                  'email': item.email,
-                  'phone': item.phone,
-                  'age': item.age,
-                  'department': item.department,
-                  'specialty': item.specialty,
-                  'subjects': _stringListConverter.encode(item.subjects),
-                  'profile_image_url': item.profileImageUrl,
-                  'is_active': item.isActive ? 1 : 0,
-                  'created_at': _dateTimeConverter.encode(item.createdAt),
-                  'updated_at': _dateTimeConverter.encode(item.updatedAt)
-                }),
-        _teacherUpdateAdapter = UpdateAdapter(
-            database,
-            'teachers',
-            ['id'],
-            (Teacher item) => <String, Object?>{
-                  'id': item.id,
-                  'first_name': item.firstName,
-                  'last_name': item.lastName,
-                  'email': item.email,
-                  'phone': item.phone,
-                  'age': item.age,
-                  'department': item.department,
-                  'specialty': item.specialty,
-                  'subjects': _stringListConverter.encode(item.subjects),
-                  'profile_image_url': item.profileImageUrl,
-                  'is_active': item.isActive ? 1 : 0,
-                  'created_at': _dateTimeConverter.encode(item.createdAt),
-                  'updated_at': _dateTimeConverter.encode(item.updatedAt)
-                }),
-        _teacherDeletionAdapter = DeletionAdapter(
-            database,
-            'teachers',
-            ['id'],
-            (Teacher item) => <String, Object?>{
-                  'id': item.id,
-                  'first_name': item.firstName,
-                  'last_name': item.lastName,
-                  'email': item.email,
-                  'phone': item.phone,
-                  'age': item.age,
-                  'department': item.department,
-                  'specialty': item.specialty,
-                  'subjects': _stringListConverter.encode(item.subjects),
-                  'profile_image_url': item.profileImageUrl,
-                  'is_active': item.isActive ? 1 : 0,
-                  'created_at': _dateTimeConverter.encode(item.createdAt),
-                  'updated_at': _dateTimeConverter.encode(item.updatedAt)
-                });
 
   final sqflite.DatabaseExecutor database;
 
@@ -1277,6 +1241,115 @@ class _$TeacherDao extends TeacherDao {
   @override
   Future<void> deleteById(String id) async {
     await _queryAdapter.queryNoReturn('DELETE FROM notifications WHERE id = ?1',
+        arguments: [id]);
+  }
+
+  @override
+  Future<void> deleteByStatus(String status) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM notifications WHERE status = ?1',
+        arguments: [status]);
+  }
+
+  @override
+  Future<void> deleteAllNotifications() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM notifications');
+  }
+
+  @override
+  Future<void> insertNotification(NotificationModel notification) async {
+    await _notificationModelInsertionAdapter.insert(
+        notification, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertNotifications(
+      List<NotificationModel> notifications) async {
+    await _notificationModelInsertionAdapter.insertList(
+        notifications, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> updateNotification(NotificationModel notification) {
+    return _notificationModelUpdateAdapter.updateAndReturnChangedRows(
+        notification, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> deleteNotification(NotificationModel notification) {
+    return _notificationModelDeletionAdapter
+        .deleteAndReturnChangedRows(notification);
+  }
+}
+
+class _$TeacherDao extends TeacherDao {
+  _$TeacherDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _teacherInsertionAdapter = InsertionAdapter(
+            database,
+            'teachers',
+            (Teacher item) => <String, Object?>{
+                  'id': item.id,
+                  'first_name': item.firstName,
+                  'last_name': item.lastName,
+                  'email': item.email,
+                  'phone': item.phone,
+                  'age': item.age,
+                  'department': item.department,
+                  'specialty': item.specialty,
+                  'subjects': _stringListConverter.encode(item.subjects),
+                  'profile_image_url': item.profileImageUrl,
+                  'is_active': item.isActive ? 1 : 0,
+                  'created_at': _dateTimeConverter.encode(item.createdAt),
+                  'updated_at': _dateTimeConverter.encode(item.updatedAt)
+                }),
+        _teacherUpdateAdapter = UpdateAdapter(
+            database,
+            'teachers',
+            ['id'],
+            (Teacher item) => <String, Object?>{
+                  'id': item.id,
+                  'first_name': item.firstName,
+                  'last_name': item.lastName,
+                  'email': item.email,
+                  'phone': item.phone,
+                  'age': item.age,
+                  'department': item.department,
+                  'specialty': item.specialty,
+                  'subjects': _stringListConverter.encode(item.subjects),
+                  'profile_image_url': item.profileImageUrl,
+                  'is_active': item.isActive ? 1 : 0,
+                  'created_at': _dateTimeConverter.encode(item.createdAt),
+                  'updated_at': _dateTimeConverter.encode(item.updatedAt)
+                }),
+        _teacherDeletionAdapter = DeletionAdapter(
+            database,
+            'teachers',
+            ['id'],
+            (Teacher item) => <String, Object?>{
+                  'id': item.id,
+                  'first_name': item.firstName,
+                  'last_name': item.lastName,
+                  'email': item.email,
+                  'phone': item.phone,
+                  'age': item.age,
+                  'department': item.department,
+                  'specialty': item.specialty,
+                  'subjects': _stringListConverter.encode(item.subjects),
+                  'profile_image_url': item.profileImageUrl,
+                  'is_active': item.isActive ? 1 : 0,
+                  'created_at': _dateTimeConverter.encode(item.createdAt),
+                  'updated_at': _dateTimeConverter.encode(item.updatedAt)
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
   final InsertionAdapter<Teacher> _teacherInsertionAdapter;
 
   final UpdateAdapter<Teacher> _teacherUpdateAdapter;
@@ -1323,40 +1396,6 @@ class _$TeacherDao extends TeacherDao {
   }
 
   @override
-  Future<void> deleteByStatus(String status) async {
-    await _queryAdapter.queryNoReturn(
-        'DELETE FROM notifications WHERE status = ?1',
-        arguments: [status]);
-  }
-
-  @override
-  Future<void> deleteAllNotifications() async {
-    await _queryAdapter.queryNoReturn('DELETE FROM notifications');
-  }
-
-  @override
-  Future<void> insertNotification(NotificationModel notification) async {
-    await _notificationModelInsertionAdapter.insert(
-        notification, OnConflictStrategy.abort);
-  }
-
-  @override
-  Future<void> insertNotifications(
-      List<NotificationModel> notifications) async {
-    await _notificationModelInsertionAdapter.insertList(
-        notifications, OnConflictStrategy.abort);
-  }
-
-  @override
-  Future<int> updateNotification(NotificationModel notification) {
-    return _notificationModelUpdateAdapter.updateAndReturnChangedRows(
-        notification, OnConflictStrategy.abort);
-  }
-
-  @override
-  Future<int> deleteNotification(NotificationModel notification) {
-    return _notificationModelDeletionAdapter
-        .deleteAndReturnChangedRows(notification);
   Future<void> insertTeacher(Teacher teacher) async {
     await _teacherInsertionAdapter.insert(teacher, OnConflictStrategy.replace);
   }
