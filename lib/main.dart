@@ -14,6 +14,9 @@ import 'package:ubook_app/repository/auth/user_repository.dart';
 import 'package:ubook_app/repository/notification/floor_notification_repository.dart';
 import 'package:ubook_app/view_model/notification/notification_view_model.dart';
 import 'package:ubook_app/repository/process/floor_process_repository.dart';
+import 'package:ubook_app/repository/process/firestore_process_repository.dart';
+import 'package:ubook_app/repository/process/syncing_process_repository.dart';
+import 'package:ubook_app/repository/process/process_repository.dart';
 import 'package:ubook_app/repository/reviews/review_repository_provider.dart';
 import 'package:ubook_app/repository/teacher_subject/floor_subject_teacher_repository.dart';
 import 'package:ubook_app/repository/teachers/floor_teacher_repository.dart';
@@ -79,8 +82,14 @@ Future<void> main() async {
   AttachmentRepository.setCurrent(
     FloorAttachmentRepository.initialize(database),
   );
-  final processRepository = FloorProcessRepository.initialize(database);
+  final localProcessRepository = FloorProcessRepository.initialize(database);
+  final remoteProcessRepository = FirestoreProcessRepository.initialize();
+  final processRepository = SyncingProcessRepository.initialize(
+    localProcessRepository,
+    remoteProcessRepository,
+  );
   await processRepository.ensureInitialized();
+  ProcessRepository.setInstance(processRepository);
   await CareerRepositoryProvider.initialize(database);
   FloorSubjectTeacherRepository.initialize(database);
   FloorTeacherRepository.initialize(database);
