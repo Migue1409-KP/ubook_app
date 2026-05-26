@@ -9,7 +9,7 @@ Future<void> showProcessFormDialog({
   required BuildContext context,
   required ProcessViewModel viewModel,
   ProcessModel? process,
-  ProcessType? lockedType,
+  String? lockedType,
   String? lockedRelatedId,
   String? scopeLabel,
 }) async {
@@ -24,7 +24,7 @@ Future<void> showProcessFormDialog({
   final processTypeFuture = lockedType == null
       ? ProcessTypeCatalogService().getProcessTypes()
       : null;
-  ProcessType selectedType =
+  String selectedType =
       lockedType ?? process?.processType ?? ProcessType.career;
   bool isActive = process?.isActive ?? true;
 
@@ -90,7 +90,6 @@ Future<void> showProcessFormDialog({
                         ProcessTypeCatalogService.fallbackOptions;
                     final availableValues = options
                         .map((option) => option.processType)
-                        .whereType<ProcessType>()
                         .toList(growable: false);
                     final dropdownValue = availableValues.contains(selectedType)
                         ? selectedType
@@ -106,15 +105,15 @@ Future<void> showProcessFormDialog({
                       });
                     }
 
-                    return DropdownButtonFormField<ProcessType>(
+                    return DropdownButtonFormField<String>(
                       initialValue: dropdownValue,
                       decoration: const InputDecoration(
                         labelText: 'Selecciona el tipo',
                       ),
                       items: options
                           .map(
-                            (option) => DropdownMenuItem<ProcessType>(
-                              value: option.processType!,
+                            (option) => DropdownMenuItem<String>(
+                              value: option.processType,
                               child: Text(option.label),
                             ),
                           )

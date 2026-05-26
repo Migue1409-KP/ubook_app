@@ -11,7 +11,7 @@ class ProcessTypeOption {
   final String value;
   final String label;
 
-  ProcessType? get processType => ProcessTypeMapper.tryParse(value);
+  String get processType => value;
 
   factory ProcessTypeOption.fromJson(Map<String, dynamic> json) {
     return ProcessTypeOption(

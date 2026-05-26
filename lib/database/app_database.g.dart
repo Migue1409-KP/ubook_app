@@ -662,8 +662,7 @@ class _$ProcessDao extends ProcessDao {
                   'description': item.description,
                   'required_documents_json':
                       _stringListConverter.encode(item.requiredDocuments),
-                  'process_type':
-                      _processTypeConverter.encode(item.processType),
+                  'process_type': item.processType,
                   'related_id': item.relatedId,
                   'is_active': item.isActive ? 1 : 0,
                   'created_at_ms':
@@ -681,8 +680,7 @@ class _$ProcessDao extends ProcessDao {
                   'description': item.description,
                   'required_documents_json':
                       _stringListConverter.encode(item.requiredDocuments),
-                  'process_type':
-                      _processTypeConverter.encode(item.processType),
+                  'process_type': item.processType,
                   'related_id': item.relatedId,
                   'is_active': item.isActive ? 1 : 0,
                   'created_at_ms':
@@ -710,8 +708,7 @@ class _$ProcessDao extends ProcessDao {
             description: row['description'] as String,
             requiredDocuments: _stringListConverter
                 .decode(row['required_documents_json'] as String),
-            processType:
-                _processTypeConverter.decode(row['process_type'] as String),
+            processType: row['process_type'] as String,
             relatedId: row['related_id'] as String?,
             isActive: (row['is_active'] as int) != 0,
             createdAt:
@@ -735,8 +732,7 @@ class _$ProcessDao extends ProcessDao {
             description: row['description'] as String,
             requiredDocuments: _stringListConverter
                 .decode(row['required_documents_json'] as String),
-            processType:
-                _processTypeConverter.decode(row['process_type'] as String),
+            processType: row['process_type'] as String,
             relatedId: row['related_id'] as String?,
             isActive: (row['is_active'] as int) != 0,
             createdAt:
@@ -1413,7 +1409,6 @@ class _$TeacherDao extends TeacherDao {
 
 // ignore_for_file: unused_element
 final _authProviderConverter = AuthProviderConverter();
-final _processTypeConverter = ProcessTypeConverter();
 final _stringListConverter = StringListConverter();
 final _dateTimeConverter = DateTimeConverter();
 final _nullableDateTimeConverter = NullableDateTimeConverter();

@@ -168,7 +168,7 @@ class ProcessCard extends StatelessWidget {
     );
   }
 
-  ({Color color, IconData icon, String label}) _visualByType(ProcessType type) {
+  ({Color color, IconData icon, String label}) _visualByType(String type) {
     switch (type) {
       case ProcessType.career:
         return (
@@ -187,6 +187,12 @@ class ProcessCard extends StatelessWidget {
           color: Colors.teal,
           icon: Icons.account_balance,
           label: 'Proceso de Centro Educativo',
+        );
+      default:
+        return (
+          color: Colors.blueGrey,
+          icon: Icons.bookmark,
+          label: 'Proceso de ${type.label}',
         );
     }
   }

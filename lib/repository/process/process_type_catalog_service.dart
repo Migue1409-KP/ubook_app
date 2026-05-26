@@ -36,7 +36,7 @@ class ProcessTypeCatalogService {
           .where(
             (option) =>
                 option.label.isNotEmpty &&
-                ProcessTypeMapper.tryParse(option.value) != null,
+                option.value.isNotEmpty,
           )
           .toList(growable: false);
 
