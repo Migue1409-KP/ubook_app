@@ -1,14 +1,14 @@
 import 'dart:typed_data';
 
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'attachment_storage_service.dart';
 
-/// Adaptador de salida para Firebase Storage.
+/// Adaptador de salida para Supabase Storage.
 ///
-/// Implementa [AttachmentStorageService] usando el SDK de `firebase_storage`.
+/// Implementa [AttachmentStorageService] usando el SDK de `supabase_flutter`.
 ///
-/// Estructura de rutas en el bucket:
+/// Estructura de rutas dentro del bucket [_bucket]:
 /// ```
 /// attachments/
 ///   {uploadedById}/
@@ -17,24 +17,25 @@ import 'attachment_storage_service.dart';
 /// ```
 ///
 /// El [storagePath] devuelto por [uploadFile] es la ruta relativa dentro del
-/// bucket (sin el prefijo `gs://`). Este valor se almacena directamente en
-/// [AttachmentModel.filePath] y se reutiliza en [downloadFile] y [deleteFile].
+/// bucket. Este valor se almacena en [AttachmentModel.filePath] y se reutiliza
+/// en [downloadFile] y [deleteFile].
 ///
-/// IMPORTANTE: requiere que [FirebaseApp] esté inicializado antes de usarse.
-/// Llamar `await Firebase.initializeApp(...)` en `main.dart` antes de
-/// registrar este servicio.
-class FirebaseStorageService implements AttachmentStorageService {
-  FirebaseStorageService._();
+/// IMPORTANTE: requiere que [Supabase] esté inicializado antes de usarse.
+/// Llamar `await Supabase.initialize(url: ..., anonKey: ...)` en `main.dart`
+/// antes de registrar este servicio.
+class SupabaseStorageService implements AttachmentStorageService {
+  SupabaseStorageService._();
 
-  static final FirebaseStorageService instance = FirebaseStorageService._();
+  static final SupabaseStorageService instance = SupabaseStorageService._();
 
+  /// Nombre del bucket de Supabase Storage donde se almacenan los archivos.
+  /// Debe coincidir con el bucket creado en el proyecto de Supabase.
+  static const _bucket = 'ubook_attachments';
+
+  /// Prefijo de ruta dentro del bucket.
   static const _basePath = 'attachments';
 
-  /// Límite máximo de descarga en bytes (100 MB). Previene OOM en archivos grandes.
-  static const int _maxDownloadBytes = 100 * 1024 * 1024;
-
-  /// Referencia al bucket de Firebase Storage.
-  FirebaseStorage get _storage => FirebaseStorage.instance;
+  SupabaseStorageClient get _storage => Supabase.instance.client.storage;
 
   // ── Helpers de normalización ──────────────────────────────────────────────
 
@@ -76,11 +77,11 @@ class FirebaseStorageService implements AttachmentStorageService {
 
   // ── AttachmentStorageService ──────────────────────────────────────────────
 
-  /// Sube [bytes] a Firebase Storage y devuelve la ruta relativa en el bucket.
+  /// Sube [bytes] a Supabase Storage y devuelve la ruta relativa en el bucket.
   ///
   /// Ruta resultante: `attachments/{uploadedById}/{subjectId}/{id}.{ext}`
   ///
-  /// Lanza [FirebaseException] si la subida falla (permisos, red, etc.).
+  /// Lanza [StorageException] si la subida falla (permisos, red, etc.).
   @override
   Future<String> uploadFile({
     required String id,
@@ -91,42 +92,37 @@ class FirebaseStorageService implements AttachmentStorageService {
   }) async {
     final ext = _normalizeExt(fileType);
     final storagePath = '$_basePath/$uploadedById/$subjectId/$id.$ext';
-    final ref = _storage.ref(storagePath);
-    await ref.putData(
+    await _storage.from(_bucket).uploadBinary(
+      storagePath,
       bytes,
-      SettableMetadata(contentType: _contentType(fileType)),
+      fileOptions: FileOptions(contentType: _contentType(fileType)),
     );
     return storagePath;
   }
 
   /// Descarga y devuelve los bytes del archivo en [storagePath].
   ///
-  /// Lanza [FirebaseException] si el archivo no existe o hay error de red.
+  /// Lanza [StorageException] si el archivo no existe o hay error de red.
   @override
   Future<Uint8List> downloadFile(String storagePath) async {
-    final ref = _storage.ref(storagePath);
-    final data = await ref.getData(_maxDownloadBytes);
-    if (data == null) {
-      throw FirebaseException(
-        plugin: 'firebase_storage',
-        code: 'object-not-found',
-        message: 'No se encontraron datos en la ruta: $storagePath',
-      );
-    }
-    return data;
+    return _storage.from(_bucket).download(storagePath);
   }
 
   /// Elimina el archivo en [storagePath] del bucket.
   ///
-  /// Si el archivo ya no existe, el error `object-not-found` se ignora
-  /// silenciosamente para que `deleteAttachment` sea idempotente.
+  /// Si el archivo ya no existe, el error 404 se ignora silenciosamente
+  /// para que `deleteAttachment` sea idempotente.
   @override
   Future<void> deleteFile(String storagePath) async {
     try {
-      await _storage.ref(storagePath).delete();
-    } on FirebaseException catch (e) {
-      if (e.code != 'object-not-found') rethrow;
+      await _storage.from(_bucket).remove([storagePath]);
+    } on StorageException catch (e) {
       // Archivo ya eliminado: no es un error desde la perspectiva del negocio.
+      if (e.statusCode == '404' ||
+          e.message.toLowerCase().contains('not found')) {
+        return;
+      }
+      rethrow;
     }
   }
 }

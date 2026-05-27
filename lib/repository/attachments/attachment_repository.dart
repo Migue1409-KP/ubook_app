@@ -11,7 +11,7 @@ abstract class AttachmentRepository {
   // Uso en main.dart:
   //   AttachmentRepository.setCurrent(FloorAttachmentRepository.initialize(db));
   //   // o en el futuro:
-  //   AttachmentRepository.setCurrent(FirebaseAttachmentRepository.initialize(db));
+  //   AttachmentRepository.setCurrent(SupabaseAttachmentRepository.initialize());
   //
   // Uso en el ViewModel:
   //   AttachmentRepository.current.saveFile(attachment);
