@@ -8,7 +8,7 @@ import 'dart:typed_data';
 ///
 /// Implementaciones disponibles:
 /// - [LocalFileStorageService]: escribe/lee en el sistema de archivos del dispositivo.
-/// - [FirebaseStorageService]: sube/descarga desde Firebase Storage.
+/// - [SupabaseStorageService]: sube/descarga desde Supabase Storage.
 abstract class AttachmentStorageService {
   /// Sube [bytes] al almacenamiento y devuelve el [storagePath] resultante.
   ///
@@ -17,7 +17,7 @@ abstract class AttachmentStorageService {
   ///
   /// - Implementación local:  ruta absoluta en el sistema de archivos.
   ///   Ej: `/data/user/0/.../attachments/KF1zRG7e9xDpYBkLm2nA.pdf`
-  /// - Implementación Firebase: ruta relativa en el bucket.
+  /// - Implementación Supabase: ruta relativa en el bucket.
   ///   Ej: `attachments/uid123/subjectAbc/KF1zRG7e9xDpYBkLm2nA.pdf`
   Future<String> uploadFile({
     required String id,

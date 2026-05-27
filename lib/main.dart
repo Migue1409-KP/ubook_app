@@ -2,11 +2,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
+import 'package:ubook_app/config/supabase_config.dart';
 import 'package:ubook_app/database/app_database.dart';
 import 'package:ubook_app/firebase_options.dart';
 import 'package:ubook_app/view/subjects/subjects_view.dart';
 import 'package:ubook_app/repository/attachments/attachment_repository.dart';
-import 'package:ubook_app/repository/attachments/floor_attachment_repository.dart';
+import 'package:ubook_app/repository/attachments/firebase_attachment_repository.dart';
 import 'package:ubook_app/repository/auth/firestore_user_repository.dart';
 import 'package:ubook_app/repository/auth/floor_user_repository.dart';
 import 'package:ubook_app/repository/auth/syncing_user_repository.dart';
@@ -39,6 +41,10 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
+  );
 
   final database =
       await $FloorAppDatabase.databaseBuilder('ubook_app.db').addMigrations([
@@ -66,21 +72,10 @@ Future<void> main() async {
   await ReviewRepositoryProvider.initialize(database);
 
   // ── Repositorio de adjuntos ───────────────────────────────────────────────
-  // Implementación activa: almacenamiento local (Floor + SQLite).
-  //
-  // TODO: cuando la cuenta de Firebase Storage esté disponible, reemplazar
-  // estas dos líneas por la implementación Firebase:
-  //
-  //   import 'package:ubook_app/repository/attachments/firebase_attachment_repository.dart';
-  //
-  //   AttachmentRepository.setCurrent(
-  //     FirebaseAttachmentRepository.initialize(database),
-  //   );
-  //
-  // Firebase.initializeApp() ya se llama arriba, así que no se necesita
-  // ningún cambio adicional fuera de este bloque.
+  // Metadata (nombre, tipo, fechas, relaciones) → Cloud Firestore.
+  // Archivos binarios → Supabase Storage (bucket 'attachments').
   AttachmentRepository.setCurrent(
-    FloorAttachmentRepository.initialize(database),
+    SupabaseAttachmentRepository.initialize(),
   );
   final localProcessRepository = FloorProcessRepository.initialize(database);
   final remoteProcessRepository = FirestoreProcessRepository.initialize();
