@@ -165,7 +165,7 @@ final migration8to9 = Migration(8, 9, (database) async {
 @TypeConverters([
   AuthProviderConverter,
   StringListConverter,
-  DateTimeConverter,
+  NotificationDateTimeConverter,
   NullableDateTimeConverter,
   NotificationTypeConverter,
   NotificationStatusConverter,
