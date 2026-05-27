@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
+import 'package:ubook_app/config/supabase_config.dart';
 import 'package:ubook_app/database/app_database.dart';
 import 'package:ubook_app/firebase_options.dart';
 import 'package:ubook_app/view/subjects/subjects_view.dart';
@@ -38,8 +39,8 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await Supabase.initialize(
-    url: 'https://lqegcpkliffyjbtdtlrk.supabase.co',
-    anonKey: 'sb_publishable_iAN1WnUHs7XRmyuL4EFO3g_tdKKGEHh',
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
   );
 
   final database =

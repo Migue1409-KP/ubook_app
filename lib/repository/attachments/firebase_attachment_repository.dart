@@ -219,8 +219,9 @@ class SupabaseAttachmentRepository implements AttachmentRepository {
     try {
       await _col.doc(id).update(_toMap(attachment));
       return 1;
-    } catch (_) {
-      return 0;
+    } on FirebaseException catch (e) {
+      if (e.code == 'not-found') return 0;
+      rethrow;
     }
   }
 
