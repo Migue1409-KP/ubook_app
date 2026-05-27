@@ -34,6 +34,7 @@ migrate_working_dir/
 /coverage/
 /.scannerwork/
 analysis_options.yaml.sonar
+lib/database/app_database.g.dart
 
 # Symbolication related
 app.*.symbols

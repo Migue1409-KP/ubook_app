@@ -34,7 +34,7 @@ class NotificationStatusConverter
   }
 }
 
-class DateTimeConverter extends TypeConverter<DateTime, int> {
+class NotificationDateTimeConverter extends TypeConverter<DateTime, int> {
   @override
   DateTime decode(int databaseValue) {
     return DateTime.fromMillisecondsSinceEpoch(databaseValue);
