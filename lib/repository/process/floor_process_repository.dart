@@ -94,4 +94,10 @@ class FloorProcessRepository implements ProcessRepository {
     await ensureInitialized();
     await _database.processDao.deleteById(processId);
   }
+
+  @override
+  Future<ProcessModel?> getProcessById(String processId) async {
+    await ensureInitialized();
+    return _database.processDao.findById(processId);
+  }
 }

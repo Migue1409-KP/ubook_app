@@ -4,23 +4,6 @@ import 'dart:convert';
 
 import 'package:floor/floor.dart';
 
-import '../../model/process/process_model.dart';
-
-class ProcessTypeConverter extends TypeConverter<ProcessType, String> {
-  @override
-  ProcessType decode(String databaseValue) {
-    return ProcessType.values.firstWhere(
-      (value) => value.name == databaseValue,
-      orElse: () => ProcessType.subject,
-    );
-  }
-
-  @override
-  String encode(ProcessType value) {
-    return value.name;
-  }
-}
-
 class StringListConverter extends TypeConverter<List<String>, String> {
   @override
   List<String> decode(String databaseValue) {
@@ -38,17 +21,7 @@ class StringListConverter extends TypeConverter<List<String>, String> {
   }
 }
 
-class DateTimeConverter extends TypeConverter<DateTime, int> {
-  @override
-  DateTime decode(int databaseValue) {
-    return DateTime.fromMillisecondsSinceEpoch(databaseValue);
-  }
 
-  @override
-  int encode(DateTime value) {
-    return value.millisecondsSinceEpoch;
-  }
-}
 
 class NullableDateTimeConverter extends TypeConverter<DateTime?, int?> {
   @override
