@@ -3,7 +3,6 @@ import '../../model/teachers/teacher.dart';
 import '../../model/subjectteacher/subjectteacher.dart';
 import '../../model/subjectteacher/academic_period.dart';
 import '../../model/subjects/subjects.dart';
-import '../../repository/teacher_subject/floor_subject_teacher_repository.dart';
 import '../../repository/teacher_subject/academic_period_api_repository.dart';
 import '../../repository/teacher_subject/subject_teacher_repository.dart';
 import '../../repository/teacher_subject/teacher_subject_prefs.dart';
@@ -38,7 +37,7 @@ class AssignSubjectTeacherViewModel extends ChangeNotifier {
     SubjectTeacherRepository? repository,
     TeacherSubjectPrefs? prefs,
     AcademicPeriodApiRepository? periodoApi,
-  })  : _repository = repository ?? FloorSubjectTeacherRepository.instance,
+  })  : _repository = repository ?? SubjectTeacherRepository.instance,
         _prefs = prefs ?? TeacherSubjectPrefs(),
         _periodoApi = periodoApi ?? AcademicPeriodApiRepository.instance {
     _load();
