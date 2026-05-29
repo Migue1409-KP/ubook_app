@@ -3,16 +3,6 @@ import 'package:ubook_app/model/subjectteacher/subjectteacher.dart';
 
 import 'subject_teacher_repository.dart';
 
-/// Implementación de [SubjectTeacherRepository] contra Cloud Firestore.
-///
-/// Sigue el mismo patrón singleton de [FirestoreProcessRepository]: se
-/// inicializa una sola vez desde `main.dart` después de
-/// `Firebase.initializeApp(...)`.
-///
-/// Los documentos viven en la colección `subject_teachers` y usan el id de
-/// [SubjectTeacher.id] como id de documento. La serialización reusa
-/// [SubjectTeacher.toJson] / [SubjectTeacher.fromJson] para mantener una sola
-/// fuente de verdad sobre los nombres de campo.
 class FirestoreSubjectTeacherRepository implements SubjectTeacherRepository {
   FirestoreSubjectTeacherRepository._();
 

@@ -5,18 +5,6 @@ import 'firestore_subject_teacher_repository.dart';
 import 'floor_subject_teacher_repository.dart';
 import 'subject_teacher_repository.dart';
 
-/// Repositorio que coordina [FloorSubjectTeacherRepository] como caché local
-/// y [FirestoreSubjectTeacherRepository] como fuente de verdad remota.
-///
-/// Estrategia (copiada del patrón de [SyncingProcessRepository]):
-/// - **Lecturas:** intenta Firestore primero. Si responde, hace upsert en Floor
-///   y devuelve los resultados frescos. Si falla (sin red, error), cae al
-///   estado local.
-/// - **Escrituras:** persisten primero en Floor (para que la UI responda al
-///   instante) y luego se envían a Firestore como fire-and-forget. Errores
-///   remotos se loguean pero no rompen la UI.
-/// - **Cold start:** en [findAll], si Firestore está vacío pero Floor tiene
-///   datos, los publica al remoto para que otros dispositivos los vean.
 class SyncingSubjectTeacherRepository implements SubjectTeacherRepository {
   SyncingSubjectTeacherRepository._(this._local, this._remote);
 
@@ -33,7 +21,6 @@ class SyncingSubjectTeacherRepository implements SubjectTeacherRepository {
   final FloorSubjectTeacherRepository _local;
   final FirestoreSubjectTeacherRepository _remote;
 
-  /// Sincronización inicial: trae del remoto y semilla local si remoto vacío.
   Future<void> ensureInitialized() async {
     try {
       final remoteLinks = await _remote.findAll();
