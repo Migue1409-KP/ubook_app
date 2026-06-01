@@ -252,8 +252,10 @@ class _DashboardViewContent extends StatelessWidget {
       return;
     }
     final center = EducationalCenter(
-      id: rawId.toString(),
-      name: item['name'] as String? ?? 'Centro educativo',
+      id: 'un_id_de_prueba',
+      name: 'Universidad de Prueba',
+      createdAt: DateTime.now().millisecondsSinceEpoch, // 📥 Agrega esto
+      updatedAt: DateTime.now().millisecondsSinceEpoch, // 📥 Agrega esto
     );
 
     Navigator.push(

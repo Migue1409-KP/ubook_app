@@ -12,204 +12,188 @@ class EducationalCenterScreen extends StatefulWidget {
   const EducationalCenterScreen({super.key});
 
   @override
-  State<EducationalCenterScreen> createState() =>
-      _EducationalCenterScreenState();
+  State<EducationalCenterScreen> createState() => _EducationalCenterScreenState();
 }
 
 class _EducationalCenterScreenState extends State<EducationalCenterScreen> {
-  final EducationalCenterViewModel viewModel = EducationalCenterViewModel();
-
-  List<EducationalCenter> filteredCenters = [];
+  final TextEditingController _searchController = TextEditingController();
+  late EducationalCenterViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
-    filteredCenters = viewModel.centers;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<EducationalCenterCountProvider>().initialize(
-        total: viewModel.centers.length,
-      );
-    });
+    // 1. Inicializamos el ViewModel localmente
+    _viewModel = EducationalCenterViewModel();
+
+    // 2. Ejecutamos la carga inicial de SQLite usando el método real de tus compañeros
+    _initFetch();
   }
 
-  void _search(String query) {
-    setState(() {
-      filteredCenters = viewModel.searchCenter(query);
+  Future<void> _initFetch() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      // Llamamos al método correcto de tu ViewModel para leer SQLite
+      await _viewModel.loadCenters();
+
+      // Sincronizamos el contador numérico del dashboard principal
+      if (mounted) {
+        context.read<EducationalCenterCountProvider>().initialize(
+          total: _viewModel.centers.length,
+        );
+      }
     });
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    _viewModel.dispose(); // Liberamos memoria
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: AppColors.onPrimary,
-        foregroundColor: AppColors.textPrimary,
-        title: const Text(
-          'Centros educativos',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Gestión de Centros Educativos',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Explora, busca y administra los centros educativos',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 14),
-            Consumer<EducationalCenterCountProvider>(
-              builder: (context, counter, _) {
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.onPrimary,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.divider),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.account_balance_outlined,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'Total de centros educativos',
+    return ChangeNotifierProvider<EducationalCenterViewModel>.value(
+      value: _viewModel,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Consumer2<EducationalCenterViewModel, EducationalCenterCountProvider>(
+              builder: (context, viewModel, countProvider, child) {
+
+                // Obtenemos la lista real expuesta por el ViewModel
+                final List<EducationalCenter> dynamicCenters = viewModel.centers;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Fila superior: Botón de regresar y título principal
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 22),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Centros Educativos',
                           style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
                             color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.5,
                           ),
                         ),
-                      ),
-                      Text(
-                        '${counter.total}',
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Buscador y botón de Nuevo
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: TextField(
+                              controller: _searchController,
+                              onChanged: (value) {
+                                // Usa el filtro nativo que programaron tus compañeros
+                                viewModel.searchCenter(value);
+                              },
+                              decoration: const InputDecoration(
+                                hintText: 'Buscar centro...',
+                                hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+                                prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ),
                         ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF134E4A),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (dialogContext) {
+                                return MultiProvider(
+                                  providers: [
+                                    ChangeNotifierProvider<EducationalCenterViewModel>.value(value: viewModel),
+                                    ChangeNotifierProvider<EducationalCenterCountProvider>.value(value: countProvider),
+                                  ],
+                                  child: const EducationalCenterForm(),
+                                );
+                              },
+                            );
+                          },
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add),
+                              SizedBox(width: 6),
+                              Text('Nuevo', style: TextStyle(fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Lista Reactiva desde la Base de Datos Local
+                    Expanded(
+                      child: viewModel.isLoading
+                          ? const Center(child: CircularProgressIndicator(color: Color(0xFF134E4A)))
+                          : dynamicCenters.isEmpty
+                          ? const Center(
+                        child: Text(
+                          'No hay centros educativos registrados.',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      )
+                          : ListView.builder(
+                        itemCount: dynamicCenters.length,
+                        itemBuilder: (context, index) {
+                          final center = dynamicCenters[index];
+                          return EducationalCenterRow(
+                            center: center,
+                            onView: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => EducationalCenterDetailScreen(center: center),
+                                ),
+                              );
+                            },
+                          );
+                        },
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 );
               },
             ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Buscar centro educativo',
-                      hintStyle: const TextStyle(color: AppColors.placeholder),
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: AppColors.primary,
-                      ),
-                      filled: true,
-                      fillColor: AppColors.inputFill,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.divider),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.divider),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AppColors.primary,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                    onChanged: _search,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.onPrimary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 2,
-                  ),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return const EducationalCenterForm();
-                      },
-                    );
-                  },
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.add),
-                      SizedBox(width: 6),
-                      Text(
-                        'Nuevo',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                itemCount: filteredCenters.length,
-                itemBuilder: (context, index) {
-                  final center = filteredCenters[index];
-                  return EducationalCenterRow(
-                    center: center,
-                    onView: () => _openCenterDetail(center),
-                  );
-                },
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
-    );
-  }
-
-  void _openCenterDetail(EducationalCenter center) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => EducationalCenterDetailScreen(center: center),
       ),
     );
   }

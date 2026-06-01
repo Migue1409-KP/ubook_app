@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../model/educational_center/educational_center_dummy_data.dart';
 import '../../model/educational_center/educational_center_model.dart';
 import '../../theme/app_colors.dart';
+import '../../view_model/educational_center/educational_center_view_model.dart';
+import '../../view_model/educational_center/educational_center_count_provider.dart';
 
 class EducationalCenterForm extends StatefulWidget {
   final bool isEditing;
@@ -24,16 +27,11 @@ class _EducationalCenterFormState extends State<EducationalCenterForm> {
   void initState() {
     super.initState();
 
-    // Datos dummy para editar
-    if (widget.isEditing) {
-      final selectedCenter = widget.center;
-      if (selectedCenter != null) {
-        final detail = educationalCenterDummyById(selectedCenter.id);
-        nameController.text = selectedCenter.name;
-        addressController.text = detail.address;
-        websiteController.text = detail.website;
-        type = detail.type;
-      }
+    if (widget.isEditing && widget.center != null) {
+      nameController.text = widget.center!.name;
+      addressController.text = widget.center!.address ?? '';
+      websiteController.text = widget.center!.website ?? '';
+      type = widget.center!.type ?? 'Pública';
     }
   }
 
@@ -66,37 +64,25 @@ class _EducationalCenterFormState extends State<EducationalCenterForm> {
     return AlertDialog(
       backgroundColor: AppColors.onPrimary,
       title: Text(
-        widget.isEditing
-            ? "Editar centro educativo"
-            : "Agregar centro educativo",
-        style: const TextStyle(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.bold,
-        ),
+        widget.isEditing ? "Editar centro educativo" : "Agregar centro educativo",
+        style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
       ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Nombre
             TextField(
               controller: nameController,
               decoration: inputDecoration.copyWith(labelText: "Nombre"),
             ),
-
             const SizedBox(height: 12),
-
-            // Dirección
             TextField(
               controller: addressController,
               decoration: inputDecoration.copyWith(labelText: "Dirección"),
             ),
-
             const SizedBox(height: 12),
-
-            // Tipo
             DropdownButtonFormField<String>(
-              initialValue: type,
+              value: type,
               decoration: inputDecoration.copyWith(labelText: "Tipo"),
               dropdownColor: AppColors.onPrimary,
               items: const [
@@ -109,10 +95,7 @@ class _EducationalCenterFormState extends State<EducationalCenterForm> {
                 });
               },
             ),
-
             const SizedBox(height: 12),
-
-            // Sitio web
             TextField(
               controller: websiteController,
               decoration: inputDecoration.copyWith(labelText: "Sitio web"),
@@ -121,42 +104,57 @@ class _EducationalCenterFormState extends State<EducationalCenterForm> {
         ),
       ),
       actions: [
-        // Cancelar
         TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: const Text(
-            "Cancelar",
-            style: TextStyle(color: AppColors.textSecondary),
-          ),
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancelar", style: TextStyle(color: AppColors.textSecondary)),
         ),
-
-        // Guardar
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: AppColors.onPrimary,
           ),
-          onPressed: () {
-            // TODO: implementar guardado en backend.
-            // Cuando esté listo, agregar la notificación así:
-            //
-            // import 'dart:async';
-            // import '../../model/notification/notification_model.dart';
-            // import '../../service/notification_service.dart';
-            //
-            // final name = nameController.text.trim();
-            // unawaited(NotificationService.push(
-            //   title: widget.isEditing
-            //       ? 'Centro educativo actualizado'
-            //       : 'Nuevo centro educativo registrado',
-            //   message: widget.isEditing
-            //       ? 'El centro educativo "$name" fue actualizado.'
-            //       : 'El centro educativo "$name" fue registrado en el sistema.',
-            //   type: NotificationType.other,
-            // ));
-            Navigator.pop(context);
+          onPressed: () async {
+            final name = nameController.text.trim();
+            final address = addressController.text.trim();
+            final website = websiteController.text.trim();
+
+            if (name.isEmpty) return;
+
+            final viewModel = Provider.of<EducationalCenterViewModel>(context, listen: false);
+            final countProvider = Provider.of<EducationalCenterCountProvider>(context, listen: false);
+            final int currentTime = DateTime.now().millisecondsSinceEpoch;
+
+            if (widget.isEditing && widget.center != null) {
+              // 📝 MODO EDICIÓN: Actualización limpia eliminando el antiguo para prevenir conflictos en SQLite
+              await viewModel.removeCenter(widget.center!.id, countProvider);
+
+              final centroEditado = EducationalCenter(
+                id: widget.center!.id,
+                name: name,
+                address: address.isEmpty ? null : address,
+                type: type,
+                website: website.isEmpty ? null : website,
+                createdAt: widget.center!.createdAt,
+                updatedAt: currentTime,
+              );
+              await viewModel.addCenter(centroEditado, countProvider);
+            } else {
+              // ➕ MODO CREACIÓN:
+              final nuevoCentro = EducationalCenter(
+                id: currentTime.toString(),
+                name: name,
+                address: address.isEmpty ? null : address,
+                type: type,
+                website: website.isEmpty ? null : website,
+                createdAt: currentTime,
+                updatedAt: currentTime,
+              );
+              await viewModel.addCenter(nuevoCentro, countProvider);
+            }
+
+            if (context.mounted) {
+              Navigator.pop(context);
+            }
           },
           child: const Text("Guardar"),
         ),
