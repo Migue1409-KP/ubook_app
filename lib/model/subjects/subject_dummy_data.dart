@@ -4,7 +4,7 @@ class SubjectDummyData {
   SubjectDummyData._();
 
   static List<Subject> build() {
-    return const [
+    return [
       Subject(
         id: 'subject-1',
         nombre: 'Ing Software 4',

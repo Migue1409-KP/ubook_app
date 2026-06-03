@@ -169,9 +169,9 @@ class _SubjectsViewState extends State<SubjectsView> {
     if (result == null) return;
 
     if (subject == null) {
-      _viewModel.addExistingSubject(result);
+      await _viewModel.createSubject(result);
     } else {
-      _viewModel.updateExistingSubject(result);
+      await _viewModel.updateExistingSubject(result);
     }
   }
 

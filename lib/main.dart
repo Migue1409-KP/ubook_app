@@ -7,6 +7,10 @@ import 'package:ubook_app/config/supabase_config.dart';
 import 'package:ubook_app/database/app_database.dart';
 import 'package:ubook_app/firebase_options.dart';
 import 'package:ubook_app/view/subjects/subjects_view.dart';
+import 'package:ubook_app/repository/subjects/floor_subject_repository.dart';
+import 'package:ubook_app/repository/subjects/firestore_subject_repository.dart';
+import 'package:ubook_app/repository/subjects/syncing_subject_repository.dart';
+import 'package:ubook_app/repository/subjects/subject_repository.dart';
 import 'package:ubook_app/repository/attachments/attachment_repository.dart';
 import 'package:ubook_app/repository/attachments/firebase_attachment_repository.dart';
 import 'package:ubook_app/repository/auth/firestore_user_repository.dart';
@@ -89,6 +93,15 @@ Future<void> main() async {
   FloorSubjectTeacherRepository.initialize(database);
   FloorTeacherRepository.initialize(database);
 
+  final localSubjectRepository = FloorSubjectRepository.initialize(database);
+  final remoteSubjectRepository = FirestoreSubjectRepository.initialize();
+  final subjectRepository = SyncingSubjectRepository.initialize(
+    localSubjectRepository,
+    remoteSubjectRepository,
+  );
+  SubjectRepository.setInstance(subjectRepository);
+  await subjectRepository.ensureInitialized();
+
   runApp(MyApp(database: database, userRepository: userRepository));
 }
 
@@ -105,6 +118,8 @@ class MyApp extends StatelessWidget {
         if (database != null) Provider<AppDatabase>.value(value: database!),
         if (userRepository != null)
           Provider<UserRepository>.value(value: userRepository!),
+        Provider<SubjectRepository>.value(
+            value: SubjectRepository.instance),
         ChangeNotifierProvider(create: (_) => NotificationViewModel()),
         ChangeNotifierProvider(create: (_) => UserCountProvider()),
         ChangeNotifierProvider(create: (_) => TeacherCountProvider()),

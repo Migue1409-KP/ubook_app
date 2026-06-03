@@ -1,3 +1,5 @@
+import 'subject_entity.dart';
+
 class Subject {
   final String id;
   final String nombre;
@@ -5,15 +7,42 @@ class Subject {
   final int creditos;
   final List<String> prerrequisitos;
   final String contenido;
+  final int lastUpdate;
 
-  const Subject({
+  Subject({
     required this.id,
     required this.nombre,
     required this.horas,
     required this.creditos,
     required this.prerrequisitos,
     required this.contenido,
+    this.lastUpdate = 0,
   });
+
+  factory Subject.fromEntity(SubjectEntity entity) {
+    return Subject(
+      id: entity.id,
+      nombre: entity.name,
+      horas: entity.hours,
+      creditos: entity.credits,
+      prerrequisitos: const [],
+      contenido: entity.description ?? '',
+      lastUpdate: entity.lastUpdate,
+    );
+  }
+
+  SubjectEntity toEntity({bool isSync = true, int? lastUpdate}) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    return SubjectEntity(
+      id: id,
+      name: nombre,
+      credits: creditos,
+      hours: horas,
+      description: contenido.isEmpty ? null : contenido,
+      isSync: isSync,
+      lastUpdate: lastUpdate ?? now,
+    );
+  }
 
   factory Subject.fromJson(Map<String, dynamic> json) {
     return Subject(

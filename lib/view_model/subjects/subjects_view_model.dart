@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../model/notification/notification_model.dart';
-import '../../model/subjects/subject_dummy_data.dart';
 import '../../model/subjects/subjects.dart';
+import '../../repository/subjects/subject_repository.dart';
 import '../../service/notification_service.dart';
 import '../../utils/session_manager.dart';
 
 class SubjectsViewModel extends ChangeNotifier {
-  SubjectsViewModel() : _subjects = List<Subject>.from(SubjectDummyData.build()) {
+  SubjectsViewModel() : _subjects = <Subject>[] {
     _initializeSession();
   }
 
@@ -20,14 +20,12 @@ class SubjectsViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get currentUserId => _currentUserId;
 
-  /// Inicializa la sesión cargando el userId actual
   Future<void> _initializeSession() async {
     final sessionManager = SessionManager();
     _currentUserId = sessionManager.currentUserId;
-    notifyListeners();
+    await loadUserSubjects();
   }
 
-  /// Carga las materias del usuario autenticado
   Future<void> loadUserSubjects() async {
     _isLoading = true;
     notifyListeners();
@@ -40,15 +38,12 @@ class SubjectsViewModel extends ChangeNotifier {
 
       _currentUserId = sessionManager.currentUserId;
 
-      // TODO: Cuando se integre con backend, filtrar por userId desde la API
-      // Por ahora usamos dummy data filtrada
-      final userId = _currentUserId;
-      if (userId != null) {
-        // Aquí se puede añadir filtrado adicional si es necesario
-        // _subjects.removeWhere((subject) => subject.userId != userId);
-      }
-
-      notifyListeners();
+      final entities = await SubjectRepository.instance.getSubjects();
+      final subjects = entities
+          .map((entity) => Subject.fromEntity(entity))
+          .toList();
+      _subjects.clear();
+      _subjects.addAll(subjects);
     } catch (e) {
       debugPrint('Error al cargar materias del usuario: $e');
       rethrow;
@@ -70,10 +65,7 @@ class SubjectsViewModel extends ChangeNotifier {
     return List<Subject>.unmodifiable(
       _subjects.where((subject) {
         return subject.nombre.toLowerCase().contains(query) ||
-            subject.contenido.toLowerCase().contains(query) ||
-            subject.prerrequisitos.any(
-              (item) => item.toLowerCase().contains(query),
-            );
+            subject.contenido.toLowerCase().contains(query);
       }),
     );
   }
@@ -83,7 +75,9 @@ class SubjectsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addExistingSubject(Subject subject) {
+  Future<void> createSubject(Subject subject) async {
+    final entity = subject.toEntity(isSync: false);
+    await SubjectRepository.instance.addSubject(entity);
     _subjects.insert(0, subject);
     notifyListeners();
     unawaited(NotificationService.push(
@@ -93,10 +87,12 @@ class SubjectsViewModel extends ChangeNotifier {
     ));
   }
 
-  void updateExistingSubject(Subject updatedSubject) {
+  Future<void> updateExistingSubject(Subject updatedSubject) async {
     final index = _subjects.indexWhere((item) => item.id == updatedSubject.id);
     if (index == -1) return;
 
+    final entity = updatedSubject.toEntity(isSync: false);
+    await SubjectRepository.instance.updateSubject(entity);
     _subjects[index] = updatedSubject;
     notifyListeners();
     unawaited(NotificationService.push(
@@ -106,8 +102,9 @@ class SubjectsViewModel extends ChangeNotifier {
     ));
   }
 
-  void removeSubject(String id) {
+  Future<void> removeSubject(String id) async {
     final subject = _subjects.firstWhere((s) => s.id == id);
+    await SubjectRepository.instance.deleteSubject(id);
     _subjects.removeWhere((s) => s.id == id);
     notifyListeners();
     unawaited(NotificationService.push(
@@ -115,10 +112,5 @@ class SubjectsViewModel extends ChangeNotifier {
       message: 'La asignatura "${subject.nombre}" fue eliminada del sistema.',
       type: NotificationType.subjectCreated,
     ));
-  }
-
-  String serializePrerequisites(List<String> items) {
-    if (items.isEmpty) return '';
-    return items.join(', ');
   }
 }
