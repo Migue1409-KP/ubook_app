@@ -1,12 +1,12 @@
-﻿import 'package:floor/floor.dart';
+import 'package:floor/floor.dart';
 
 import 'auth_provider.dart';
 import 'package:ubook_app/repository/auth/floor_converters.dart';
 
-/// Modelo del usuario autenticado en la aplicaci├│n.
+/// Modelo del usuario autenticado en la aplicación.
 ///
-/// Contiene la informaci├│n del perfil del usuario tras registrarse
-/// o iniciar sesi├│n (con email/contrase├▒a o con Google).
+/// Contiene la información del perfil del usuario tras registrarse
+/// o iniciar sesión (con email/contraseña o con Google).
 @TypeConverters([AuthProviderConverter])
 @Entity(
   tableName: 'users',

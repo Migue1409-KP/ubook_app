@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../model/reviews/review.dart';
 import '../../repository/reviews/review_repository.dart';
+import '../../repository/reviews/review_repository_provider.dart';
 
 class ReviewsViewModel extends ChangeNotifier {
   ReviewsViewModel({ReviewRepository? repository})
-    : _repository = repository ?? InMemoryReviewRepository.instance;
+    : _repository = repository ?? ReviewRepositoryProvider.instance;
 
   final ReviewRepository _repository;
 

@@ -11,8 +11,6 @@ import 'package:ubook_app/model/process/process_model.dart';
 import 'package:ubook_app/model/career/career_entity.dart';
 import 'package:ubook_app/model/reviews/review.dart';
 import 'package:ubook_app/model/subjectteacher/subjectteacher.dart';
-import 'package:ubook_app/model/subjects/subject_entity.dart';
-import 'package:ubook_app/model/teachers/teacher.dart';
 import 'package:ubook_app/repository/attachments/attachment_dao.dart';
 import 'package:ubook_app/repository/auth/floor_converters.dart';
 import 'package:ubook_app/repository/auth/user_dao.dart';
@@ -22,7 +20,6 @@ import 'package:ubook_app/repository/notification/notification_floor_converters.
 import 'package:ubook_app/repository/process/process_dao.dart';
 import 'package:ubook_app/repository/process/process_floor_converters.dart';
 import 'package:ubook_app/repository/reviews/review_dao.dart';
-import 'package:ubook_app/repository/subjects/subject_dao.dart';
 import 'package:ubook_app/repository/teacher_subject/subject_teacher_dao.dart';
 import 'package:ubook_app/model/teachers/teacher.dart';
 import 'package:ubook_app/repository/teachers/teacher_dao.dart';
@@ -162,21 +159,6 @@ final migration8to9 = Migration(8, 9, (database) async {
   );
   await database.execute(
     'ALTER TABLE `careers` ADD COLUMN `modalityName` TEXT',
-  );
-});
-
-final migration9to11 = Migration(9, 11, (database) async {
-  await database.execute(
-    'CREATE TABLE IF NOT EXISTS `subjects` ('
-    '`id` TEXT NOT NULL, '
-    '`name` TEXT NOT NULL, '
-    '`credits` INTEGER NOT NULL, '
-    '`hours` INTEGER NOT NULL, '
-    '`description` TEXT, '
-    '`isSync` INTEGER NOT NULL, '
-    '`lastUpdate` INTEGER NOT NULL, '
-    'PRIMARY KEY (`id`)'
-    ')',
   );
 });
 

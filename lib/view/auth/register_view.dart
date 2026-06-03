@@ -1,8 +1,33 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:http/http.dart' as http;
 import 'package:ubook_app/theme/app_colors.dart';
 import 'package:ubook_app/view_model/auth/register_view_model.dart';
 import 'package:ubook_app/widgets/auth/index.dart';
+
+class _CityOption {
+  final String nombre;
+  final String departamento;
+  final String codigoDane;
+
+  const _CityOption({
+    required this.nombre,
+    required this.departamento,
+    required this.codigoDane,
+  });
+
+  factory _CityOption.fromJson(Map<String, dynamic> json) {
+    return _CityOption(
+      nombre: json['nombre']?.toString() ?? '',
+      departamento: json['departamento']?.toString() ?? '',
+      codigoDane: json['codigoDane']?.toString() ?? '',
+    );
+  }
+
+  String get label => '$nombre - $departamento';
+}
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -13,18 +38,194 @@ class RegisterView extends StatefulWidget {
 
 class _RegisterViewState extends State<RegisterView> {
   late final RegisterViewModel _vm;
+  late Future<List<_CityOption>> _citiesFuture;
+
+  static const String _citiesEndpoint =
+      'https://my-json-server.typicode.com/juanpanore/api/ciudadesColombia';
 
   @override
   void initState() {
     super.initState();
     _vm = RegisterViewModel();
     _vm.addListener(() => setState(() {}));
+    _citiesFuture = _loadCities();
   }
 
   @override
   void dispose() {
     _vm.dispose();
     super.dispose();
+  }
+
+  Future<List<_CityOption>> _loadCities() async {
+    final response = await http.get(Uri.parse(_citiesEndpoint));
+    if (response.statusCode != 200) {
+      throw Exception('No se pudieron cargar las ciudades');
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) {
+      throw Exception('Respuesta inválida de ciudades');
+    }
+
+    return decoded
+        .whereType<Map<String, dynamic>>()
+        .map(_CityOption.fromJson)
+        .where((city) => city.nombre.isNotEmpty)
+        .toList();
+  }
+
+  Widget _buildCityField() {
+    return FutureBuilder<List<_CityOption>>(
+      future: _citiesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return TextFormField(
+            enabled: false,
+            decoration: InputDecoration(
+              hintText: 'Cargando ciudades...',
+              hintStyle: const TextStyle(color: AppColors.placeholder),
+              filled: true,
+              fillColor: AppColors.inputFill,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 18,
+              ),
+              prefixIcon: Container(
+                margin: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.location_on_outlined,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+              suffixIcon: const Padding(
+                padding: EdgeInsets.all(16),
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return InputDecorator(
+            decoration: InputDecoration(
+              hintText: 'Ciudad',
+              hintStyle: const TextStyle(color: AppColors.placeholder),
+              filled: true,
+              fillColor: AppColors.inputFill,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 18,
+              ),
+              prefixIcon: Container(
+                margin: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.location_on_outlined,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'No se pudieron cargar las ciudades',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _citiesFuture = _loadCities();
+                    });
+                  },
+                  child: const Text('Reintentar'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final cities = snapshot.data ?? const <_CityOption>[];
+        final selectedCity = cities.any((city) => city.nombre == _vm.city.text)
+            ? _vm.city.text
+            : null;
+
+        return DropdownButtonFormField<String>(
+          value: selectedCity,
+          decoration: InputDecoration(
+            hintText: 'Ciudad',
+            hintStyle: const TextStyle(color: AppColors.placeholder),
+            filled: true,
+            fillColor: AppColors.inputFill,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 18,
+            ),
+            prefixIcon: Container(
+              margin: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.location_on_outlined,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+          ),
+          icon: const Icon(Icons.keyboard_arrow_down_rounded),
+          isExpanded: true,
+          dropdownColor: AppColors.onPrimary,
+          items: cities
+              .map(
+                (city) => DropdownMenuItem<String>(
+                  value: city.nombre,
+                  child: Text(city.label, overflow: TextOverflow.ellipsis),
+                ),
+              )
+              .toList(),
+          onChanged: (value) {
+            if (value == null) return;
+            _vm.city.text = value;
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -149,11 +350,7 @@ class _RegisterViewState extends State<RegisterView> {
                                 icon: Icons.menu_book_outlined,
                               ),
                               const SizedBox(height: 12),
-                              AuthTextInput(
-                                controller: _vm.city,
-                                hint: 'Ciudad',
-                                icon: Icons.location_on_outlined,
-                              ),
+                              _buildCityField(),
                             ],
                           ),
                         ),

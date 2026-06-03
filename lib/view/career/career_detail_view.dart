@@ -93,6 +93,24 @@ class _CareerDetailContent extends StatelessWidget {
             },
           ),
 
+          const SizedBox(height: 12),
+
+          if (career.modalityName != null)
+            Row(
+              children: [
+                const Icon(Icons.school_outlined,
+                    size: 18, color: AppColors.textSecondary),
+                const SizedBox(width: 6),
+                Text(
+                  "Modalidad: ${career.modalityName}",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+
           const SizedBox(height: 30),
 
           NavigationCard(

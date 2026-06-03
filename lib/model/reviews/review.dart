@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:floor/floor.dart';
 import 'package:flutter/foundation.dart';

@@ -49,19 +49,14 @@ dependencies:
 
   # Persistencia local simple (no sensible)
   shared_preferences: ^2.3.2
-  
-  # Database
   floor: ^1.5.0
   sqflite: ^2.4.1
   path: ^1.9.1
-  
-  # Firebase
   firebase_core: ^4.9.0
   firebase_auth: ^6.5.1
   google_sign_in: ^6.2.2
   cloud_firestore: ^6.0.0
   supabase_flutter: ^2.12.4
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

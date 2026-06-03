@@ -1,6 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../../repository/dashboard/dashboard_local_storage.dart';
+
 class DashboardViewModel extends ChangeNotifier {
+  DashboardViewModel({DashboardLocalStorage? localStorage})
+    : _localStorage = localStorage ?? DashboardLocalStorage() {
+    unawaited(_loadSavedState());
+  }
+
+  final DashboardLocalStorage _localStorage;
+
   // Dummy data for Top 5 Educational Centers
   final List<Map<String, dynamic>> topCenters = [
     {
@@ -76,10 +87,30 @@ class DashboardViewModel extends ChangeNotifier {
 
   // Dummy data for Top 5 Subjects
   final List<Map<String, dynamic>> topSubjects = [
-    {'id': 'sub-1', 'name': 'Cálculo Diferencial', 'faculty': 'Ingeniería', 'rating': 4.9},
-    {'id': 'sub-2', 'name': 'Programación I', 'faculty': 'Ingeniería', 'rating': 4.8},
-    {'id': 'sub-3', 'name': 'Bases de Datos', 'faculty': 'Sistemas', 'rating': 4.7},
-    {'id': 'sub-4', 'name': 'Derecho Constitucional', 'faculty': 'Derecho', 'rating': 4.6},
+    {
+      'id': 'sub-1',
+      'name': 'Cálculo Diferencial',
+      'faculty': 'Ingeniería',
+      'rating': 4.9,
+    },
+    {
+      'id': 'sub-2',
+      'name': 'Programación I',
+      'faculty': 'Ingeniería',
+      'rating': 4.8,
+    },
+    {
+      'id': 'sub-3',
+      'name': 'Bases de Datos',
+      'faculty': 'Sistemas',
+      'rating': 4.7,
+    },
+    {
+      'id': 'sub-4',
+      'name': 'Derecho Constitucional',
+      'faculty': 'Derecho',
+      'rating': 4.6,
+    },
     {
       'id': 'sub-5',
       'name': 'Psicología General',
@@ -110,6 +141,7 @@ class DashboardViewModel extends ChangeNotifier {
   ];
 
   // Search and Filter state
+  String searchQuery = '';
   String selectedFilter = 'Centro Educativo';
   final List<String> filterOptions = [
     'Centro Educativo',
@@ -120,6 +152,28 @@ class DashboardViewModel extends ChangeNotifier {
 
   void setFilter(String filter) {
     selectedFilter = filter;
+    unawaited(_localStorage.saveSelectedFilter(filter));
+    notifyListeners();
+  }
+
+  void setSearchQuery(String query) {
+    searchQuery = query;
+    unawaited(_localStorage.saveSearchQuery(query));
+    notifyListeners();
+  }
+
+  Future<void> _loadSavedState() async {
+    final savedFilter = await _localStorage.getSelectedFilter();
+    final savedSearchQuery = await _localStorage.getSearchQuery();
+
+    if (savedFilter != null && filterOptions.contains(savedFilter)) {
+      selectedFilter = savedFilter;
+    }
+
+    if (savedSearchQuery != null) {
+      searchQuery = savedSearchQuery;
+    }
+
     notifyListeners();
   }
 }

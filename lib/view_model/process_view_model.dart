@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import '../model/notification/notification_model.dart';
 import '../model/process/process_model.dart';
 import '../repository/process/process_repository.dart';
+import '../service/notification_service.dart';
 
 class ProcessViewModel extends ChangeNotifier {
   ProcessViewModel({
@@ -11,7 +15,7 @@ class ProcessViewModel extends ChangeNotifier {
     this.careerName,
     this.subjectId,
     this.subjectName,
-  }) : _repository = repository ?? InMemoryProcessRepository() {
+  }) : _repository = repository ?? ProcessRepository.instance {
     loadProcesses();
   }
 
@@ -140,21 +144,39 @@ class ProcessViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    final now = DateTime.now();
     final processToSave = isEducationalCenterScoped
         ? process.copyWith(
             processType: ProcessType.educationalCenter,
             relatedId: educationalCenterId,
+            createdAt: now,
+            updatedAt: now,
           )
         : isCareerScoped
-        ? process.copyWith(processType: ProcessType.career, relatedId: careerId)
+        ? process.copyWith(
+            processType: ProcessType.career,
+            relatedId: careerId,
+            createdAt: now,
+            updatedAt: now,
+          )
         : isSubjectScoped
         ? process.copyWith(
             processType: ProcessType.subject,
             relatedId: subjectId,
+            createdAt: now,
+            updatedAt: now,
           )
-        : process;
+        : process.copyWith(
+            createdAt: now,
+            updatedAt: now,
+          );
 
     await _repository.addProcess(processToSave);
+    unawaited(NotificationService.push(
+      title: 'Nuevo proceso registrado',
+      message: 'El proceso "${processToSave.name}" fue registrado en el sistema.',
+      type: NotificationType.other,
+    ));
     if (_disposed) return;
 
     _processes.add(processToSave);
@@ -167,21 +189,35 @@ class ProcessViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    final now = DateTime.now();
     final processToSave = isEducationalCenterScoped
         ? process.copyWith(
             processType: ProcessType.educationalCenter,
             relatedId: educationalCenterId,
+            updatedAt: now,
           )
         : isCareerScoped
-        ? process.copyWith(processType: ProcessType.career, relatedId: careerId)
+        ? process.copyWith(
+            processType: ProcessType.career,
+            relatedId: careerId,
+            updatedAt: now,
+          )
         : isSubjectScoped
         ? process.copyWith(
             processType: ProcessType.subject,
             relatedId: subjectId,
+            updatedAt: now,
           )
-        : process;
+        : process.copyWith(
+            updatedAt: now,
+          );
 
     await _repository.updateProcess(processToSave);
+    unawaited(NotificationService.push(
+      title: 'Proceso actualizado',
+      message: 'El proceso "${processToSave.name}" fue actualizado.',
+      type: NotificationType.other,
+    ));
     if (_disposed) return;
 
     final index = _processes.indexWhere((p) => p.id == processToSave.id);
@@ -197,7 +233,13 @@ class ProcessViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    final process = _processes.firstWhere((p) => p.id == processId);
     await _repository.deleteProcess(processId);
+    unawaited(NotificationService.push(
+      title: 'Proceso eliminado',
+      message: 'El proceso "${process.name}" fue eliminado del sistema.',
+      type: NotificationType.other,
+    ));
     if (_disposed) return;
 
     _processes.removeWhere((p) => p.id == processId);

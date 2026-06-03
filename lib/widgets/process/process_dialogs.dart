@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../model/process/process_model.dart';
+import '../../model/process/process_type_option.dart';
+import '../../repository/process/process_type_catalog_service.dart';
 import '../../theme/app_colors.dart';
 import '../../view_model/process_view_model.dart';
 
@@ -7,7 +9,7 @@ Future<void> showProcessFormDialog({
   required BuildContext context,
   required ProcessViewModel viewModel,
   ProcessModel? process,
-  ProcessType? lockedType,
+  String? lockedType,
   String? lockedRelatedId,
   String? scopeLabel,
 }) async {
@@ -19,7 +21,10 @@ Future<void> showProcessFormDialog({
   final documentsController = TextEditingController(
     text: process?.requiredDocuments.join(', ') ?? '',
   );
-  ProcessType selectedType =
+  final processTypeFuture = lockedType == null
+      ? ProcessTypeCatalogService().getProcessTypes()
+      : null;
+  String selectedType =
       lockedType ?? process?.processType ?? ProcessType.career;
   bool isActive = process?.isActive ?? true;
 
@@ -63,7 +68,7 @@ Future<void> showProcessFormDialog({
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: Text(
-                    _processTypeLabel(lockedType),
+                    lockedType.label,
                     style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.w500,
@@ -71,48 +76,54 @@ Future<void> showProcessFormDialog({
                   ),
                 )
               else
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Radio<ProcessType>(
-                          value: ProcessType.career,
-                          groupValue: selectedType,
-                          onChanged: (v) =>
-                              setDialogState(() => selectedType = v!),
-                        ),
-                        const Text('Carrera'),
-                      ],
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Radio<ProcessType>(
-                          value: ProcessType.subject,
-                          groupValue: selectedType,
-                          onChanged: (v) =>
-                              setDialogState(() => selectedType = v!),
-                        ),
-                        const Text('Materia'),
-                      ],
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Radio<ProcessType>(
-                          value: ProcessType.educationalCenter,
-                          groupValue: selectedType,
-                          onChanged: (v) =>
-                              setDialogState(() => selectedType = v!),
-                        ),
-                        const Text('Centro educativo'),
-                      ],
-                    ),
-                  ],
+                FutureBuilder<List<ProcessTypeOption>>(
+                  future: processTypeFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    final options = snapshot.data ??
+                        ProcessTypeCatalogService.fallbackOptions;
+                    final availableValues = options
+                        .map((option) => option.processType)
+                        .toList(growable: false);
+                    final dropdownValue = availableValues.contains(selectedType)
+                        ? selectedType
+                        : availableValues.isNotEmpty
+                        ? availableValues.first
+                        : ProcessType.career;
+
+                    if (selectedType != dropdownValue) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (context.mounted) {
+                          setDialogState(() => selectedType = dropdownValue);
+                        }
+                      });
+                    }
+
+                    return DropdownButtonFormField<String>(
+                      initialValue: dropdownValue,
+                      decoration: const InputDecoration(
+                        labelText: 'Selecciona el tipo',
+                      ),
+                      items: options
+                          .map(
+                            (option) => DropdownMenuItem<String>(
+                              value: option.processType,
+                              child: Text(option.label),
+                            ),
+                          )
+                          .toList(growable: false),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setDialogState(() => selectedType = value);
+                      },
+                    );
+                  },
                 ),
               if (scopeLabel != null && scopeLabel.isNotEmpty)
                 Padding(
@@ -230,7 +241,7 @@ Future<void> showProcessDetailsDialog({
             ),
             const SizedBox(height: 16),
             Text(
-              'Tipo: ${_processTypeLabel(process.processType)}',
+              'Tipo: ${process.processType.label}',
               style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 4),
@@ -249,17 +260,6 @@ Future<void> showProcessDetailsDialog({
       ],
     ),
   );
-}
-
-String _processTypeLabel(ProcessType type) {
-  switch (type) {
-    case ProcessType.career:
-      return 'Carrera';
-    case ProcessType.subject:
-      return 'Materia';
-    case ProcessType.educationalCenter:
-      return 'Centro educativo';
-  }
 }
 
 Future<void> showDeleteProcessDialog({

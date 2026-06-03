@@ -1,25 +1,64 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:ubook_app/repository/auth/auth_local_storage.dart';
+import 'package:ubook_app/repository/auth/firebase_auth_service.dart';
 import '../theme/app_colors.dart';
 import 'notification/notification_bell.dart';
 
-class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
+class DashboardAppBar extends StatefulWidget implements PreferredSizeWidget {
+  final String searchQuery;
   final String selectedFilter;
   final List<String> filterOptions;
+  final ValueChanged<String> onSearchChanged;
   final Function(String) onFilterChanged;
 
   const DashboardAppBar({
     super.key,
+    required this.searchQuery,
     required this.selectedFilter,
     required this.filterOptions,
+    required this.onSearchChanged,
     required this.onFilterChanged,
   });
 
   @override
+  State<DashboardAppBar> createState() => _DashboardAppBarState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(140);
+}
+
+class _DashboardAppBarState extends State<DashboardAppBar> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(text: widget.searchQuery);
+  }
+
+  @override
+  void didUpdateWidget(covariant DashboardAppBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.searchQuery != _searchController.text) {
+      _searchController.text = widget.searchQuery;
+      _searchController.selection = TextSelection.collapsed(
+        offset: _searchController.text.length,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final routeName = ModalRoute.of(context)?.settings.name;
     return AppBar(
+      automaticallyImplyLeading: routeName == '/dashboard' ? false : true,
       elevation: 0,
       backgroundColor: AppColors.background,
       foregroundColor: AppColors.textPrimary,
@@ -52,6 +91,9 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
               // TODO: Navegar a perfil
               case 'users':
                 Navigator.pushNamed(context, '/admin_user');
+                break;
+              case 'notifications':
+                Navigator.pushNamed(context, '/admin_notifications');
                 break;
               case 'pqrs':
                 Navigator.pushNamed(context, '/pqrs');
@@ -93,6 +135,23 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                     SizedBox(width: 12),
                     Text(
                       'Administrar Usuarios',
+                      style: TextStyle(color: AppColors.textPrimary),
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'notifications',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.notifications_active_outlined,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Administrar Notificaciones',
                       style: TextStyle(color: AppColors.textPrimary),
                     ),
                   ],
@@ -148,6 +207,8 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                     border: Border.all(color: AppColors.divider),
                   ),
                   child: TextField(
+                    controller: _searchController,
+                    onChanged: widget.onSearchChanged,
                     decoration: InputDecoration(
                       hintText: 'Buscar en UBook...',
                       hintStyle: const TextStyle(color: AppColors.placeholder),
@@ -189,15 +250,11 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Future<void> _logout(BuildContext context) async {
-    await AuthLocalStorage().setHasActiveSession(false);
+    await FirebaseAuthService.instance.signOut();
 
     if (!context.mounted) return;
 
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/login',
-      (_) => false,
-    );
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
   }
 
   void _showFilterBottomSheet(BuildContext context) {
@@ -231,7 +288,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              ...filterOptions.map((option) {
+              ...widget.filterOptions.map((option) {
                 return RadioListTile<String>(
                   title: Text(
                     option,
@@ -241,12 +298,12 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                   value: option,
-                  groupValue: selectedFilter,
+                  groupValue: widget.selectedFilter,
                   activeColor: AppColors.primary,
                   contentPadding: EdgeInsets.zero,
                   onChanged: (value) {
                     if (value != null) {
-                      onFilterChanged(value);
+                      widget.onFilterChanged(value);
                       Navigator.pop(context);
                     }
                   },
@@ -259,7 +316,4 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
       },
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(140);
 }

@@ -1,4 +1,4 @@
-﻿import 'package:floor/floor.dart';
+import 'package:floor/floor.dart';
 
 enum NotificationType { subjectCreated, reviewCreated, other }
 

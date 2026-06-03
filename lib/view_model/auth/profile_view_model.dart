@@ -1,8 +1,14 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:ubook_app/model/auth/user_model.dart';
-import 'package:ubook_app/model/auth/auth_provider.dart';
+import 'package:ubook_app/repository/auth/firebase_auth_service.dart';
+import 'package:ubook_app/repository/auth/syncing_user_repository.dart';
+import 'package:ubook_app/repository/auth/user_repository.dart';
 
 class ProfileViewModel extends ChangeNotifier {
+  final UserRepository _userRepository;
+  final FirebaseAuthService _authService;
+
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final educationalCenterController = TextEditingController();
@@ -23,43 +29,44 @@ class ProfileViewModel extends ChangeNotifier {
 
   String? passwordErrorMessage;
 
-  final String _dummyPassword = 'test1234';
+  UserModel? _currentUser;
 
-  ProfileViewModel() {
-    _loadDummyUser();
+  bool get isGoogleUser => _authService.isGoogleUser;
+
+  ProfileViewModel({
+    UserRepository? userRepository,
+    FirebaseAuthService? authService,
+  }) : _userRepository = userRepository ?? SyncingUserRepository.instance,
+       _authService = authService ?? FirebaseAuthService.instance {
+    _loadCurrentUser();
   }
 
-  void _loadDummyUser() {
-    final dummyUser = UserModel(
-      id: '1',
-      email: 'test@test.com',
-      name: 'test pepito',
-      birthDate: null,
-      educationalCenter: 'Universidad Católica del Oriente',
-      career: 'Ingeniería de Sistemas',
-      city: 'Rionegro',
-      profileImageUrl: null,
-      authProvider: AuthProvider.emailPassword,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+  Future<void> _loadCurrentUser() async {
+    final firebaseUser = _authService.currentUser;
+    UserModel? user;
 
-    nameController.text = dummyUser.name;
-    emailController.text = dummyUser.email;
-    educationalCenterController.text = dummyUser.educationalCenter;
-    careerController.text = dummyUser.career;
-    cityController.text = dummyUser.city;
+    if (firebaseUser?.email != null) {
+      user = await _userRepository.findByEmail(firebaseUser!.email!);
+    }
+
+    user ??= await _userRepository.findMostRecentUser();
+    _currentUser = user;
+
+    if (user != null) {
+      nameController.text = user.name;
+      emailController.text = user.email;
+      educationalCenterController.text = user.educationalCenter;
+      careerController.text = user.career;
+      cityController.text = user.city;
+    }
+
+    notifyListeners();
   }
 
-  // Reutilizar validadores de RegisterViewModel con submittedPersonal
   String? validateName(String? value) {
     if (!submittedPersonal) return null;
-    if (value == null || value.trim().isEmpty) {
-      return 'Nombre es requerido';
-    }
-    if (value.trim().length < 4) {
-      return 'Nombre debe tener al menos 4 caracteres';
-    }
+    if (value == null || value.trim().isEmpty) return 'Nombre es requerido';
+    if (value.trim().length < 4) return 'Nombre debe tener al menos 4 caracteres';
     return null;
   }
 
@@ -73,11 +80,9 @@ class ProfileViewModel extends ChangeNotifier {
 
   String? validateNewPassword(String? value) {
     if (!submittedPassword) return null;
-    if (value == null || value.trim().isEmpty) {
-      return 'Nueva contraseña es requerida';
-    }
-    if (value.trim().length < 8) {
-      return 'Nueva contraseña debe tener al menos 8 caracteres';
+    if (value == null || value.trim().isEmpty) return 'Nueva contraseña es requerida';
+    if (value.trim().length < 6) {
+      return 'Nueva contraseña debe tener al menos 6 caracteres';
     }
     return null;
   }
@@ -97,14 +102,32 @@ class ProfileViewModel extends ChangeNotifier {
     submittedPersonal = true;
     notifyListeners();
 
-    if (!(personalFormKey.currentState?.validate() ?? false)) {
+    if (!(personalFormKey.currentState?.validate() ?? false)) return false;
+
+    final currentUser = _currentUser;
+    if (currentUser == null) {
+      passwordErrorMessage = 'No se encontró el usuario activo';
+      notifyListeners();
       return false;
     }
 
     isSavingProfile = true;
     notifyListeners();
 
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    final updatedUser = currentUser.copyWith(
+      name: nameController.text.trim(),
+      educationalCenter: educationalCenterController.text.trim(),
+      career: careerController.text.trim(),
+      city: cityController.text.trim(),
+      updatedAt: DateTime.now(),
+    );
+
+    await _userRepository.updateUser(updatedUser);
+    _currentUser = updatedUser;
+
+    await _authService.currentUser?.updateDisplayName(nameController.text.trim());
+
+    await Future<void>.delayed(const Duration(milliseconds: 300));
 
     isSavingProfile = false;
     notifyListeners();
@@ -115,30 +138,37 @@ class ProfileViewModel extends ChangeNotifier {
     submittedPassword = true;
     notifyListeners();
 
-    if (!(passwordFormKey.currentState?.validate() ?? false)) {
-      return false;
-    }
-
-    if (currentPasswordController.text.trim() != _dummyPassword) {
-      passwordErrorMessage = 'La contraseña actual no es correcta';
-      notifyListeners();
-      return false;
-    }
+    if (!(passwordFormKey.currentState?.validate() ?? false)) return false;
 
     passwordErrorMessage = null;
     isChangingPassword = true;
     notifyListeners();
 
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    try {
+      await _authService.reauthenticateWithPassword(
+        currentPasswordController.text.trim(),
+      );
+      await _authService.updatePassword(newPasswordController.text.trim());
 
-    currentPasswordController.clear();
-    newPasswordController.clear();
-    confirmNewPasswordController.clear();
+      currentPasswordController.clear();
+      newPasswordController.clear();
+      confirmNewPasswordController.clear();
 
-    isChangingPassword = false;
-    submittedPassword = false;
-    notifyListeners();
-    return true;
+      isChangingPassword = false;
+      submittedPassword = false;
+      notifyListeners();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      passwordErrorMessage = FirebaseAuthService.mapError(e);
+      isChangingPassword = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      passwordErrorMessage = 'Error al cambiar contraseña. Intenta nuevamente.';
+      isChangingPassword = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   @override
