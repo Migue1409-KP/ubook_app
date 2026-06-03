@@ -173,8 +173,8 @@ final migration9to11 = Migration(9, 11, (database) async {
     '`credits` INTEGER NOT NULL, '
     '`hours` INTEGER NOT NULL, '
     '`description` TEXT, '
-    '`is_sync` INTEGER NOT NULL, '
-    '`last_update` INTEGER NOT NULL, '
+    '`isSync` INTEGER NOT NULL, '
+    '`lastUpdate` INTEGER NOT NULL, '
     'PRIMARY KEY (`id`)'
     ')',
   );
@@ -189,7 +189,7 @@ final migration9to11 = Migration(9, 11, (database) async {
   NotificationStatusConverter,
 ])
 @Database(
-  version: 11,
+  version: 9,
   entities: [
     UserModel,
     Review,
@@ -199,7 +199,6 @@ final migration9to11 = Migration(9, 11, (database) async {
     ProcessModel,
     Teacher,
     NotificationModel,
-    SubjectEntity,
   ],
 )
 abstract class AppDatabase extends FloorDatabase {
@@ -211,5 +210,4 @@ abstract class AppDatabase extends FloorDatabase {
   SubjectTeacherDao get subjectTeacherDao;
   NotificationDao get notificationDao;
   TeacherDao get teacherDao;
-  SubjectDao get subjectDao;
 }
