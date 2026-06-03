@@ -1,7 +1,12 @@
+﻿import 'dart:convert';
+
+import 'package:floor/floor.dart';
 import 'package:flutter/foundation.dart';
 
+@Entity(tableName: 'reviews')
 @immutable
 class Review {
+  @PrimaryKey()
   final String id;
   final String entityId;
   final String entityType;
@@ -9,11 +14,11 @@ class Review {
   final int rating;
   final String title;
   final String? content;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
-  final Map<String, dynamic>? metadata;
+  final int? createdAtMs;
+  final int? updatedAtMs;
+  final String? metadataJson;
 
-  const Review({
+  Review({
     required this.id,
     required this.entityId,
     required this.entityType,
@@ -21,10 +26,26 @@ class Review {
     required this.rating,
     required this.title,
     this.content,
-    this.createdAt,
-    this.updatedAt,
-    this.metadata,
-  });
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Map<String, dynamic>? metadata,
+    int? createdAtMs,
+    int? updatedAtMs,
+    String? metadataJson,
+  }) : createdAtMs = createdAtMs ?? createdAt?.millisecondsSinceEpoch,
+       updatedAtMs = updatedAtMs ?? updatedAt?.millisecondsSinceEpoch,
+       metadataJson = metadataJson ?? _encodeMetadata(metadata);
+
+  DateTime? get createdAt => createdAtMs == null
+      ? null
+      : DateTime.fromMillisecondsSinceEpoch(createdAtMs!);
+
+  DateTime? get updatedAt => updatedAtMs == null
+      ? null
+      : DateTime.fromMillisecondsSinceEpoch(updatedAtMs!);
+
+  @ignore
+  Map<String, dynamic>? get metadata => _decodeMetadata(metadataJson);
 
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
@@ -35,12 +56,8 @@ class Review {
       rating: json['rating'] as int,
       title: json['title'] as String,
       content: json['content'] as String?,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+      createdAt: _readDate(json['created_at']),
+      updatedAt: _readDate(json['updated_at']),
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
   }
@@ -84,6 +101,25 @@ class Review {
       updatedAt: updatedAt ?? this.updatedAt,
       metadata: metadata ?? this.metadata,
     );
+  }
+
+  static DateTime? _readDate(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    if (value is String) return DateTime.tryParse(value);
+    if (value is DateTime) return value;
+    return null;
+  }
+
+  static String? _encodeMetadata(Map<String, dynamic>? metadata) {
+    if (metadata == null || metadata.isEmpty) return null;
+    return jsonEncode(metadata);
+  }
+
+  static Map<String, dynamic>? _decodeMetadata(String? metadataJson) {
+    if (metadataJson == null || metadataJson.isEmpty) return null;
+    final decoded = jsonDecode(metadataJson);
+    return decoded is Map<String, dynamic> ? decoded : null;
   }
 
   @override
