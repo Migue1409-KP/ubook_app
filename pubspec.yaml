@@ -35,6 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   animate_do: ^4.2.0
+  http: ^1.2.2
 
   # State management
   provider: ^6.1.2
@@ -48,6 +49,18 @@ dependencies:
 
   # Persistencia local simple (no sensible)
   shared_preferences: ^2.3.2
+  
+  # Database
+  floor: ^1.5.0
+  sqflite: ^2.4.1
+  path: ^1.9.1
+  
+  # Firebase
+  firebase_core: ^4.9.0
+  firebase_auth: ^6.5.1
+  google_sign_in: ^6.2.2
+  cloud_firestore: ^6.0.0
+  supabase_flutter: ^2.12.4
 
 dev_dependencies:
   flutter_test:
@@ -59,6 +72,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  floor_generator: ^1.5.0
+  build_runner: ^2.4.13
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
