@@ -1,6 +1,12 @@
+﻿import 'package:floor/floor.dart';
+
+@Entity(tableName: 'teachers')
 class Teacher {
+  @primaryKey
   final String id;
+  @ColumnInfo(name: 'first_name')
   final String firstName;
+  @ColumnInfo(name: 'last_name')
   final String lastName;
   final String email;
   final String phone;
@@ -8,9 +14,13 @@ class Teacher {
   final String department;
   final String specialty;
   final List<String> subjects;
+  @ColumnInfo(name: 'profile_image_url')
   final String profileImageUrl;
+  @ColumnInfo(name: 'is_active')
   final bool isActive;
+  @ColumnInfo(name: 'created_at')
   final DateTime createdAt;
+  @ColumnInfo(name: 'updated_at')
   final DateTime updatedAt;
 
   const Teacher({

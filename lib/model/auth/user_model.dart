@@ -1,15 +1,27 @@
-import 'auth_provider.dart';
+﻿import 'package:floor/floor.dart';
 
-/// Modelo del usuario autenticado en la aplicación.
+import 'auth_provider.dart';
+import 'package:ubook_app/repository/auth/floor_converters.dart';
+
+/// Modelo del usuario autenticado en la aplicaci├│n.
 ///
-/// Contiene la información del perfil del usuario tras registrarse
-/// o iniciar sesión (con email/contraseña o con Google).
+/// Contiene la informaci├│n del perfil del usuario tras registrarse
+/// o iniciar sesi├│n (con email/contrase├▒a o con Google).
+@TypeConverters([AuthProviderConverter])
+@Entity(
+  tableName: 'users',
+  indices: [
+    Index(value: ['email'], unique: true),
+  ],
+)
 class UserModel {
+  @PrimaryKey()
   final String id;
   final String email;
   final String name;
+  final String password;
   // TODO: Implementar funcionalidad de fecha de nacimiento
-  final DateTime? birthDate;
+  final int? birthDate;
   final String educationalCenter;
   final String career;
   final String city;
@@ -17,13 +29,14 @@ class UserModel {
   final String? profileImageUrl;
   final AuthProvider authProvider;
   final bool isActive;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final int createdAt;
+  final int updatedAt;
 
   const UserModel({
     required this.id,
     required this.email,
     required this.name,
+    this.password = '',
     this.birthDate,
     this.educationalCenter = '',
     this.career = '',
@@ -41,9 +54,8 @@ class UserModel {
       id: json['id'] as String,
       email: json['email'] as String,
       name: json['name'] as String,
-      birthDate: json['birth_date'] != null
-          ? DateTime.parse(json['birth_date'] as String)
-          : null,
+      password: json['password'] as String? ?? '',
+      birthDate: _readTimestamp(json['birth_date']),
       educationalCenter: json['educational_center'] as String? ?? '',
       career: json['career'] as String? ?? '',
       city: json['city'] as String? ?? '',
@@ -52,9 +64,25 @@ class UserModel {
           ? AuthProvider.fromJson(json['auth_provider'] as String)
           : AuthProvider.emailPassword,
       isActive: json['is_active'] as bool? ?? true,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt:
+          _readTimestamp(json['created_at']) ??
+          DateTime.now().millisecondsSinceEpoch,
+      updatedAt:
+          _readTimestamp(json['updated_at']) ??
+          DateTime.now().millisecondsSinceEpoch,
     );
+  }
+
+  static int? _readTimestamp(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) {
+      final parsedInt = int.tryParse(value);
+      if (parsedInt != null) return parsedInt;
+      final parsedDate = DateTime.tryParse(value);
+      return parsedDate?.millisecondsSinceEpoch;
+    }
+    return null;
   }
 
   /// Serializa el modelo a un mapa JSON.
@@ -63,15 +91,22 @@ class UserModel {
       'id': id,
       'email': email,
       'name': name,
-      'birth_date': birthDate?.toIso8601String(),
+      'password': password,
+      'birth_date': birthDate == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(birthDate!).toIso8601String(),
       'educational_center': educationalCenter,
       'career': career,
       'city': city,
       'profile_image_url': profileImageUrl,
       'auth_provider': authProvider.toJson(),
       'is_active': isActive,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': DateTime.fromMillisecondsSinceEpoch(
+        createdAt,
+      ).toIso8601String(),
+      'updated_at': DateTime.fromMillisecondsSinceEpoch(
+        updatedAt,
+      ).toIso8601String(),
     };
   }
 
@@ -79,6 +114,7 @@ class UserModel {
     String? id,
     String? email,
     String? name,
+    String? password,
     DateTime? birthDate,
     String? educationalCenter,
     String? career,
@@ -93,15 +129,16 @@ class UserModel {
       id: id ?? this.id,
       email: email ?? this.email,
       name: name ?? this.name,
-      birthDate: birthDate ?? this.birthDate,
+      password: password ?? this.password,
+      birthDate: birthDate?.millisecondsSinceEpoch ?? this.birthDate,
       educationalCenter: educationalCenter ?? this.educationalCenter,
       career: career ?? this.career,
       city: city ?? this.city,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       authProvider: authProvider ?? this.authProvider,
       isActive: isActive ?? this.isActive,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      createdAt: createdAt?.millisecondsSinceEpoch ?? this.createdAt,
+      updatedAt: updatedAt?.millisecondsSinceEpoch ?? this.updatedAt,
     );
   }
 
