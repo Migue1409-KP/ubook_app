@@ -7,6 +7,8 @@ class AuthLocalStorage {
   static const _lastLoginAtKey = 'auth.last_login_at';
   static const _hasActiveSessionKey = 'auth.has_active_session';
   static const _registerDraftKey = 'auth.register_draft';
+  static const _userIdKey = 'auth.user_id';
+  static const _userNameKey = 'auth.user_name';
 
   Future<void> saveLastLoginEmail(String email) async {
     final prefs = await SharedPreferences.getInstance();
@@ -72,5 +74,39 @@ class AuthLocalStorage {
   Future<void> clearRegisterDraft() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_registerDraftKey);
+  }
+
+  /// Guarda el ID del usuario logueado
+  Future<void> saveUserId(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userIdKey, userId);
+  }
+
+  /// Obtiene el ID del usuario logueado
+  Future<String?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userIdKey);
+  }
+
+  /// Guarda el nombre del usuario logueado
+  Future<void> saveUserName(String userName) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userNameKey, userName);
+  }
+
+  /// Obtiene el nombre del usuario logueado
+  Future<String?> getUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userNameKey);
+  }
+
+  /// Limpia toda la información del usuario (logout)
+  Future<void> clearUserSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userIdKey);
+    await prefs.remove(_userNameKey);
+    await prefs.remove(_lastLoginEmailKey);
+    await prefs.remove(_lastLoginAtKey);
+    await prefs.remove(_hasActiveSessionKey);
   }
 }

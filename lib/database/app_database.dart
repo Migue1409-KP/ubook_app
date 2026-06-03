@@ -23,6 +23,8 @@ import 'package:ubook_app/repository/reviews/review_dao.dart';
 import 'package:ubook_app/repository/teacher_subject/subject_teacher_dao.dart';
 import 'package:ubook_app/model/teachers/teacher.dart';
 import 'package:ubook_app/repository/teachers/teacher_dao.dart';
+import 'package:ubook_app/model/subjects/subject_entity.dart';
+import 'package:ubook_app/repository/subjects/subject_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -162,6 +164,27 @@ final migration8to9 = Migration(8, 9, (database) async {
   );
 });
 
+final migration9to10 = Migration(9, 10, (database) async {
+  await database.execute(
+    'CREATE TABLE IF NOT EXISTS `subjects` ('
+    '`id` TEXT NOT NULL, '
+    '`name` TEXT NOT NULL, '
+    '`credits` INTEGER NOT NULL, '
+    '`hours` INTEGER NOT NULL, '
+    '`description` TEXT, '
+    '`is_sync` INTEGER NOT NULL DEFAULT 0, '
+    '`last_update` INTEGER NOT NULL DEFAULT 0, '
+    'PRIMARY KEY (`id`)'
+    ')',
+  );
+});
+
+final migration10to11 = Migration(10, 11, (database) async {
+  await database.execute(
+    'CREATE INDEX IF NOT EXISTS `idx_subjects_last_update` ON `subjects` (`last_update`)',
+  );
+});
+
 @TypeConverters([
   AuthProviderConverter,
   StringListConverter,
@@ -171,11 +194,12 @@ final migration8to9 = Migration(8, 9, (database) async {
   NotificationStatusConverter,
 ])
 @Database(
-  version: 9,
+  version: 11,
   entities: [
     UserModel,
     Review,
     AttachmentModel,
+    SubjectEntity,
     SubjectTeacher,
     CareerEntity,
     ProcessModel,
@@ -189,6 +213,7 @@ abstract class AppDatabase extends FloorDatabase {
   AttachmentDao get attachmentDao;
   ProcessDao get processDao;
   CareerDao get careerDao;
+  SubjectDao get subjectDao;
   SubjectTeacherDao get subjectTeacherDao;
   NotificationDao get notificationDao;
   TeacherDao get teacherDao;
