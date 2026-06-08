@@ -23,8 +23,8 @@ import 'package:ubook_app/repository/reviews/review_dao.dart';
 import 'package:ubook_app/repository/teacher_subject/subject_teacher_dao.dart';
 import 'package:ubook_app/model/teachers/teacher.dart';
 import 'package:ubook_app/repository/teachers/teacher_dao.dart';
-import 'package:ubook_app/model/subjects/subject_entity.dart';
-import 'package:ubook_app/repository/subjects/subject_dao.dart';
+import 'package:ubook_app/database/entity/subject_entity.dart';
+import 'package:ubook_app/database/dao/subject_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -168,10 +168,10 @@ final migration9to10 = Migration(9, 10, (database) async {
   await database.execute(
     'CREATE TABLE IF NOT EXISTS `subjects` ('
     '`id` TEXT NOT NULL, '
-    '`name` TEXT NOT NULL, '
-    '`credits` INTEGER NOT NULL, '
-    '`hours` INTEGER NOT NULL, '
-    '`description` TEXT, '
+    '`nombre` TEXT NOT NULL, '
+    '`creditos` INTEGER NOT NULL, '
+    '`horas` INTEGER NOT NULL, '
+    '`descripcion` TEXT, '
     '`is_sync` INTEGER NOT NULL DEFAULT 0, '
     '`last_update` INTEGER NOT NULL DEFAULT 0, '
     'PRIMARY KEY (`id`)'
@@ -185,6 +185,65 @@ final migration10to11 = Migration(10, 11, (database) async {
   );
 });
 
+final migration11to12 = Migration(11, 12, (database) async {
+  // is_sync ya debería existir desde migration9to10
+  // Esta migración solo crea el índice y maneja el caso edge
+  try {
+    await database.execute('ALTER TABLE `subjects` ADD COLUMN `is_sync` INTEGER NOT NULL DEFAULT 1');
+  } catch (_) {
+    // La columna ya existe o hay error de SQLite < 3.25.0
+  }
+});
+
+final migration12to13 = Migration(12, 13, (database) async {
+  final columns = await database.rawQuery("PRAGMA table_info(subjects)");
+  final columnNames = columns.map((c) => c['name'] as String).toSet();
+  
+  // Si ya tiene el esquema correcto, no hacer nada
+  if (columnNames.contains('nombre') && columnNames.contains('last_update')) {
+    return;
+  }
+  
+  // Obtener datos existentes
+  final List<Map<String, dynamic>> existingData = 
+      columnNames.contains('id') ? await database.query('subjects') : [];
+  
+  // Crear nueva tabla con esquema correcto
+  await database.execute('DROP TABLE IF EXISTS subjects_new');
+  await database.execute(
+    'CREATE TABLE subjects_new ('
+    '`id` TEXT NOT NULL, '
+    '`nombre` TEXT NOT NULL, '
+    '`creditos` INTEGER NOT NULL, '
+    '`horas` INTEGER NOT NULL, '
+    '`descripcion` TEXT, '
+    '`is_sync` INTEGER NOT NULL DEFAULT 0, '
+    '`last_update` INTEGER NOT NULL DEFAULT 0, '
+    'PRIMARY KEY (`id`)'
+    ')',
+  );
+  
+  // Insertar datos migrados según el esquema detectado
+  for (final row in existingData) {
+    await database.execute(
+      'INSERT OR REPLACE INTO subjects_new (id, nombre, creditos, horas, descripcion, is_sync, last_update) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [
+        row['id'],
+        row['nombre'] ?? row['name'],
+        row['creditos'] ?? row['credits'],
+        row['horas'] ?? row['hours'],
+        row['descripcion'] ?? row['description'],
+        row['is_sync'] ?? row['isSync'] ?? 1,
+        row['last_update'] ?? row['lastUpdate'] ?? 0,
+      ],
+    );
+  }
+  
+  await database.execute('DROP TABLE subjects');
+  await database.execute('ALTER TABLE subjects_new RENAME TO subjects');
+  await database.execute('CREATE INDEX IF NOT EXISTS `idx_subjects_last_update` ON `subjects` (`last_update`)');
+});
+
 @TypeConverters([
   AuthProviderConverter,
   StringListConverter,
@@ -194,7 +253,7 @@ final migration10to11 = Migration(10, 11, (database) async {
   NotificationStatusConverter,
 ])
 @Database(
-  version: 11,
+  version: 13,
   entities: [
     UserModel,
     Review,

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import '../model/subjects/subject_entity.dart';
+import '../database/entity/subject_entity.dart';
 import '../model/reviews/review.dart';
 
 /// Estrategia de sincronización offline-first con Cloud Firestore
@@ -43,8 +43,8 @@ class CloudSyncService {
 
       // Si el documento existe en la nube, comparar timestamps
       if (docSnapshot.exists) {
-        final cloudData = docSnapshot.data() as Map<String, dynamic>?;
-        final cloudLastUpdate = cloudData?['last_update'] as int? ?? 0;
+final cloudData = docSnapshot.data();
+         final cloudLastUpdate = cloudData?['last_update'] as int? ?? 0;
 
         // El registro más reciente gana
         if (cloudLastUpdate > localLastUpdate) {
@@ -56,14 +56,11 @@ class CloudSyncService {
       // Subir versión local a Firestore
       await docRef.set({
         'id': subject.id,
-        'name': subject.name,
-        'credits': subject.credits,
-        'hours': subject.hours,
-        'description': subject.description,
-        'is_sync': true,
+        'nombre': subject.nombre,
+        'creditos': subject.creditos,
+        'horas': subject.horas,
+        'descripcion': subject.descripcion,
         'last_update': now,
-        'created_at': FieldValue.serverTimestamp(),
-        'updated_at': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
       return true;
@@ -94,10 +91,10 @@ class CloudSyncService {
 
       // Si el documento existe en la nube, comparar timestamps
       if (docSnapshot.exists) {
-        final cloudData = docSnapshot.data() as Map<String, dynamic>?;
-        final cloudLastUpdate = cloudData?['updated_at_ms'] as int? ??
-            (cloudData?['created_at_ms'] as int?) ??
-            0;
+final cloudData = docSnapshot.data();
+         final cloudLastUpdate = cloudData?['updated_at_ms'] as int? ??
+             (cloudData?['created_at_ms'] as int?) ??
+             0;
 
         // El registro más reciente gana
         if (cloudLastUpdate > localLastUpdate) {
@@ -141,11 +138,11 @@ class CloudSyncService {
 
       final data = docSnapshot.data() as Map<String, dynamic>;
       return SubjectEntity(
-        id: data['id'] as String,
-        name: data['name'] as String,
-        credits: data['credits'] as int,
-        hours: data['hours'] as int,
-        description: data['description'] as String?,
+        id: data['id'] as String? ?? subjectId,
+        nombre: data['nombre'] as String? ?? (data['name'] as String? ?? ''),
+        creditos: data['creditos'] as int? ?? (data['credits'] as int? ?? 0),
+        horas: data['horas'] as int? ?? (data['hours'] as int? ?? 0),
+        descripcion: data['descripcion'] as String? ?? (data['description'] as String?),
         isSync: data['is_sync'] as bool? ?? true,
         lastUpdate: data['last_update'] as int? ?? 0,
       );

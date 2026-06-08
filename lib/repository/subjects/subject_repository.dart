@@ -1,4 +1,4 @@
-import '../../model/subjects/subject_entity.dart';
+import '../../database/entity/subject_entity.dart';
 
 abstract class SubjectRepository {
   static SubjectRepository? _instance;

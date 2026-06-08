@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../../model/subjects/subject_entity.dart';
+import '../../database/entity/subject_entity.dart';
 import 'floor_subject_repository.dart';
 import 'firestore_subject_repository.dart';
 import 'subject_repository.dart';
@@ -26,19 +26,21 @@ class SyncingSubjectRepository implements SubjectRepository {
 
   @override
   Future<List<SubjectEntity>> getSubjects() async {
+    debugPrint('[SyncingSubjectRepository] consultando remoto...');
+    List<SubjectEntity> subjects = <SubjectEntity>[];
     try {
-      final remoteSubjects = await _remote.getSubjects();
-      if (remoteSubjects.isNotEmpty) {
-        for (final remote in remoteSubjects) {
-          await _upsertLocal(remote);
-        }
+      subjects = await _remote.getSubjects();
+      debugPrint('[SyncingSubjectRepository] remote ${subjects.length}');
+      for (final entity in subjects) {
+        await _upsertLocal(entity);
       }
-      return await _local.getSubjects();
     } catch (e) {
-      debugPrint(
-          '[SyncingSubjectRepository] remote fetch failed, fallback local: $e');
-      return await _local.getSubjects();
+      debugPrint('[SyncingSubjectRepository] remote failed: $e');
+      subjects = <SubjectEntity>[];
     }
+    final local = await _local.getSubjects();
+    debugPrint('[SyncingSubjectRepository] local ${local.length}');
+    return local;
   }
 
   @override
@@ -51,8 +53,7 @@ class SyncingSubjectRepository implements SubjectRepository {
       }
       return await _local.getSubjectById(subjectId);
     } catch (e) {
-      debugPrint(
-          '[SyncingSubjectRepository] remote fetch by id failed: $e');
+      debugPrint('[SyncingSubjectRepository] remote fetch by id failed: $e');
       return await _local.getSubjectById(subjectId);
     }
   }
@@ -62,10 +63,10 @@ class SyncingSubjectRepository implements SubjectRepository {
     final now = DateTime.now().millisecondsSinceEpoch;
     final entity = SubjectEntity(
       id: subject.id,
-      name: subject.name,
-      credits: subject.credits,
-      hours: subject.hours,
-      description: subject.description,
+      nombre: subject.nombre,
+      creditos: subject.creditos,
+      horas: subject.horas,
+      descripcion: subject.descripcion,
       isSync: false,
       lastUpdate: now,
     );
@@ -78,10 +79,10 @@ class SyncingSubjectRepository implements SubjectRepository {
     final now = DateTime.now().millisecondsSinceEpoch;
     final entity = SubjectEntity(
       id: subject.id,
-      name: subject.name,
-      credits: subject.credits,
-      hours: subject.hours,
-      description: subject.description,
+      nombre: subject.nombre,
+      creditos: subject.creditos,
+      horas: subject.horas,
+      descripcion: subject.descripcion,
       isSync: false,
       lastUpdate: now,
     );

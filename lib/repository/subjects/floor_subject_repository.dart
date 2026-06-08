@@ -1,6 +1,5 @@
-import 'package:flutter/foundation.dart';
 import '../../database/app_database.dart';
-import '../../model/subjects/subject_entity.dart';
+import '../../database/entity/subject_entity.dart';
 import 'subject_repository.dart';
 
 class FloorSubjectRepository implements SubjectRepository {
@@ -24,6 +23,7 @@ class FloorSubjectRepository implements SubjectRepository {
   final AppDatabase _database;
   bool _isInitialized = false;
 
+  @override
   Future<void> ensureInitialized() async {
     if (_isInitialized) return;
     _isInitialized = true;
@@ -31,12 +31,12 @@ class FloorSubjectRepository implements SubjectRepository {
 
   @override
   Future<List<SubjectEntity>> getSubjects() async {
-    return await _database.subjectDao.findAllSubjects();
+    return await _database.subjectDao.getAllSubjects();
   }
 
   @override
   Future<SubjectEntity?> getSubjectById(String subjectId) async {
-    return await _database.subjectDao.findSubjectById(subjectId);
+    return await _database.subjectDao.getSubjectById(subjectId);
   }
 
   @override
@@ -51,6 +51,8 @@ class FloorSubjectRepository implements SubjectRepository {
 
   @override
   Future<void> deleteSubject(String subjectId) async {
-    await _database.subjectDao.deleteSubjectById(subjectId);
+    final subject = await _database.subjectDao.getSubjectById(subjectId);
+    if (subject == null) return;
+    await _database.subjectDao.deleteSubject(subject);
   }
 }

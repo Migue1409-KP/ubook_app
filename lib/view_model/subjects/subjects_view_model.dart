@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../model/notification/notification_model.dart';
 import '../../model/subjects/subjects.dart';
@@ -8,11 +9,8 @@ import '../../service/notification_service.dart';
 import '../../utils/session_manager.dart';
 
 class SubjectsViewModel extends ChangeNotifier {
-  SubjectsViewModel() : _subjects = <Subject>[] {
-    _initializeSession();
-  }
 
-  final List<Subject> _subjects;
+  final List<Subject> _subjects = <Subject>[];
   String _searchQuery = '';
   String? _currentUserId;
   bool _isLoading = false;
@@ -20,9 +18,14 @@ class SubjectsViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get currentUserId => _currentUserId;
 
+  Future<void> initialize() async {
+    await _initializeSession();
+  }
+
   Future<void> _initializeSession() async {
     final sessionManager = SessionManager();
     _currentUserId = sessionManager.currentUserId;
+    debugPrint('[SubjectsViewModel] auth=${sessionManager.isAuthenticated} userId=$_currentUserId');
     await loadUserSubjects();
   }
 
@@ -32,21 +35,33 @@ class SubjectsViewModel extends ChangeNotifier {
 
     try {
       final sessionManager = SessionManager();
-      if (!sessionManager.isAuthenticated) {
-        throw Exception('Usuario no autenticado');
+      final isAuthenticated = sessionManager.isAuthenticated;
+      final userId = sessionManager.currentUserId;
+
+      debugPrint('[SubjectsViewModel] cargando userId=$userId auth=$isAuthenticated');
+
+      if (!isAuthenticated || userId == null || userId.isEmpty) {
+        _subjects.clear();
+        debugPrint('[SubjectsViewModel] sin sesión, lista vacía');
+        return;
       }
 
-      _currentUserId = sessionManager.currentUserId;
+      _currentUserId = userId;
 
-      final entities = await SubjectRepository.instance.getSubjects();
-      final subjects = entities
-          .map((entity) => Subject.fromEntity(entity))
-          .toList();
-      _subjects.clear();
-      _subjects.addAll(subjects);
+      List<Subject> loadedSubjects = <Subject>[];
+      try {
+        final entities = await SubjectRepository.instance.getSubjects();
+        loadedSubjects = entities.map(Subject.fromEntity).toList();
+      } catch (e) {
+        debugPrint('[SubjectsViewModel] error al consultar SubjectRepository: $e');
+      }
+
+      _subjects
+        ..clear()
+        ..addAll(loadedSubjects);
     } catch (e) {
       debugPrint('Error al cargar materias del usuario: $e');
-      rethrow;
+      _subjects.clear();
     } finally {
       _isLoading = false;
       notifyListeners();
