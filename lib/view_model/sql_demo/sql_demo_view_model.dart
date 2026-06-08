@@ -69,7 +69,11 @@ class SqlDemoViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('[SqlDemoViewModel] Executing listDemoProcesses()...');
       final result = await _connector.listDemoProcesses().execute();
+      
+      debugPrint('[SqlDemoViewModel] listDemoProcesses result data: ${result.data}');
+
       _processes = result.data.demoProcesses.map((p) => DemoProcessItem(
         id: p.id,
         name: p.name,
@@ -81,7 +85,8 @@ class SqlDemoViewModel extends ChangeNotifier {
 
       _isConnected = true;
       _lastOperation = 'Conectado a Cloud SQL (ubooksql) ✓';
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('[SqlDemoViewModel] Error loading processes: $e\n$stack');
       _error = 'Error al conectar con Data Connect: $e';
       _isConnected = false;
       _lastOperation = 'Error de conexión';
@@ -95,24 +100,30 @@ class SqlDemoViewModel extends ChangeNotifier {
     required String name,
     required String description,
     required String processType,
+    bool isActive = true,
   }) async {
     _setLoading(true);
     _error = null;
     _lastOperation =
-        'INSERT INTO DemoProcess (name, description, processType) VALUES (...)';
+        'INSERT INTO DemoProcess (name, description, processType, isActive) VALUES (...)';
     notifyListeners();
 
     try {
-      await _connector.createDemoProcess(
+      debugPrint('[SqlDemoViewModel] Executing createDemoProcess($name, $description, $processType, isActive=$isActive)...');
+      final result = await _connector.createDemoProcess(
         name: name,
         description: description,
         processType: processType,
+        isActive: isActive,
       ).execute();
+
+      debugPrint('[SqlDemoViewModel] createDemoProcess result data: ${result.data}');
 
       _lastOperation = 'Proceso creado en Cloud SQL ✓';
       // Recargar lista después de crear para asegurar consistencia
       await loadProcesses();
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('[SqlDemoViewModel] Error creating process: $e\n$stack');
       _error = 'Error al crear proceso: $e';
       _lastOperation = 'Error al insertar';
       _setLoading(false);
@@ -178,18 +189,28 @@ class SqlDemoViewModel extends ChangeNotifier {
 
     try {
       final defaultSeed = buildDefaultProcessSeed();
+      debugPrint('[SqlDemoViewModel] Seeding ${defaultSeed.length} processes...');
 
-      for (final process in defaultSeed) {
-        await _connector.createDemoProcess(
+      for (int i = 0; i < defaultSeed.length; i++) {
+        final process = defaultSeed[i];
+        _lastOperation = 'Sembrando (${i + 1}/${defaultSeed.length}): ${process.name}...';
+        notifyListeners();
+
+        debugPrint('[SqlDemoViewModel] Seeding process ${process.name} (isActive=${process.isActive})...');
+        final result = await _connector.createDemoProcess(
           name: process.name,
           description: process.description,
           processType: process.processType,
+          isActive: process.isActive,
         ).execute();
+
+        debugPrint('[SqlDemoViewModel] Seed process ${process.name} result data: ${result.data}');
       }
 
       _lastOperation = '${defaultSeed.length} procesos académicos cargados en Cloud SQL ✓';
       await loadProcesses();
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('[SqlDemoViewModel] Error seeding processes: $e\n$stack');
       _error = 'Error al sembrar procesos: $e';
       _lastOperation = 'Error al sembrar';
       _setLoading(false);

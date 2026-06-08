@@ -22,8 +22,8 @@ part 'get_demo_process.dart';
 class UbookSqlConnectorConnector {
   
   
-  CreateDemoProcessVariablesBuilder createDemoProcess ({required String name, required String description, required String processType, }) {
-    return CreateDemoProcessVariablesBuilder(dataConnect, name: name,description: description,processType: processType,);
+  CreateDemoProcessVariablesBuilder createDemoProcess ({required String name, required String description, required String processType, bool isActive = true, }) {
+    return CreateDemoProcessVariablesBuilder(dataConnect, name: name,description: description,processType: processType,isActive: isActive,);
   }
   
   

@@ -15,14 +15,6 @@ class SqlDemoView extends StatefulWidget {
 
 class _SqlDemoViewState extends State<SqlDemoView> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SqlDemoViewModel>().loadProcesses();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => SqlDemoViewModel(),

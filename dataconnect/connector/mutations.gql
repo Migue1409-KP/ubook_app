@@ -3,11 +3,13 @@ mutation CreateDemoProcess(
   $name: String!
   $description: String!
   $processType: String!
+  $isActive: Boolean! = true
 ) @auth(level: PUBLIC) {
   demoProcess_insert(data: {
     name: $name
     description: $description
     processType: $processType
+    isActive: $isActive
   })
 }
 
