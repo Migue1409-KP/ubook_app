@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:ubook_app/dataconnect/ubook_sql_connector/ubook_sql_connector.dart';
+import 'package:ubook_app/repository/process/process_seed_data.dart';
 
 /// Modelo local para representar un proceso del demo Data Connect.
 class DemoProcessItem {
@@ -168,32 +169,25 @@ class SqlDemoViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Siembra los procesos de ejemplo en Cloud SQL.
+  /// Siembra los procesos de ejemplo reales en Cloud SQL.
   Future<void> seedExampleProcesses() async {
     _setLoading(true);
     _error = null;
-    _lastOperation = 'Sembrando procesos de ejemplo en Cloud SQL...';
+    _lastOperation = 'Sembrando procesos de ejemplo reales en Cloud SQL...';
     notifyListeners();
 
     try {
-      final examples = [
-        {'name': 'Inscripción de Carrera', 'description': 'Proceso para inscribir una nueva carrera universitaria.', 'processType': 'career'},
-        {'name': 'Solicitud de Certificado', 'description': 'Solicitud de certificado oficial que acredita estar cursando una carrera.', 'processType': 'career'},
-        {'name': 'Cancelación de Materia', 'description': 'Permite cancelar una materia antes de la fecha límite.', 'processType': 'subject'},
-        {'name': 'Examen Supletorio', 'description': 'Proceso para solicitar un examen supletorio.', 'processType': 'subject'},
-        {'name': 'Homologación de Estudios', 'description': 'Validar y homologar estudios realizados en otra institución.', 'processType': 'educationalCenter'},
-        {'name': 'Beca Institucional', 'description': 'Permite aplicar a becas internas por rendimiento.', 'processType': 'educationalCenter'},
-      ];
+      final defaultSeed = buildDefaultProcessSeed();
 
-      for (final ex in examples) {
+      for (final process in defaultSeed) {
         await _connector.createDemoProcess(
-          name: ex['name']!,
-          description: ex['description']!,
-          processType: ex['processType']!,
+          name: process.name,
+          description: process.description,
+          processType: process.processType,
         ).execute();
       }
 
-      _lastOperation = '${examples.length} procesos de ejemplo creados en Cloud SQL ✓';
+      _lastOperation = '${defaultSeed.length} procesos académicos cargados en Cloud SQL ✓';
       await loadProcesses();
     } catch (e) {
       _error = 'Error al sembrar procesos: $e';
