@@ -96,7 +96,7 @@ class _$AppDatabase extends AppDatabase {
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 11,
+      version: 13,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -118,7 +118,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `attachments` (`id` TEXT, `file_name` TEXT NOT NULL, `file_type` TEXT NOT NULL, `uploaded_by_id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `file_path` TEXT, `file_size` INTEGER, `uploaded_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `subjects` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `credits` INTEGER NOT NULL, `hours` INTEGER NOT NULL, `description` TEXT, `is_sync` INTEGER NOT NULL, `last_update` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `subjects` (`id` TEXT NOT NULL, `nombre` TEXT NOT NULL, `creditos` INTEGER NOT NULL, `horas` INTEGER NOT NULL, `descripcion` TEXT, `is_sync` INTEGER NOT NULL, `last_update` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `subject_teachers` (`id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `subject_nombre` TEXT NOT NULL, `subject_creditos` INTEGER NOT NULL, `subject_horas` INTEGER NOT NULL, `teacher_id` TEXT NOT NULL, `teacher_name` TEXT NOT NULL, `teacher_email` TEXT NOT NULL, `is_active` INTEGER NOT NULL, `periodo_academico_id` TEXT, `periodo_etiqueta` TEXT, `created_at_ms` INTEGER NOT NULL, `updated_at_ms` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
@@ -914,10 +914,10 @@ class _$SubjectDao extends SubjectDao {
             'subjects',
             (SubjectEntity item) => <String, Object?>{
                   'id': item.id,
-                  'name': item.name,
-                  'credits': item.credits,
-                  'hours': item.hours,
-                  'description': item.description,
+                  'nombre': item.nombre,
+                  'creditos': item.creditos,
+                  'horas': item.horas,
+                  'descripcion': item.descripcion,
                   'is_sync': item.isSync ? 1 : 0,
                   'last_update': item.lastUpdate
                 }),
@@ -927,10 +927,23 @@ class _$SubjectDao extends SubjectDao {
             ['id'],
             (SubjectEntity item) => <String, Object?>{
                   'id': item.id,
-                  'name': item.name,
-                  'credits': item.credits,
-                  'hours': item.hours,
-                  'description': item.description,
+                  'nombre': item.nombre,
+                  'creditos': item.creditos,
+                  'horas': item.horas,
+                  'descripcion': item.descripcion,
+                  'is_sync': item.isSync ? 1 : 0,
+                  'last_update': item.lastUpdate
+                }),
+        _subjectEntityDeletionAdapter = DeletionAdapter(
+            database,
+            'subjects',
+            ['id'],
+            (SubjectEntity item) => <String, Object?>{
+                  'id': item.id,
+                  'nombre': item.nombre,
+                  'creditos': item.creditos,
+                  'horas': item.horas,
+                  'descripcion': item.descripcion,
                   'is_sync': item.isSync ? 1 : 0,
                   'last_update': item.lastUpdate
                 });
@@ -945,49 +958,64 @@ class _$SubjectDao extends SubjectDao {
 
   final UpdateAdapter<SubjectEntity> _subjectEntityUpdateAdapter;
 
+  final DeletionAdapter<SubjectEntity> _subjectEntityDeletionAdapter;
+
   @override
-  Future<List<SubjectEntity>> findAllSubjects() async {
-    return _queryAdapter.queryList('SELECT * FROM subjects',
+  Future<List<SubjectEntity>> getAllSubjects() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM subjects ORDER BY last_update DESC',
         mapper: (Map<String, Object?> row) => SubjectEntity(
             id: row['id'] as String,
-            name: row['name'] as String,
-            credits: row['credits'] as int,
-            hours: row['hours'] as int,
-            description: row['description'] as String?,
+            nombre: row['nombre'] as String,
+            creditos: row['creditos'] as int,
+            horas: row['horas'] as int,
+            descripcion: row['descripcion'] as String?,
             isSync: (row['is_sync'] as int) != 0,
             lastUpdate: row['last_update'] as int));
   }
 
   @override
-  Future<SubjectEntity?> findSubjectById(String id) async {
+  Future<SubjectEntity?> getSubjectById(String id) async {
     return _queryAdapter.query('SELECT * FROM subjects WHERE id = ?1',
         mapper: (Map<String, Object?> row) => SubjectEntity(
             id: row['id'] as String,
-            name: row['name'] as String,
-            credits: row['credits'] as int,
-            hours: row['hours'] as int,
-            description: row['description'] as String?,
+            nombre: row['nombre'] as String,
+            creditos: row['creditos'] as int,
+            horas: row['horas'] as int,
+            descripcion: row['descripcion'] as String?,
             isSync: (row['is_sync'] as int) != 0,
             lastUpdate: row['last_update'] as int),
         arguments: [id]);
   }
 
   @override
-  Future<void> deleteSubjectById(String id) async {
-    await _queryAdapter
-        .queryNoReturn('DELETE FROM subjects WHERE id = ?1', arguments: [id]);
+  Future<List<SubjectEntity>> getPendingSyncSubjects() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM subjects WHERE is_sync = 0 ORDER BY last_update DESC',
+        mapper: (Map<String, Object?> row) => SubjectEntity(
+            id: row['id'] as String,
+            nombre: row['nombre'] as String,
+            creditos: row['creditos'] as int,
+            horas: row['horas'] as int,
+            descripcion: row['descripcion'] as String?,
+            isSync: (row['is_sync'] as int) != 0,
+            lastUpdate: row['last_update'] as int));
   }
 
   @override
   Future<void> insertSubject(SubjectEntity subject) async {
     await _subjectEntityInsertionAdapter.insert(
-        subject, OnConflictStrategy.replace);
+        subject, OnConflictStrategy.abort);
   }
 
   @override
   Future<void> updateSubject(SubjectEntity subject) async {
-    await _subjectEntityUpdateAdapter.update(
-        subject, OnConflictStrategy.replace);
+    await _subjectEntityUpdateAdapter.update(subject, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> deleteSubject(SubjectEntity subject) async {
+    await _subjectEntityDeletionAdapter.delete(subject);
   }
 }
 
