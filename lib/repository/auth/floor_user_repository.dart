@@ -63,7 +63,11 @@ class FloorUserRepository implements UserRepository {
 
   @override
   Future<void> insertUser(UserModel user) async {
-    await _database.userDao.insertUser(user);
+    try {
+      await _database.userDao.insertUser(user);
+    } catch (e) {
+      print('[FloorUserRepository] insertUser ignored duplicate: $e');
+    }
   }
 
   @override

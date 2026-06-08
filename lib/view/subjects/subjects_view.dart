@@ -21,6 +21,13 @@ class _SubjectsViewState extends State<SubjectsView> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await _viewModel.initialize();
+      } catch (e) {
+        debugPrint('Error inicializando SubjectsView: $e');
+      }
+    });
     _viewModel.addListener(_refresh);
   }
 

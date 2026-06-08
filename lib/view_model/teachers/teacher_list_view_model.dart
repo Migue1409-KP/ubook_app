@@ -6,7 +6,6 @@ import '../../model/teachers/teacher.dart';
 import '../../service/notification_service.dart';
 import '../../repository/teachers/floor_teacher_repository.dart';
 import '../../repository/teachers/teacher_preferences.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class TeacherListViewModel extends ChangeNotifier {
   List<Teacher> _allTeachers = [];

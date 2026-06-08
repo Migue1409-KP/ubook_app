@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Gestor centralizado de sesión de usuario.
@@ -38,6 +39,7 @@ class SessionManager {
     _currentUserEmail = prefs.getString(_userEmailKey);
     _currentUserName = prefs.getString(_userNameKey);
     _currentUserPhotoUrl = prefs.getString(_userPhotoUrlKey);
+    debugPrint('SessionManager.initialize() userId=$_currentUserId email=$_currentUserEmail');
   }
 
   /// Obtiene el ID del usuario actualmente logueado
@@ -76,6 +78,7 @@ class SessionManager {
     if (photoUrl != null) {
       await prefs.setString(_userPhotoUrlKey, photoUrl);
     }
+    debugPrint('SessionManager.saveUserSession() userId=$userId email=$email');
   }
 
   /// Limpia la sesión actual (logout)

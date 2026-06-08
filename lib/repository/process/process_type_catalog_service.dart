@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../../model/process/process_model.dart';
 import '../../model/process/process_type_option.dart';
 
 class ProcessTypeCatalogService {

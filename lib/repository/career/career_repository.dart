@@ -13,11 +13,11 @@ abstract class CareerRepository {
 class FloorCareerRepository implements CareerRepository {
   FloorCareerRepository._(this._database);
 
-  static late final FloorCareerRepository instance;
+  static FloorCareerRepository? _instance;
 
   static FloorCareerRepository initialize(AppDatabase database) {
-    instance = FloorCareerRepository._(database);
-    return instance;
+    _instance ??= FloorCareerRepository._(database);
+    return _instance!;
   }
 
   final AppDatabase _database;

@@ -7,11 +7,21 @@ import 'notification_seed_data.dart';
 class FloorNotificationRepository implements NotificationRepository {
   FloorNotificationRepository._(this._database);
 
-  static late final FloorNotificationRepository instance;
+  static FloorNotificationRepository? _instance;
+
+  static FloorNotificationRepository get instance {
+    final i = _instance;
+    if (i == null) {
+      throw StateError(
+        'FloorNotificationRepository.initialize() no fue llamado',
+      );
+    }
+    return i;
+  }
 
   static FloorNotificationRepository initialize(AppDatabase database) {
-    instance = FloorNotificationRepository._(database);
-    return instance;
+    _instance ??= FloorNotificationRepository._(database);
+    return _instance!;
   }
 
   final AppDatabase _database;

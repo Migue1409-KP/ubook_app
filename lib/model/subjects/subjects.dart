@@ -1,4 +1,4 @@
-import 'subject_entity.dart';
+import 'package:ubook_app/database/entity/subject_entity.dart';
 
 class Subject {
   final String id;
@@ -22,11 +22,11 @@ class Subject {
   factory Subject.fromEntity(SubjectEntity entity) {
     return Subject(
       id: entity.id,
-      nombre: entity.name,
-      horas: entity.hours,
-      creditos: entity.credits,
+      nombre: entity.nombre,
+      horas: entity.horas,
+      creditos: entity.creditos,
       prerrequisitos: const [],
-      contenido: entity.description ?? '',
+      contenido: entity.descripcion ?? '',
       lastUpdate: entity.lastUpdate,
     );
   }
@@ -35,10 +35,10 @@ class Subject {
     final now = DateTime.now().millisecondsSinceEpoch;
     return SubjectEntity(
       id: id,
-      name: nombre,
-      credits: creditos,
-      hours: horas,
-      description: contenido.isEmpty ? null : contenido,
+      nombre: nombre,
+      creditos: creditos,
+      horas: horas,
+      descripcion: contenido.isEmpty ? null : contenido,
       isSync: isSync,
       lastUpdate: lastUpdate ?? now,
     );

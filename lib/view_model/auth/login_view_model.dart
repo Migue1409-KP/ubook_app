@@ -6,6 +6,7 @@ import 'package:ubook_app/repository/auth/auth_local_storage.dart';
 import 'package:ubook_app/repository/auth/firebase_auth_service.dart';
 import 'package:ubook_app/repository/auth/syncing_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
+import 'package:ubook_app/utils/session_manager.dart';
 
 class LoginViewModel extends ChangeNotifier {
   final AuthLocalStorage _localStorage;
@@ -67,32 +68,51 @@ class LoginViewModel extends ChangeNotifier {
     try {
       final email = emailController.text.trim();
       final password = passwordController.text.trim();
-
+      debugPrint('[LoginViewModel] intento login email=$email');
       final firebaseUser = await _authService.signInWithEmail(email, password);
+      debugPrint('[LoginViewModel] firebaseUser=${firebaseUser?.uid}');
       if (firebaseUser == null) {
         errorMessage = 'Error al iniciar sesión';
         isLoading = false;
-        notifyListeners();
+        _safeNotify();
         return false;
       }
 
+      debugPrint('[LoginViewModel] antes de _ensureLocalProfile');
       await _ensureLocalProfile(firebaseUser, app_auth.AuthProvider.emailPassword);
+      debugPrint('[LoginViewModel] antes de saveLastLoginEmail');
       await _localStorage.saveLastLoginEmail(email);
       await _localStorage.saveLastLoginAt(DateTime.now());
+      debugPrint('[LoginViewModel] antes de saveUserSession');
+      await SessionManager().saveUserSession(
+        userId: firebaseUser.uid,
+        email: email,
+        name: firebaseUser.displayName,
+        photoUrl: firebaseUser.photoURL,
+      );
+      debugPrint('[LoginViewModel] sesión guardada correctamente');
 
       isLoading = false;
-      notifyListeners();
+      _safeNotify();
       return true;
     } on FirebaseAuthException catch (e) {
       errorMessage = FirebaseAuthService.mapError(e);
       isLoading = false;
-      notifyListeners();
+      _safeNotify();
       return false;
     } catch (e) {
       errorMessage = 'Error al iniciar sesión';
       isLoading = false;
-      notifyListeners();
+      _safeNotify();
       return false;
+    }
+  }
+
+  void _safeNotify() {
+    try {
+      notifyListeners();
+    } catch (e) {
+      debugPrint('LoginViewModel _safeNotify failed: $e');
     }
   }
 
@@ -112,6 +132,12 @@ class LoginViewModel extends ChangeNotifier {
       await _ensureLocalProfile(firebaseUser, app_auth.AuthProvider.google);
       await _localStorage.saveLastLoginEmail(firebaseUser.email ?? '');
       await _localStorage.saveLastLoginAt(DateTime.now());
+      await SessionManager().saveUserSession(
+        userId: firebaseUser.uid,
+        email: firebaseUser.email ?? '',
+        name: firebaseUser.displayName,
+        photoUrl: firebaseUser.photoURL,
+      );
 
       isLoading = false;
       notifyListeners();
@@ -131,24 +157,35 @@ class LoginViewModel extends ChangeNotifier {
     final email = firebaseUser.email;
     if (email == null) return;
 
-    final existing = await _userRepository.findByEmail(email);
+    UserModel? existing;
+    try {
+      existing = await _userRepository.findByEmail(email);
+    } catch (e) {
+      debugPrint('[LoginViewModel] findByEmail failed: $e');
+      existing = null;
+    }
     if (existing != null) return;
 
     final now = DateTime.now();
-    await _userRepository.insertUser(
-      UserModel(
-        id: firebaseUser.uid,
-        email: email,
-        name: firebaseUser.displayName ?? email.split('@').first,
-        educationalCenter: '',
-        career: '',
-        city: '',
-        authProvider: provider,
-        isActive: true,
-        createdAt: now.millisecondsSinceEpoch,
-        updatedAt: now.millisecondsSinceEpoch,
-      ),
-    );
+    try {
+      await _userRepository.insertUser(
+        UserModel(
+          id: firebaseUser.uid,
+          email: email,
+          name: firebaseUser.displayName ?? email.split('@').first,
+          educationalCenter: '',
+          career: '',
+          city: '',
+          authProvider: provider,
+          isActive: true,
+          createdAt: now.millisecondsSinceEpoch,
+          updatedAt: now.millisecondsSinceEpoch,
+        ),
+      );
+    } catch (e) {
+      debugPrint('[LoginViewModel] insertUser failed: $e');
+      rethrow;
+    }
   }
 
   @override

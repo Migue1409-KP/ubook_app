@@ -1,5 +1,3 @@
-import 'process_model.dart';
-
 class ProcessTypeOption {
   const ProcessTypeOption({
     required this.id,
