@@ -2,7 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:ubook_app/database/app_database.dart';
+import 'package:ubook_app/database/mock_app_database.dart';
 import 'package:ubook_app/firebase_options.dart';
 import 'package:ubook_app/view/subjects/subjects_view.dart';
 import 'package:ubook_app/repository/attachments/attachment_repository.dart';
@@ -33,15 +35,21 @@ import 'view_model/educational_center/educational_center_count_provider.dart';
 import 'view_model/teachers/teacher_count_provider.dart';
 import 'view/admin_user/admin_users_view.dart';
 import 'package:ubook_app/repository/career/career_repository_provider.dart';
+import 'package:ubook_app/view/sql_demo/sql_demo_view.dart';
+import 'package:ubook_app/view_model/sql_demo/sql_demo_view_model.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  final database =
-      await $FloorAppDatabase.databaseBuilder('ubook_app.db').addMigrations([
+    final AppDatabase database;
+    if (kIsWeb) {
+      database = MockAppDatabase();
+    } else {
+      database = await $FloorAppDatabase.databaseBuilder('ubook_app.db').addMigrations([
         migration1to2,
         migration2to3,
         migration3to4,
@@ -50,51 +58,130 @@ Future<void> main() async {
         migration6to7,
         migration7to8,
         migration8to9,
-      ])
-      .build();
-  final localUserRepository = FloorUserRepository.initialize(database);
-  final remoteUserRepository = FirestoreUserRepository.initialize();
-  final userRepository = SyncingUserRepository.initialize(
-    localUserRepository,
-    remoteUserRepository,
-  );
-  await userRepository.ensureInitialized();
-  final notificationRepository = FloorNotificationRepository.initialize(
-    database,
-  );
-  await notificationRepository.ensureInitialized();
-  await ReviewRepositoryProvider.initialize(database);
+      ]).build();
+    }
+    final localUserRepository = FloorUserRepository.initialize(database);
+    final remoteUserRepository = FirestoreUserRepository.initialize();
+    final userRepository = SyncingUserRepository.initialize(
+      localUserRepository,
+      remoteUserRepository,
+    );
+    await userRepository.ensureInitialized();
+    final notificationRepository = FloorNotificationRepository.initialize(
+      database,
+    );
+    await notificationRepository.ensureInitialized();
+    await ReviewRepositoryProvider.initialize(database);
 
-  // ── Repositorio de adjuntos ───────────────────────────────────────────────
-  // Implementación activa: almacenamiento local (Floor + SQLite).
-  //
-  // TODO: cuando la cuenta de Firebase Storage esté disponible, reemplazar
-  // estas dos líneas por la implementación Firebase:
-  //
-  //   import 'package:ubook_app/repository/attachments/firebase_attachment_repository.dart';
-  //
-  //   AttachmentRepository.setCurrent(
-  //     FirebaseAttachmentRepository.initialize(database),
-  //   );
-  //
-  // Firebase.initializeApp() ya se llama arriba, así que no se necesita
-  // ningún cambio adicional fuera de este bloque.
-  AttachmentRepository.setCurrent(
-    FloorAttachmentRepository.initialize(database),
-  );
-  final localProcessRepository = FloorProcessRepository.initialize(database);
-  final remoteProcessRepository = FirestoreProcessRepository.initialize();
-  final processRepository = SyncingProcessRepository.initialize(
-    localProcessRepository,
-    remoteProcessRepository,
-  );
-  await processRepository.ensureInitialized();
-  ProcessRepository.setInstance(processRepository);
-  await CareerRepositoryProvider.initialize(database);
-  FloorSubjectTeacherRepository.initialize(database);
-  FloorTeacherRepository.initialize(database);
+    // ── Repositorio de adjuntos ───────────────────────────────────────────────
+    // Implementación activa: almacenamiento local (Floor + SQLite).
+    //
+    // TODO: cuando la cuenta de Firebase Storage esté disponible, reemplazar
+    // estas dos líneas por la implementación Firebase:
+    //
+    //   import 'package:ubook_app/repository/attachments/firebase_attachment_repository.dart';
+    //
+    //   AttachmentRepository.setCurrent(
+    //     FirebaseAttachmentRepository.initialize(database),
+    //   );
+    //
+    // Firebase.initializeApp() ya se llama arriba, así que no se necesita
+    // ningún cambio adicional fuera de este bloque.
+    AttachmentRepository.setCurrent(
+      FloorAttachmentRepository.initialize(database),
+    );
+    final localProcessRepository = FloorProcessRepository.initialize(database);
+    final remoteProcessRepository = FirestoreProcessRepository.initialize();
+    final processRepository = SyncingProcessRepository.initialize(
+      localProcessRepository,
+      remoteProcessRepository,
+    );
+    await processRepository.ensureInitialized();
+    ProcessRepository.setInstance(processRepository);
+    await CareerRepositoryProvider.initialize(database);
+    FloorSubjectTeacherRepository.initialize(database);
+    FloorTeacherRepository.initialize(database);
 
-  runApp(MyApp(database: database, userRepository: userRepository));
+    runApp(MyApp(database: database, userRepository: userRepository));
+  } catch (e, stack) {
+    debugPrint('CRITICAL INITIALIZATION ERROR: $e\n$stack');
+    runApp(MaterialApp(
+      home: Scaffold(
+        backgroundColor: const Color(0xFFB71C1C),
+        body: Center(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                    child: Icon(Icons.error_outline, size: 64, color: Colors.white),
+                  ),
+                  const SizedBox(height: 16),
+                  const Center(
+                    child: Text(
+                      'UBook - Error de Inicialización',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Excepción:',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      e.toString(),
+                      style: const TextStyle(
+                        color: Colors.yellow,
+                        fontFamily: 'monospace',
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Stack Trace:',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      stack.toString(),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontFamily: 'monospace',
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -134,6 +221,10 @@ class MyApp extends StatelessWidget {
             child: const PQRSPage(),
           ),
           '/admin_user': (context) => const AdminUsersView(),
+          '/sql_demo': (context) => ChangeNotifierProvider(
+            create: (_) => SqlDemoViewModel(),
+            child: const SqlDemoView(),
+          ),
           '/subjects': (context) => SubjectsView(),
         },
         home: const AuthGate(),
