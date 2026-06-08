@@ -255,6 +255,21 @@ class _LoginViewState extends State<LoginView> {
                       },
                       animationDuration: const Duration(milliseconds: 1700),
                     ),
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      icon: const Icon(Icons.storage, color: Colors.blueAccent),
+                      label: const Text(
+                        'Probar SQL Connect Demo →',
+                        style: TextStyle(
+                          color: Colors.blueAccent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/sql_demo');
+                      },
+                    ),
                     const SizedBox(height: 20),
 
                     // ── Texto legal ──

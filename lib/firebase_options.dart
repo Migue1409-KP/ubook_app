@@ -41,13 +41,13 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBK7WLyd271CBIR2vfoAPN6LNrUyX05Tws',
-    appId: '1:342045930924:web:2962e21d2525f6a4abb609',
-    messagingSenderId: '342045930924',
-    projectId: 'ubook-82861',
-    authDomain: 'ubook-82861.firebaseapp.com',
-    storageBucket: 'ubook-82861.firebasestorage.app',
-    measurementId: 'G-QKRHEKKQ99',
+    apiKey: 'AIzaSyC-X8xd8jOFd4cq3apQtZrcNR_X2tMYdWk',
+    appId: '1:52724083703:web:163c0b4af88971f94a9cf2',
+    messagingSenderId: '52724083703',
+    projectId: 'ubook-sql',
+    authDomain: 'ubook-sql.firebaseapp.com',
+    storageBucket: 'ubook-sql.firebasestorage.app',
+    measurementId: 'G-9QYK492FGT',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
