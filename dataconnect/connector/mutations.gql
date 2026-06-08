@@ -1,0 +1,29 @@
+# Crear un nuevo proceso académico
+mutation CreateDemoProcess(
+  $name: String!
+  $description: String!
+  $processType: String!
+) @auth(level: PUBLIC) {
+  demoProcess_insert(data: {
+    name: $name
+    description: $description
+    processType: $processType
+  })
+}
+
+# Actualizar nombre o estado activo de un proceso
+mutation UpdateDemoProcess(
+  $id: UUID!
+  $name: String
+  $isActive: Boolean
+) @auth(level: PUBLIC) {
+  demoProcess_update(id: $id, data: {
+    name: $name
+    isActive: $isActive
+  })
+}
+
+# Eliminar un proceso por ID
+mutation DeleteDemoProcess($id: UUID!) @auth(level: PUBLIC) {
+  demoProcess_delete(id: $id)
+}

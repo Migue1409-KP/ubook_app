@@ -1,0 +1,13 @@
+"""
+DemoProcess — tabla de procesos académicos para el demo de Firebase Data Connect.
+Se mapea automáticamente a la tabla `DemoProcess` en Cloud SQL PostgreSQL (ubooksql).
+"""
+type DemoProcess @table {
+  id: UUID! @default(expr: "uuidV4()")
+  name: String!
+  description: String!
+  processType: String!
+  isActive: Boolean! @default(expr: "true")
+  createdAt: Timestamp! @default(expr: "request.time")
+  updatedAt: Timestamp
+}

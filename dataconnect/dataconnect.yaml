@@ -1,0 +1,11 @@
+specVersion: "v1beta"
+serviceId: "ubook-sql-service"
+location: "us-central1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "ubooksql"
+      cloudSql:
+        instanceId: "ubook-sql-instance"
+connectorDirs: ["./connector"]

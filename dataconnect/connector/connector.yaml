@@ -1,0 +1,6 @@
+connectorId: "ubook-sql-connector"
+authMode: "PUBLIC"
+generate:
+  dartSdk:
+    outputDir: "../../lib/dataconnect/ubook_sql_connector"
+    package: "ubook_sql_connector"

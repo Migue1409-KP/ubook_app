@@ -1,0 +1,25 @@
+# Listar todos los procesos (más recientes primero)
+query ListDemoProcesses @auth(level: PUBLIC) {
+  demoProcesses(orderBy: { createdAt: DESC }) {
+    id
+    name
+    description
+    processType
+    isActive
+    createdAt
+    updatedAt
+  }
+}
+
+# Obtener un proceso por ID
+query GetDemoProcess($id: UUID!) @auth(level: PUBLIC) {
+  demoProcess(id: $id) {
+    id
+    name
+    description
+    processType
+    isActive
+    createdAt
+    updatedAt
+  }
+}
