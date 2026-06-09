@@ -1,10 +1,8 @@
-import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:open_file/open_file.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 import '../../model/attachments/attachment_model.dart';
 import '../../repository/attachments/attachment_local_storage.dart';
@@ -36,6 +34,11 @@ class AttachmentsViewModel extends ChangeNotifier {
 
   final List<AttachmentModel> _attachments = [];
   List<AttachmentModel> get attachments => List.unmodifiable(_attachments);
+
+  /// Mensaje de error para mostrar en la UI tras un fallo al cargar/guardar.
+  String? errorMessage;
+
+  bool isLoading = false;
 
   /// Carga el nombre del archivo guardado en SharedPreferences al arrancar.
   Future<void> _loadCustomFileName() async {
@@ -88,12 +91,22 @@ class AttachmentsViewModel extends ChangeNotifier {
 
   /// Carga desde la BD los adjuntos asociados a [subjectId].
   Future<void> loadBySubject(String subjectId) async {
-    _attachments
-      ..clear()
-      ..addAll(
-        await AttachmentRepository.current.findBySubjectId(subjectId),
-      );
+    isLoading = true;
+    errorMessage = null;
     notifyListeners();
+    try {
+      _attachments
+        ..clear()
+        ..addAll(
+          await AttachmentRepository.current.findBySubjectId(subjectId),
+        );
+    } catch (e) {
+      errorMessage = 'Error al cargar adjuntos: $e';
+      debugPrint('loadBySubject: $e');
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> deleteAttachment(int index) async {
@@ -191,30 +204,24 @@ class AttachmentsViewModel extends ChangeNotifier {
     openingId = attachment.id;
     notifyListeners();
     try {
-      String localPath;
-
-      // Las rutas absolutas apuntan al filesystem local → abrir directamente.
-      // Las rutas relativas apuntan a Firebase Storage → descargar primero.
+      // Ruta absoluta → archivo local, abrir directamente.
       if (p.isAbsolute(filePath)) {
-        localPath = filePath;
-      } else {
-        // Descarga desde Firebase Storage al directorio temporal del dispositivo.
-        // El SO puede limpiar estos archivos; no consumen espacio permanente.
-        final bytes =
-            await AttachmentRepository.current.downloadFileBytes(attachment);
-        if (bytes == null) return 'No se pudo descargar el archivo';
-
-        final tmpDir = await getTemporaryDirectory();
-        final extWithDot = p.extension(filePath).toLowerCase();
-        final tmpFile = File(
-          p.join(tmpDir.path, '${attachment.id}$extWithDot'),
-        );
-        await tmpFile.writeAsBytes(bytes, flush: true);
-        localPath = tmpFile.path;
+        final result = await OpenFile.open(filePath);
+        if (result.type != ResultType.done) return result.message;
+        return null;
       }
 
-      final result = await OpenFile.open(localPath);
-      if (result.type != ResultType.done) return result.message;
+      // Ruta relativa → Supabase Storage, generar URL firmada y abrir.
+      final url =
+          await AttachmentRepository.current.getSignedUrl(attachment);
+      if (url == null) {
+        return 'No se pudo generar el enlace de descarga';
+      }
+      final launched = await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) return 'No se pudo abrir el archivo';
       return null;
     } catch (e) {
       return 'No se pudo abrir el archivo: $e';

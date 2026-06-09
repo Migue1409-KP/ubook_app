@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
 import 'package:ubook_app/model/attachments/attachment_model.dart';
 
 import 'attachment_repository.dart';
@@ -238,6 +239,17 @@ class SupabaseAttachmentRepository implements AttachmentRepository {
     final path = attachment.filePath;
     if (path == null) return null;
     return _storageService.downloadFile(path);
+  }
+
+  /// Genera una URL firmada temporal (1 hora) para visualizar/descargar el
+  /// archivo desde el navegador o la app del sistema.
+  @override
+  Future<String?> getSignedUrl(AttachmentModel attachment) async {
+    final path = attachment.filePath;
+    if (path == null) return null;
+    return Supabase.instance.client.storage
+        .from('ubook_attachments')
+        .createSignedUrl(path, 3600);
   }
 
   // ── Eliminación ───────────────────────────────────────────────────────────

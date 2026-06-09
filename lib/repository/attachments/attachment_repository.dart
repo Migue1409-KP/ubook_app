@@ -73,11 +73,21 @@ abstract class AttachmentRepository {
   ///
   /// - Implementación local: lee el archivo desde el filesystem usando
   ///   [AttachmentModel.filePath] (ruta absoluta).
-  /// - Implementación Firebase: descarga desde Firebase Storage usando
+  /// - Implementación Supabase: descarga desde Supabase Storage usando
   ///   [AttachmentModel.filePath] como ruta relativa en el bucket.
   ///
   /// Devuelve `null` si el archivo no existe o [filePath] es `null`.
   Future<Uint8List?> downloadFileBytes(AttachmentModel attachment);
+
+  /// Genera una URL firmada temporal para acceder al archivo sin necesidad
+  /// de autenticación adicional. Permite visualizar/descargar desde el
+  /// navegador o la app predeterminada del sistema.
+  ///
+  /// - Implementación Supabase: genera un `createSignedUrl` contra el bucket.
+  /// - Implementación local: devuelve `null` (no aplica al filesystem).
+  ///
+  /// Devuelve `null` si no hay [filePath] o la implementación no lo soporta.
+  Future<String?> getSignedUrl(AttachmentModel attachment) async => null;
 
   // ── Eliminación ──────────────────────────────────────────────────────────────
 
