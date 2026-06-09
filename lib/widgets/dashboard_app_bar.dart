@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:ubook_app/repository/auth/firebase_auth_service.dart';
+import 'package:ubook_app/service/fcm_service.dart';
 import '../theme/app_colors.dart';
 import 'notification/notification_bell.dart';
 
@@ -250,6 +252,14 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
   }
 
   Future<void> _logout(BuildContext context) async {
+    // Eliminar el token FCM de este dispositivo antes de cerrar sesión, para
+    // dejar de recibir push dirigidas a este usuario. Se captura el uid antes
+    // del signOut porque después currentUser será null.
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await FcmService.instance.removeTokenForUser(uid);
+    }
+
     await FirebaseAuthService.instance.signOut();
 
     if (!context.mounted) return;

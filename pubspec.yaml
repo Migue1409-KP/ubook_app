@@ -57,6 +57,12 @@ dependencies:
   google_sign_in: ^6.2.2
   cloud_firestore: ^6.0.0
   supabase_flutter: ^2.12.4
+  firebase_messaging: ^16.3.0
+  # Fijado a 18.x: la 22.0.0 trae una coordenada de dependencia errónea
+  # (com.android.tools.build:coreLibraryDesugaring) que rompe el build de Android
+  # con "Failed to parse desugar_jdk_libs variant". La 18.x usa la coordenada
+  # correcta (com.android.tools:desugar_jdk_libs).
+  flutter_local_notifications: ^18.0.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
