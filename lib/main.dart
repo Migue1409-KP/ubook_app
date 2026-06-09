@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
 import 'package:ubook_app/config/supabase_config.dart';
@@ -48,6 +49,10 @@ import 'package:ubook_app/repository/auth/firestore_user_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Configurar Crashlytics para capturar errores
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -55,6 +60,10 @@ Future<void> main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+
+  // Prueba de Crashlytics (quitar después de verificar)
+  // FirebaseCrashlytics.instance.crash();
+
 
 final database =
        await $FloorAppDatabase.databaseBuilder('ubook_app.db').addMigrations([
