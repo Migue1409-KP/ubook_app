@@ -247,9 +247,15 @@ class SupabaseAttachmentRepository implements AttachmentRepository {
   Future<String?> getSignedUrl(AttachmentModel attachment) async {
     final path = attachment.filePath;
     if (path == null) return null;
-    return Supabase.instance.client.storage
-        .from('ubook_attachments')
-        .createSignedUrl(path, 3600);
+    try {
+      return Supabase.instance.client.storage
+          .from('ubook_attachments')
+          .createSignedUrl(path, 3600);
+    } catch (e, st) {
+      debugPrint('getSignedUrl: fallo al generar URL firmada para'
+          ' $path – $e\n$st');
+      return null;
+    }
   }
 
   // ── Eliminación ───────────────────────────────────────────────────────────

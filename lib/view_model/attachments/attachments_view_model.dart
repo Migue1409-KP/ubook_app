@@ -35,10 +35,11 @@ class AttachmentsViewModel extends ChangeNotifier {
   final List<AttachmentModel> _attachments = [];
   List<AttachmentModel> get attachments => List.unmodifiable(_attachments);
 
-  /// Mensaje de error para mostrar en la UI tras un fallo al cargar/guardar.
-  String? errorMessage;
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
 
-  bool isLoading = false;
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
 
   /// Carga el nombre del archivo guardado en SharedPreferences al arrancar.
   Future<void> _loadCustomFileName() async {
@@ -91,8 +92,8 @@ class AttachmentsViewModel extends ChangeNotifier {
 
   /// Carga desde la BD los adjuntos asociados a [subjectId].
   Future<void> loadBySubject(String subjectId) async {
-    isLoading = true;
-    errorMessage = null;
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
     try {
       _attachments
@@ -101,10 +102,10 @@ class AttachmentsViewModel extends ChangeNotifier {
           await AttachmentRepository.current.findBySubjectId(subjectId),
         );
     } catch (e) {
-      errorMessage = 'Error al cargar adjuntos: $e';
+      _errorMessage = 'Error al cargar adjuntos: $e';
       debugPrint('loadBySubject: $e');
     } finally {
-      isLoading = false;
+      _isLoading = false;
       notifyListeners();
     }
   }
@@ -217,8 +218,12 @@ class AttachmentsViewModel extends ChangeNotifier {
       if (url == null) {
         return 'No se pudo generar el enlace de descarga';
       }
+      final uri = Uri.tryParse(url);
+      if (uri == null || !uri.isAbsolute || !uri.hasScheme || !uri.hasAuthority) {
+        return 'Enlace de descarga inválido';
+      }
       final launched = await launchUrl(
-        Uri.parse(url),
+        uri,
         mode: LaunchMode.externalApplication,
       );
       if (!launched) return 'No se pudo abrir el archivo';
