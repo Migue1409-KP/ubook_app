@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import '../../model/notification/notification_model.dart';
 import '../../model/subjects/subject_dummy_data.dart';
 import '../../model/subjects/subjects.dart';
+import '../../service/analytics_service.dart';
 import '../../service/notification_service.dart';
 
 class SubjectsViewModel extends ChangeNotifier {
-  SubjectsViewModel() : _subjects = List<Subject>.from(SubjectDummyData.build());
+  SubjectsViewModel()
+    : _subjects = List<Subject>.from(SubjectDummyData.build());
 
   final List<Subject> _subjects;
   String _searchQuery = '';
@@ -40,11 +42,20 @@ class SubjectsViewModel extends ChangeNotifier {
   void addExistingSubject(Subject subject) {
     _subjects.insert(0, subject);
     notifyListeners();
-    unawaited(NotificationService.push(
-      title: 'Nueva asignatura creada',
-      message: 'La asignatura "${subject.nombre}" fue registrada en el sistema.',
-      type: NotificationType.subjectCreated,
-    ));
+    unawaited(
+      AnalyticsService.instance.logSubjectCreated(
+        credits: subject.creditos,
+        prerequisiteCount: subject.prerrequisitos.length,
+      ),
+    );
+    unawaited(
+      NotificationService.push(
+        title: 'Nueva asignatura creada',
+        message:
+            'La asignatura "${subject.nombre}" fue registrada en el sistema.',
+        type: NotificationType.subjectCreated,
+      ),
+    );
   }
 
   void updateExistingSubject(Subject updatedSubject) {
@@ -53,22 +64,33 @@ class SubjectsViewModel extends ChangeNotifier {
 
     _subjects[index] = updatedSubject;
     notifyListeners();
-    unawaited(NotificationService.push(
-      title: 'Asignatura actualizada',
-      message: 'La asignatura "${updatedSubject.nombre}" fue actualizada.',
-      type: NotificationType.subjectCreated,
-    ));
+    unawaited(
+      AnalyticsService.instance.logSubjectUpdated(
+        credits: updatedSubject.creditos,
+        prerequisiteCount: updatedSubject.prerrequisitos.length,
+      ),
+    );
+    unawaited(
+      NotificationService.push(
+        title: 'Asignatura actualizada',
+        message: 'La asignatura "${updatedSubject.nombre}" fue actualizada.',
+        type: NotificationType.subjectCreated,
+      ),
+    );
   }
 
   void removeSubject(String id) {
     final subject = _subjects.firstWhere((s) => s.id == id);
     _subjects.removeWhere((s) => s.id == id);
     notifyListeners();
-    unawaited(NotificationService.push(
-      title: 'Asignatura eliminada',
-      message: 'La asignatura "${subject.nombre}" fue eliminada del sistema.',
-      type: NotificationType.subjectCreated,
-    ));
+    unawaited(AnalyticsService.instance.logSubjectDeleted());
+    unawaited(
+      NotificationService.push(
+        title: 'Asignatura eliminada',
+        message: 'La asignatura "${subject.nombre}" fue eliminada del sistema.',
+        type: NotificationType.subjectCreated,
+      ),
+    );
   }
 
   String serializePrerequisites(List<String> items) {

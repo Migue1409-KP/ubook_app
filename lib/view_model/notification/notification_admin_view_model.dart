@@ -6,6 +6,7 @@ import '../../model/notification/notification_model.dart';
 import '../../repository/notification/floor_notification_repository.dart';
 import '../../repository/notification/notification_admin_prefs.dart';
 import '../../repository/notification/notification_repository.dart';
+import '../../service/analytics_service.dart';
 
 enum NotificationAdminStatusFilter { all, unread, read }
 
@@ -160,6 +161,11 @@ class NotificationAdminViewModel extends ChangeNotifier {
 
     notification.status = NotificationStatus.read;
     await _repository.update(notification);
+    unawaited(
+      AnalyticsService.instance.logNotificationRead(
+        type: notification.type.name,
+      ),
+    );
     notifyListeners();
   }
 
@@ -176,16 +182,21 @@ class NotificationAdminViewModel extends ChangeNotifier {
   }
 
   Future<void> markFilteredAsRead() async {
-    var changed = false;
+    var changedCount = 0;
     for (final notification in filteredNotifications) {
       if (notification.status == NotificationStatus.initial) {
         final updated = notification.copyWith(status: NotificationStatus.read);
         await _repository.update(updated);
-        changed = true;
+        changedCount++;
       }
     }
 
-    if (changed) {
+    if (changedCount > 0) {
+      unawaited(
+        AnalyticsService.instance.logNotificationsMarkedRead(
+          count: changedCount,
+        ),
+      );
       await _loadNotifications();
     }
   }
@@ -218,6 +229,12 @@ class NotificationAdminViewModel extends ChangeNotifier {
         type: type,
         status: status,
         createdAt: now,
+      ),
+    );
+    unawaited(
+      AnalyticsService.instance.logNotificationCreated(
+        type: type.name,
+        status: status.name,
       ),
     );
     await _loadNotifications();

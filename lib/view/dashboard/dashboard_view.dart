@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ubook_app/model/career/career_model.dart';
+import 'package:ubook_app/service/analytics_service.dart';
 import 'package:ubook_app/view/career/career_detail_view.dart';
 import 'package:ubook_app/view/career/career_list_view.dart';
 import '../../view_model/dashboard/dashboard_view_model.dart';
@@ -220,23 +223,50 @@ class _DashboardViewContent extends StatelessWidget {
   }
 
   void _navigateToProcessList(BuildContext context) {
+    unawaited(
+      AnalyticsService.instance.logDashboardAction(
+        action: 'open_list',
+        target: 'process',
+      ),
+    );
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const ProcessListView()),
+      MaterialPageRoute(
+        settings: const RouteSettings(name: '/processes'),
+        builder: (context) => const ProcessListView(),
+      ),
     );
   }
 
   void _navigateToTeacherList(BuildContext context) {
+    unawaited(
+      AnalyticsService.instance.logDashboardAction(
+        action: 'open_list',
+        target: 'teacher',
+      ),
+    );
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const TeacherListView()),
+      MaterialPageRoute(
+        settings: const RouteSettings(name: '/teachers'),
+        builder: (context) => const TeacherListView(),
+      ),
     );
   }
 
   void _navigateToEducationalCenters(BuildContext context) {
+    unawaited(
+      AnalyticsService.instance.logDashboardAction(
+        action: 'open_list',
+        target: 'educational_center',
+      ),
+    );
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const EducationalCenterScreen()),
+      MaterialPageRoute(
+        settings: const RouteSettings(name: '/educational_centers'),
+        builder: (context) => const EducationalCenterScreen(),
+      ),
     );
   }
 
@@ -256,18 +286,34 @@ class _DashboardViewContent extends StatelessWidget {
       name: item['name'] as String? ?? 'Centro educativo',
     );
 
+    unawaited(
+      AnalyticsService.instance.logDashboardAction(
+        action: 'open_detail',
+        target: 'educational_center',
+      ),
+    );
     Navigator.push(
       context,
       MaterialPageRoute(
+        settings: const RouteSettings(name: '/educational_center_detail'),
         builder: (context) => EducationalCenterDetailScreen(center: center),
       ),
     );
   }
 
   void _navigateToSubjects(BuildContext context) {
+    unawaited(
+      AnalyticsService.instance.logDashboardAction(
+        action: 'open_list',
+        target: 'subject',
+      ),
+    );
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const SubjectsView()),
+      MaterialPageRoute(
+        settings: const RouteSettings(name: '/subjects'),
+        builder: (context) => const SubjectsView(),
+      ),
     );
   }
 
@@ -286,14 +332,24 @@ class _DashboardViewContent extends StatelessWidget {
 
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => CareerDetailView(career: career)),
+      MaterialPageRoute(
+        settings: const RouteSettings(name: '/career_detail'),
+        builder: (context) => CareerDetailView(career: career),
+      ),
     );
   }
 
   void _navigateToCareer(BuildContext context) {
+    unawaited(
+      AnalyticsService.instance.logDashboardAction(
+        action: 'open_list',
+        target: 'career',
+      ),
+    );
     Navigator.push(
       context,
       MaterialPageRoute(
+        settings: const RouteSettings(name: '/careers'),
         builder: (context) => const CareerListView(educationalCenterId: "1"),
       ),
     );
@@ -311,16 +367,30 @@ class _DashboardViewContent extends StatelessWidget {
           'Materia enfocada en el desarrollo y la lógica correspondiente del área de ${item['faculty'] ?? 'estudio'}.',
     );
 
+    unawaited(
+      AnalyticsService.instance.logDashboardAction(
+        action: 'open_detail',
+        target: 'subject',
+      ),
+    );
     Navigator.push(
       context,
       MaterialPageRoute(
+        settings: const RouteSettings(name: '/subject_detail'),
         builder: (context) => SubjectDetailView(
           subject: dummySubject,
           onEdit: () {},
           onProcessesTap: () {
+            unawaited(
+              AnalyticsService.instance.logDashboardAction(
+                action: 'open_related_processes',
+                target: 'subject',
+              ),
+            );
             Navigator.push(
               context,
               MaterialPageRoute(
+                settings: const RouteSettings(name: '/subject_processes'),
                 builder: (_) => ProcessListView(
                   subjectId: dummySubject.id,
                   subjectName: dummySubject.nombre,
@@ -342,9 +412,16 @@ class _DashboardViewContent extends StatelessWidget {
       credits: item['credits'] ?? 180,
     );
 
+    unawaited(
+      AnalyticsService.instance.logDashboardAction(
+        action: 'open_detail',
+        target: 'career',
+      ),
+    );
     Navigator.push(
       context,
       MaterialPageRoute(
+        settings: const RouteSettings(name: '/career_detail'),
         builder: (context) => CareerDetailView(career: dummyCareer),
       ),
     );
@@ -374,9 +451,16 @@ class _DashboardViewContent extends StatelessWidget {
       updatedAt: DateTime.now(),
     );
 
+    unawaited(
+      AnalyticsService.instance.logDashboardAction(
+        action: 'open_detail',
+        target: 'teacher',
+      ),
+    );
     Navigator.push(
       context,
       MaterialPageRoute(
+        settings: const RouteSettings(name: '/teacher_subjects'),
         builder: (context) => TeacherSubjectsPage(teacher: dummyTeacher),
       ),
     );

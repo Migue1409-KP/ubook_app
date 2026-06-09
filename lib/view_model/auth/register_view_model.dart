@@ -8,6 +8,7 @@ import 'package:ubook_app/repository/auth/auth_local_storage.dart';
 import 'package:ubook_app/repository/auth/firebase_auth_service.dart';
 import 'package:ubook_app/repository/auth/syncing_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
+import 'package:ubook_app/service/analytics_service.dart';
 
 class RegisterViewModel extends ChangeNotifier {
   final AuthLocalStorage _localStorage;
@@ -75,7 +76,8 @@ class RegisterViewModel extends ChangeNotifier {
     if (draft.isEmpty) return;
 
     if (name.text.isEmpty) name.text = draft['name'] ?? '';
-    if (emailController.text.isEmpty) emailController.text = draft['email'] ?? '';
+    if (emailController.text.isEmpty)
+      emailController.text = draft['email'] ?? '';
     if (educationalCenter.text.isEmpty) {
       educationalCenter.text = draft['educationalCenter'] ?? '';
     }
@@ -88,7 +90,8 @@ class RegisterViewModel extends ChangeNotifier {
   String? validateName(String? value) {
     if (!submitted) return null;
     if (value == null || value.trim().isEmpty) return 'Nombre es requerido';
-    if (value.trim().length < 4) return 'Nombre debe tener al menos 4 caracteres';
+    if (value.trim().length < 4)
+      return 'Nombre debe tener al menos 4 caracteres';
     return null;
   }
 
@@ -103,7 +106,8 @@ class RegisterViewModel extends ChangeNotifier {
   String? validatePassword(String? value) {
     if (!submitted) return null;
     if (value == null || value.trim().isEmpty) return 'Contraseña es requerida';
-    if (value.trim().length < 6) return 'Contraseña debe tener al menos 6 caracteres';
+    if (value.trim().length < 6)
+      return 'Contraseña debe tener al menos 6 caracteres';
     return null;
   }
 
@@ -178,6 +182,8 @@ class RegisterViewModel extends ChangeNotifier {
 
       await _localStorage.saveLastLoginEmail(email);
       await _localStorage.clearRegisterDraft();
+      await AnalyticsService.instance.setCurrentUser(firebaseUser);
+      await AnalyticsService.instance.logRegister(method: 'password');
 
       isLoading = false;
       notifyListeners();

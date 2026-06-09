@@ -6,6 +6,7 @@ import 'package:ubook_app/repository/auth/auth_local_storage.dart';
 import 'package:ubook_app/repository/auth/firebase_auth_service.dart';
 import 'package:ubook_app/repository/auth/syncing_user_repository.dart';
 import 'package:ubook_app/repository/auth/user_repository.dart';
+import 'package:ubook_app/service/analytics_service.dart';
 
 class LoginViewModel extends ChangeNotifier {
   final AuthLocalStorage _localStorage;
@@ -50,7 +51,8 @@ class LoginViewModel extends ChangeNotifier {
   String? validatePassword(String? value, {String field = 'Contraseña'}) {
     if (!submitted) return null;
     if (value == null || value.trim().isEmpty) return '$field es requerido';
-    if (value.trim().length < 6) return '$field debe tener al menos 6 caracteres';
+    if (value.trim().length < 6)
+      return '$field debe tener al menos 6 caracteres';
     return null;
   }
 
@@ -76,9 +78,14 @@ class LoginViewModel extends ChangeNotifier {
         return false;
       }
 
-      await _ensureLocalProfile(firebaseUser, app_auth.AuthProvider.emailPassword);
+      await _ensureLocalProfile(
+        firebaseUser,
+        app_auth.AuthProvider.emailPassword,
+      );
       await _localStorage.saveLastLoginEmail(email);
       await _localStorage.saveLastLoginAt(DateTime.now());
+      await AnalyticsService.instance.setCurrentUser(firebaseUser);
+      await AnalyticsService.instance.logLogin(method: 'password');
 
       isLoading = false;
       notifyListeners();
@@ -112,6 +119,8 @@ class LoginViewModel extends ChangeNotifier {
       await _ensureLocalProfile(firebaseUser, app_auth.AuthProvider.google);
       await _localStorage.saveLastLoginEmail(firebaseUser.email ?? '');
       await _localStorage.saveLastLoginAt(DateTime.now());
+      await AnalyticsService.instance.setCurrentUser(firebaseUser);
+      await AnalyticsService.instance.logLogin(method: 'google');
 
       isLoading = false;
       notifyListeners();

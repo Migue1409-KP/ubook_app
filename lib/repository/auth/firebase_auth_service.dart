@@ -6,14 +6,16 @@ class FirebaseAuthService {
   static final FirebaseAuthService instance = FirebaseAuthService._();
   FirebaseAuthService._();
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  FirebaseAuth get _auth => FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   bool get isGoogleUser =>
-      _auth.currentUser?.providerData.any((p) => p.providerId == 'google.com') ??
+      _auth.currentUser?.providerData.any(
+        (p) => p.providerId == 'google.com',
+      ) ??
       false;
 
   Future<User?> signInWithEmail(String email, String password) async {
@@ -56,10 +58,7 @@ class FirebaseAuthService {
   }
 
   Future<void> signOut() async {
-    await Future.wait([
-      _auth.signOut(),
-      _googleSignIn.signOut(),
-    ]);
+    await Future.wait([_auth.signOut(), _googleSignIn.signOut()]);
   }
 
   Future<void> reauthenticateWithPassword(String password) async {

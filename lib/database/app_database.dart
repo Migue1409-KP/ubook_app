@@ -162,6 +162,20 @@ final migration8to9 = Migration(8, 9, (database) async {
   );
 });
 
+final migration9to10 = Migration(9, 10, (database) async {
+  await database.execute(
+    'CREATE TABLE IF NOT EXISTS `notifications` ('
+    '`id` TEXT NOT NULL, '
+    '`title` TEXT NOT NULL, '
+    '`message` TEXT NOT NULL, '
+    '`notification_type` TEXT NOT NULL, '
+    '`status` TEXT NOT NULL, '
+    '`created_at_ms` INTEGER NOT NULL, '
+    'PRIMARY KEY (`id`)'
+    ')',
+  );
+});
+
 @TypeConverters([
   AuthProviderConverter,
   StringListConverter,
@@ -171,7 +185,7 @@ final migration8to9 = Migration(8, 9, (database) async {
   NotificationStatusConverter,
 ])
 @Database(
-  version: 9,
+  version: 10,
   entities: [
     UserModel,
     Review,

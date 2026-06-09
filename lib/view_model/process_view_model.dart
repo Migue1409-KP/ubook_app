@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../model/notification/notification_model.dart';
 import '../model/process/process_model.dart';
 import '../repository/process/process_repository.dart';
+import '../service/analytics_service.dart';
 import '../service/notification_service.dart';
 
 class ProcessViewModel extends ChangeNotifier {
@@ -166,17 +167,24 @@ class ProcessViewModel extends ChangeNotifier {
             createdAt: now,
             updatedAt: now,
           )
-        : process.copyWith(
-            createdAt: now,
-            updatedAt: now,
-          );
+        : process.copyWith(createdAt: now, updatedAt: now);
 
     await _repository.addProcess(processToSave);
-    unawaited(NotificationService.push(
-      title: 'Nuevo proceso registrado',
-      message: 'El proceso "${processToSave.name}" fue registrado en el sistema.',
-      type: NotificationType.other,
-    ));
+    unawaited(
+      AnalyticsService.instance.logProcessCreated(
+        processType: processToSave.processType,
+        isActive: processToSave.isActive,
+        requiredDocumentCount: processToSave.requiredDocuments.length,
+      ),
+    );
+    unawaited(
+      NotificationService.push(
+        title: 'Nuevo proceso registrado',
+        message:
+            'El proceso "${processToSave.name}" fue registrado en el sistema.',
+        type: NotificationType.other,
+      ),
+    );
     if (_disposed) return;
 
     _processes.add(processToSave);
@@ -208,16 +216,23 @@ class ProcessViewModel extends ChangeNotifier {
             relatedId: subjectId,
             updatedAt: now,
           )
-        : process.copyWith(
-            updatedAt: now,
-          );
+        : process.copyWith(updatedAt: now);
 
     await _repository.updateProcess(processToSave);
-    unawaited(NotificationService.push(
-      title: 'Proceso actualizado',
-      message: 'El proceso "${processToSave.name}" fue actualizado.',
-      type: NotificationType.other,
-    ));
+    unawaited(
+      AnalyticsService.instance.logProcessUpdated(
+        processType: processToSave.processType,
+        isActive: processToSave.isActive,
+        requiredDocumentCount: processToSave.requiredDocuments.length,
+      ),
+    );
+    unawaited(
+      NotificationService.push(
+        title: 'Proceso actualizado',
+        message: 'El proceso "${processToSave.name}" fue actualizado.',
+        type: NotificationType.other,
+      ),
+    );
     if (_disposed) return;
 
     final index = _processes.indexWhere((p) => p.id == processToSave.id);
@@ -235,11 +250,18 @@ class ProcessViewModel extends ChangeNotifier {
 
     final process = _processes.firstWhere((p) => p.id == processId);
     await _repository.deleteProcess(processId);
-    unawaited(NotificationService.push(
-      title: 'Proceso eliminado',
-      message: 'El proceso "${process.name}" fue eliminado del sistema.',
-      type: NotificationType.other,
-    ));
+    unawaited(
+      AnalyticsService.instance.logProcessDeleted(
+        processType: process.processType,
+      ),
+    );
+    unawaited(
+      NotificationService.push(
+        title: 'Proceso eliminado',
+        message: 'El proceso "${process.name}" fue eliminado del sistema.',
+        type: NotificationType.other,
+      ),
+    );
     if (_disposed) return;
 
     _processes.removeWhere((p) => p.id == processId);
@@ -256,6 +278,11 @@ class ProcessViewModel extends ChangeNotifier {
       _processes.add(process);
     }
     _repository.addProcess(process);
+    unawaited(
+      AnalyticsService.instance.logProcessRestored(
+        processType: process.processType,
+      ),
+    );
     notifyListeners();
   }
 

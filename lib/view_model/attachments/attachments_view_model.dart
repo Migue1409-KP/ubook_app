@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -10,6 +11,7 @@ import '../../model/attachments/attachment_model.dart';
 import '../../repository/attachments/attachment_local_storage.dart';
 import '../../repository/attachments/attachment_repository.dart';
 import '../../repository/attachments/file_type_repository.dart';
+import '../../service/analytics_service.dart';
 
 class AttachmentsViewModel extends ChangeNotifier {
   AttachmentsViewModel._(this._contextKey) {
@@ -83,6 +85,12 @@ class AttachmentsViewModel extends ChangeNotifier {
   Future<void> addAttachment(AttachmentModel attachment) async {
     final saved = await AttachmentRepository.current.saveFile(attachment);
     _attachments.add(saved);
+    unawaited(
+      AnalyticsService.instance.logAttachmentUploaded(
+        fileType: saved.fileType,
+        fileSize: saved.fileSize,
+      ),
+    );
     notifyListeners();
   }
 
@@ -90,9 +98,7 @@ class AttachmentsViewModel extends ChangeNotifier {
   Future<void> loadBySubject(String subjectId) async {
     _attachments
       ..clear()
-      ..addAll(
-        await AttachmentRepository.current.findBySubjectId(subjectId),
-      );
+      ..addAll(await AttachmentRepository.current.findBySubjectId(subjectId));
     notifyListeners();
   }
 
@@ -100,6 +106,11 @@ class AttachmentsViewModel extends ChangeNotifier {
     final attachment = _attachments[index];
     await AttachmentRepository.current.deleteAttachment(attachment);
     _attachments.removeAt(index);
+    unawaited(
+      AnalyticsService.instance.logAttachmentDeleted(
+        fileType: attachment.fileType,
+      ),
+    );
     notifyListeners();
   }
 
@@ -192,16 +203,18 @@ class AttachmentsViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       String localPath;
+      final storage = p.isAbsolute(filePath) ? 'local' : 'remote';
 
       // Las rutas absolutas apuntan al filesystem local → abrir directamente.
       // Las rutas relativas apuntan a Firebase Storage → descargar primero.
-      if (p.isAbsolute(filePath)) {
+      if (storage == 'local') {
         localPath = filePath;
       } else {
         // Descarga desde Firebase Storage al directorio temporal del dispositivo.
         // El SO puede limpiar estos archivos; no consumen espacio permanente.
-        final bytes =
-            await AttachmentRepository.current.downloadFileBytes(attachment);
+        final bytes = await AttachmentRepository.current.downloadFileBytes(
+          attachment,
+        );
         if (bytes == null) return 'No se pudo descargar el archivo';
 
         final tmpDir = await getTemporaryDirectory();
@@ -215,6 +228,12 @@ class AttachmentsViewModel extends ChangeNotifier {
 
       final result = await OpenFile.open(localPath);
       if (result.type != ResultType.done) return result.message;
+      unawaited(
+        AnalyticsService.instance.logAttachmentOpened(
+          fileType: attachment.fileType,
+          storage: storage,
+        ),
+      );
       return null;
     } catch (e) {
       return 'No se pudo abrir el archivo: $e';

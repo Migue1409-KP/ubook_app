@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../model/notification/notification_model.dart';
 import '../../model/teachers/teacher.dart';
+import '../../service/analytics_service.dart';
 import '../../service/notification_service.dart';
 import '../../repository/teachers/floor_teacher_repository.dart';
 import '../../repository/teachers/teacher_preferences.dart';
@@ -36,7 +37,10 @@ class TeacherListViewModel extends ChangeNotifier {
           age: 25,
           department: 'Ingeniería de Sistemas',
           specialty: 'Desarrollo Móvil',
-          subjects: ['Ingeniería de Software 3', 'Ingeniería de Software Avanzada 2'],
+          subjects: [
+            'Ingeniería de Software 3',
+            'Ingeniería de Software Avanzada 2',
+          ],
           profileImageUrl: 'https://example.com/avatars/juan.jpg',
           isActive: true,
           createdAt: DateTime(2024, 1, 15),
@@ -53,13 +57,13 @@ class TeacherListViewModel extends ChangeNotifier {
   Future<void> _applySortAndFilter() async {
     final prefs = await TeacherPreferences.init();
     final ascending = prefs.getSortAscending();
-    
+
     _filteredTeachers = List.from(_allTeachers);
     _filteredTeachers.sort((a, b) {
       final comp = a.fullName.compareTo(b.fullName);
       return ascending ? comp : -comp;
     });
-    
+
     search(_searchQuery);
   }
 
@@ -98,10 +102,14 @@ class TeacherListViewModel extends ChangeNotifier {
     final teacher = _allTeachers.firstWhere((t) => t.id == id);
     _allTeachers.removeWhere((t) => t.id == id);
     search(_searchQuery);
-    unawaited(NotificationService.push(
-      title: 'Docente eliminado',
-      message: 'El docente ${teacher.firstName} ${teacher.lastName} fue eliminado del sistema.',
-      type: NotificationType.other,
-    ));
+    unawaited(AnalyticsService.instance.logTeacherDeleted());
+    unawaited(
+      NotificationService.push(
+        title: 'Docente eliminado',
+        message:
+            'El docente ${teacher.firstName} ${teacher.lastName} fue eliminado del sistema.',
+        type: NotificationType.other,
+      ),
+    );
   }
 }

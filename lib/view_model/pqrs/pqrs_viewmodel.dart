@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import '../../model/pqrs/pqrs.dart';
+import '../../service/analytics_service.dart';
 
 class PQRSViewModel extends ChangeNotifier {
   final String _currentUserId = 'user-001';
@@ -54,6 +57,12 @@ class PQRSViewModel extends ChangeNotifier {
     );
 
     _counter++;
+    unawaited(
+      AnalyticsService.instance.logPqrsCreated(
+        tipo: types[index],
+        estado: statuses[index],
+      ),
+    );
     notifyListeners();
   }
 
@@ -72,6 +81,9 @@ class PQRSViewModel extends ChangeNotifier {
         fecha: DateTime.now(),
         estado: estado,
       ),
+    );
+    unawaited(
+      AnalyticsService.instance.logPqrsCreated(tipo: tipo, estado: estado),
     );
     notifyListeners();
   }
@@ -93,6 +105,9 @@ class PQRSViewModel extends ChangeNotifier {
       fecha: current.fecha,
       estado: estado,
     );
+    unawaited(
+      AnalyticsService.instance.logPqrsUpdated(tipo: tipo, estado: estado),
+    );
     notifyListeners();
   }
 
@@ -108,6 +123,7 @@ class PQRSViewModel extends ChangeNotifier {
       fecha: current.fecha,
       estado: estado,
     );
+    unawaited(AnalyticsService.instance.logPqrsStatusChanged(estado));
     notifyListeners();
   }
 }

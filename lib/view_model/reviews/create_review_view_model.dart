@@ -6,6 +6,7 @@ import '../../model/notification/notification_model.dart';
 import '../../model/reviews/review.dart';
 import '../../repository/reviews/review_repository.dart';
 import '../../repository/reviews/review_repository_provider.dart';
+import '../../service/analytics_service.dart';
 import '../../service/notification_service.dart';
 
 class CreateReviewViewModel extends ChangeNotifier {
@@ -52,11 +53,19 @@ class CreateReviewViewModel extends ChangeNotifier {
       );
 
       await _repository.createReview(review);
-      unawaited(NotificationService.push(
-        title: 'Nueva reseña registrada',
-        message: 'Se registró una nueva reseña para "$entityId".',
-        type: NotificationType.reviewCreated,
-      ));
+      unawaited(
+        AnalyticsService.instance.logReviewCreated(
+          entityType: entityType,
+          rating: _rating,
+        ),
+      );
+      unawaited(
+        NotificationService.push(
+          title: 'Nueva reseña registrada',
+          message: 'Se registró una nueva reseña para "$entityId".',
+          type: NotificationType.reviewCreated,
+        ),
+      );
     } finally {
       _isLoading = false;
       notifyListeners();

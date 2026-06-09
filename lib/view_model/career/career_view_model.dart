@@ -7,6 +7,7 @@ import 'package:ubook_app/model/notification/notification_model.dart';
 import 'package:ubook_app/repository/career/career_prefs.dart';
 import 'package:ubook_app/repository/career/career_repository.dart';
 import 'package:ubook_app/repository/career/modality_api_repository.dart';
+import 'package:ubook_app/service/analytics_service.dart';
 import 'package:ubook_app/service/notification_service.dart';
 
 class CareerViewModel extends ChangeNotifier {
@@ -27,12 +28,10 @@ class CareerViewModel extends ChangeNotifier {
   bool get modalitiesLoading => _modalitiesLoading;
   String get sortOrder => _sortOrder;
 
-  CareerViewModel(
-    this._repository, {
-    ModalityApiRepository? modalityApi,
-  }) : _modalityApi = modalityApi ?? ModalityApiRepository.instance {
+  CareerViewModel(this._repository, {ModalityApiRepository? modalityApi})
+    : _modalityApi = modalityApi ?? ModalityApiRepository.instance {
     _loadSortOrder(); // SharedPreferences — preferencia de UI
-    loadCareers();    // Floor — datos reales
+    loadCareers(); // Floor — datos reales
     loadModalities(); // API remota — catálogo
   }
 
@@ -77,32 +76,53 @@ class CareerViewModel extends ChangeNotifier {
   Future<void> addCareer(Career career) async {
     await _repository.save(career);
     await loadCareers();
-    unawaited(NotificationService.push(
-      title: 'Nueva carrera registrada',
-      message: 'La carrera "${career.name}" fue registrada en el sistema.',
-      type: NotificationType.other,
-    ));
+    unawaited(
+      AnalyticsService.instance.logCareerCreated(
+        semesters: career.semesters,
+        credits: career.credits,
+        modalityId: career.modalityId,
+      ),
+    );
+    unawaited(
+      NotificationService.push(
+        title: 'Nueva carrera registrada',
+        message: 'La carrera "${career.name}" fue registrada en el sistema.',
+        type: NotificationType.other,
+      ),
+    );
   }
 
   Future<void> updateCareer(Career updatedCareer) async {
     await _repository.save(updatedCareer);
     await loadCareers();
-    unawaited(NotificationService.push(
-      title: 'Carrera actualizada',
-      message: 'La carrera "${updatedCareer.name}" fue actualizada.',
-      type: NotificationType.other,
-    ));
+    unawaited(
+      AnalyticsService.instance.logCareerUpdated(
+        semesters: updatedCareer.semesters,
+        credits: updatedCareer.credits,
+        modalityId: updatedCareer.modalityId,
+      ),
+    );
+    unawaited(
+      NotificationService.push(
+        title: 'Carrera actualizada',
+        message: 'La carrera "${updatedCareer.name}" fue actualizada.',
+        type: NotificationType.other,
+      ),
+    );
   }
 
   Future<void> deleteCareer(String id) async {
     final career = _careers.firstWhere((c) => c.id == id);
     await _repository.delete(career);
     await loadCareers();
-    unawaited(NotificationService.push(
-      title: 'Carrera eliminada',
-      message: 'La carrera "${career.name}" fue eliminada del sistema.',
-      type: NotificationType.other,
-    ));
+    unawaited(AnalyticsService.instance.logCareerDeleted());
+    unawaited(
+      NotificationService.push(
+        title: 'Carrera eliminada',
+        message: 'La carrera "${career.name}" fue eliminada del sistema.',
+        type: NotificationType.other,
+      ),
+    );
   }
 
   // ─── CATÁLOGO REMOTO (API modalidades) ───────────────────────
@@ -141,11 +161,15 @@ class CareerViewModel extends ChangeNotifier {
   List<Career> getFilteredCareersByCenter(String? centerId) {
     var filtered = _careers;
     if (centerId != null) {
-      filtered = filtered.where((c) => c.educationalCenterId == centerId).toList();
+      filtered = filtered
+          .where((c) => c.educationalCenterId == centerId)
+          .toList();
     }
     if (_searchQuery.isNotEmpty) {
       final q = _searchQuery.toLowerCase();
-      filtered = filtered.where((c) => c.name.toLowerCase().contains(q)).toList();
+      filtered = filtered
+          .where((c) => c.name.toLowerCase().contains(q))
+          .toList();
     }
     return filtered;
   }

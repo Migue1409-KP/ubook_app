@@ -8,13 +8,12 @@ import '../../service/notification_service.dart';
 import '../../repository/teachers/floor_teacher_repository.dart';
 import '../../repository/teachers/country_api_service.dart';
 import '../../repository/teachers/teacher_preferences.dart';
+import '../../service/analytics_service.dart';
 
 class TeacherFormViewModel extends ChangeNotifier {
-  TeacherFormViewModel({
-    TeacherRepository? repository,
-    Teacher? initial,
-  }) : _repository = repository ?? FloorTeacherRepository.instance,
-       _editingId = initial?.id {
+  TeacherFormViewModel({TeacherRepository? repository, Teacher? initial})
+    : _repository = repository ?? FloorTeacherRepository.instance,
+      _editingId = initial?.id {
     if (initial != null) _populate(initial);
     _loadCountries();
   }
@@ -34,20 +33,20 @@ class TeacherFormViewModel extends ChangeNotifier {
     } catch (e) {
       countries = _countryApiService.getFallbackCountries();
     }
-    
+
     if (countries.isNotEmpty) {
       // Use preferences or default to CO
       final prefs = await TeacherPreferences.init();
       final defaultCode = prefs.getDefaultCountryCode();
-      
+
       selectedCountry = countries.firstWhere(
-        (c) => c.dialCode == defaultCode || c.code == defaultCode, 
+        (c) => c.dialCode == defaultCode || c.code == defaultCode,
         orElse: () => countries.firstWhere(
           (c) => c.code == 'CO',
           orElse: () => countries.first,
         ),
       );
-      
+
       // If editing, try to guess the country based on the phone string if it contains a dialCode
       if (_editingId != null && phoneController.text.isNotEmpty) {
         for (var c in countries) {
@@ -64,7 +63,7 @@ class TeacherFormViewModel extends ChangeNotifier {
         }
       }
     }
-    
+
     isLoadingCountries = false;
     notifyListeners();
   }
@@ -72,15 +71,16 @@ class TeacherFormViewModel extends ChangeNotifier {
   void onCountryChanged(CountryPhoneCode? newCountry) async {
     if (newCountry == null) return;
     selectedCountry = newCountry;
-    
+
     // Save to preferences
     final prefs = await TeacherPreferences.init();
     await prefs.setDefaultCountryCode(newCountry.dialCode);
-    
+
     // Set the prefix in the text field if empty or replace old prefix
     phoneController.text = newCountry.dialCode + ' ';
     notifyListeners();
   }
+
   final String? _editingId;
 
   bool get isEditing => _editingId != null;
@@ -125,7 +125,8 @@ class TeacherFormViewModel extends ChangeNotifier {
   String? validatePositiveInt(String? value, {String field = 'Edad'}) {
     if (value == null || value.trim().isEmpty) return '$field es obligatoria';
     final parsed = int.tryParse(value);
-    if (parsed == null || parsed <= 0) return '$field debe ser un número positivo';
+    if (parsed == null || parsed <= 0)
+      return '$field debe ser un número positivo';
     return null;
   }
 
@@ -159,21 +160,32 @@ class TeacherFormViewModel extends ChangeNotifier {
     );
 
     final saved = await _repository.save(teacher);
+    unawaited(
+      AnalyticsService.instance.logTeacherSaved(
+        isEditing: isEditing,
+        subjectCount: _subjects.length,
+        isActive: teacher.isActive,
+      ),
+    );
 
     if (isEditing) {
-      unawaited(NotificationService.push(
-        title: 'Docente actualizado',
-        message:
-            'El docente ${teacher.firstName} ${teacher.lastName} fue actualizado.',
-        type: NotificationType.other,
-      ));
+      unawaited(
+        NotificationService.push(
+          title: 'Docente actualizado',
+          message:
+              'El docente ${teacher.firstName} ${teacher.lastName} fue actualizado.',
+          type: NotificationType.other,
+        ),
+      );
     } else {
-      unawaited(NotificationService.push(
-        title: 'Nuevo docente registrado',
-        message:
-            'El docente ${teacher.firstName} ${teacher.lastName} fue registrado en el sistema.',
-        type: NotificationType.other,
-      ));
+      unawaited(
+        NotificationService.push(
+          title: 'Nuevo docente registrado',
+          message:
+              'El docente ${teacher.firstName} ${teacher.lastName} fue registrado en el sistema.',
+          type: NotificationType.other,
+        ),
+      );
     }
 
     isSaving = false;

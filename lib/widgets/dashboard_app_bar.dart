@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:ubook_app/repository/auth/firebase_auth_service.dart';
+import 'package:ubook_app/service/analytics_service.dart';
 import '../theme/app_colors.dart';
 import 'notification/notification_bell.dart';
 
@@ -83,6 +84,7 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
             child: Icon(Icons.person, size: 20, color: Colors.white),
           ),
           onSelected: (value) {
+            unawaited(AnalyticsService.instance.logMenuSelection(value));
             switch (value) {
               case 'profile':
                 Navigator.pushNamed(context, '/profile');
@@ -251,6 +253,7 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
 
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuthService.instance.signOut();
+    await AnalyticsService.instance.logLogout();
 
     if (!context.mounted) return;
 

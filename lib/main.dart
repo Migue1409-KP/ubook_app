@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -22,6 +24,7 @@ import 'package:ubook_app/repository/process/process_repository.dart';
 import 'package:ubook_app/repository/reviews/review_repository_provider.dart';
 import 'package:ubook_app/repository/teacher_subject/floor_subject_teacher_repository.dart';
 import 'package:ubook_app/repository/teachers/floor_teacher_repository.dart';
+import 'package:ubook_app/service/analytics_service.dart';
 import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
 import 'view/auth/profile_view.dart';
@@ -38,9 +41,13 @@ import 'package:ubook_app/repository/career/career_repository_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  unawaited(
+    AnalyticsService.instance.setCurrentUser(FirebaseAuth.instance.currentUser),
   );
+  FirebaseAuth.instance.authStateChanges().listen((user) {
+    unawaited(AnalyticsService.instance.setCurrentUser(user));
+  });
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
@@ -56,8 +63,8 @@ Future<void> main() async {
         migration6to7,
         migration7to8,
         migration8to9,
-      ])
-      .build();
+        migration9to10,
+      ]).build();
   final localUserRepository = FloorUserRepository.initialize(database);
   final remoteUserRepository = FirestoreUserRepository.initialize();
   final userRepository = SyncingUserRepository.initialize(
@@ -74,9 +81,7 @@ Future<void> main() async {
   // ── Repositorio de adjuntos ───────────────────────────────────────────────
   // Metadata (nombre, tipo, fechas, relaciones) → Cloud Firestore.
   // Archivos binarios → Supabase Storage (bucket 'attachments').
-  AttachmentRepository.setCurrent(
-    SupabaseAttachmentRepository.initialize(),
-  );
+  AttachmentRepository.setCurrent(SupabaseAttachmentRepository.initialize());
   final localProcessRepository = FloorProcessRepository.initialize(database);
   final remoteProcessRepository = FirestoreProcessRepository.initialize();
   final processRepository = SyncingProcessRepository.initialize(
@@ -100,6 +105,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final analyticsObserver = AnalyticsService.instance.observer;
+
     return MultiProvider(
       providers: [
         if (database != null) Provider<AppDatabase>.value(value: database!),
@@ -114,6 +121,9 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'UBook',
         debugShowCheckedModeBanner: false,
+        navigatorObservers: analyticsObserver == null
+            ? const []
+            : [analyticsObserver],
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
           useMaterial3: true,
@@ -137,8 +147,23 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthGate extends StatelessWidget {
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  String? _lastScreenName;
+
+  void _trackScreen(String screenName) {
+    if (_lastScreenName == screenName) return;
+    _lastScreenName = screenName;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(AnalyticsService.instance.logScreen(screenName));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +175,11 @@ class AuthGate extends StatelessWidget {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        return snapshot.data != null ? const DashboardView() : const LoginView();
+        final screenName = snapshot.data != null ? 'dashboard' : 'login';
+        _trackScreen(screenName);
+        return snapshot.data != null
+            ? const DashboardView()
+            : const LoginView();
       },
     );
   }

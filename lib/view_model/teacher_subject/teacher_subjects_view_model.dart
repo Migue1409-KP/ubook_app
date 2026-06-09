@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../model/teachers/teacher.dart';
 import '../../model/subjectteacher/subjectteacher.dart';
@@ -6,16 +8,52 @@ import '../../model/subjects/subjects.dart';
 import '../../repository/teacher_subject/floor_subject_teacher_repository.dart';
 import '../../repository/teacher_subject/academic_period_api_repository.dart';
 import '../../repository/teacher_subject/subject_teacher_repository.dart';
+import '../../service/analytics_service.dart';
 
 /// Catálogo de fallback usado cuando el caller no inyecta [allSubjects].
 /// La capa Floor solo persiste las relaciones (tabla subject_teachers); el
 /// catálogo de materias todavía no tiene su propio repositorio.
 final List<Subject> _fallbackSubjects = [
-  Subject(id: '1', nombre: 'Ingeniería de Sistemas', horas: 60, creditos: 4, prerrequisitos: const [], contenido: 'Fundamentos de arquitectura de software.'),
-  Subject(id: '2', nombre: 'Cálculo Diferencial',    horas: 64, creditos: 3, prerrequisitos: const [], contenido: 'Límites y derivadas.'),
-  Subject(id: '3', nombre: 'Fundamentos de IA',      horas: 48, creditos: 3, prerrequisitos: const [], contenido: 'Búsqueda, lógica y agentes.'),
-  Subject(id: '4', nombre: 'Álgebra Lineal',         horas: 48, creditos: 3, prerrequisitos: const ['2'], contenido: 'Vectores y matrices.'),
-  Subject(id: '5', nombre: 'Desarrollo Web',         horas: 64, creditos: 3, prerrequisitos: const [], contenido: 'HTML, CSS, JS y frameworks.'),
+  Subject(
+    id: '1',
+    nombre: 'Ingeniería de Sistemas',
+    horas: 60,
+    creditos: 4,
+    prerrequisitos: const [],
+    contenido: 'Fundamentos de arquitectura de software.',
+  ),
+  Subject(
+    id: '2',
+    nombre: 'Cálculo Diferencial',
+    horas: 64,
+    creditos: 3,
+    prerrequisitos: const [],
+    contenido: 'Límites y derivadas.',
+  ),
+  Subject(
+    id: '3',
+    nombre: 'Fundamentos de IA',
+    horas: 48,
+    creditos: 3,
+    prerrequisitos: const [],
+    contenido: 'Búsqueda, lógica y agentes.',
+  ),
+  Subject(
+    id: '4',
+    nombre: 'Álgebra Lineal',
+    horas: 48,
+    creditos: 3,
+    prerrequisitos: const ['2'],
+    contenido: 'Vectores y matrices.',
+  ),
+  Subject(
+    id: '5',
+    nombre: 'Desarrollo Web',
+    horas: 64,
+    creditos: 3,
+    prerrequisitos: const [],
+    contenido: 'HTML, CSS, JS y frameworks.',
+  ),
 ];
 
 /// ViewModel para la pantalla de relaciones profesor ↔ materia.
@@ -42,9 +80,9 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
     this.allTeachers = const [],
     SubjectTeacherRepository? repository,
     AcademicPeriodApiRepository? periodoApi,
-  })  : _repository = repository ?? FloorSubjectTeacherRepository.instance,
-        _periodoApi = periodoApi ?? AcademicPeriodApiRepository.instance,
-        assert(teacher != null || subject != null) {
+  }) : _repository = repository ?? FloorSubjectTeacherRepository.instance,
+       _periodoApi = periodoApi ?? AcademicPeriodApiRepository.instance,
+       assert(teacher != null || subject != null) {
     _load();
   }
 
@@ -157,7 +195,8 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
       }
     } catch (_) {
       _periodos = const [];
-      apiWarning = 'Sin conexión al catálogo de periodos. '
+      apiWarning =
+          'Sin conexión al catálogo de periodos. '
           'Mostrando todas las asignaciones.';
     }
 
@@ -193,6 +232,11 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
       );
       await _repository.insertSubjectTeacher(link);
       _links.add(link);
+      unawaited(
+        AnalyticsService.instance.logSubjectTeacherAssigned(
+          source: subject == this.subject ? 'subject_detail' : 'teacher_detail',
+        ),
+      );
       errorMessage = null;
       return true;
     } catch (_) {
@@ -213,6 +257,11 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
       );
       await _repository.deleteById(link.id);
       _links.remove(link);
+      unawaited(
+        AnalyticsService.instance.logSubjectTeacherRemoved(
+          source: subject == this.subject ? 'subject_detail' : 'teacher_detail',
+        ),
+      );
       errorMessage = null;
       return true;
     } catch (_) {
@@ -230,6 +279,11 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
     try {
       await _repository.deleteById(link.id);
       _links.remove(link);
+      unawaited(
+        AnalyticsService.instance.logSubjectTeacherRemoved(
+          source: 'link_detail',
+        ),
+      );
       errorMessage = null;
       return true;
     } catch (_) {
