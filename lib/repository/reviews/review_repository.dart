@@ -169,6 +169,15 @@ class FloorReviewRepository implements ReviewRepository {
     }
   }
 
+  Future<void> saveOrUpdateReview(Review review) async {
+    final existing = await _database.reviewDao.findById(review.id);
+    if (existing == null) {
+      await _database.reviewDao.insertReview(review);
+      return;
+    }
+    await _database.reviewDao.updateReview(review);
+  }
+
   @override
   Future<List<Review>> getReviews({
     required String entityId,
