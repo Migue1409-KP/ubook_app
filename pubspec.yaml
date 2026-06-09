@@ -57,6 +57,7 @@ dependencies:
   google_sign_in: ^6.2.2
   cloud_firestore: ^6.0.0
   supabase_flutter: ^2.12.4
+  url_launcher: ^6.3.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

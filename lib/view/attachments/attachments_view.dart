@@ -31,7 +31,9 @@ class _AttachmentsViewState extends State<AttachmentsView> {
   @override
   void initState() {
     super.initState();
-    _vm.loadBySubject(widget.subjectId);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _vm.loadBySubject(widget.subjectId);
+    });
   }
 
   @override
@@ -105,6 +107,12 @@ class _AttachmentsViewState extends State<AttachmentsView> {
       body: ListenableBuilder(
         listenable: _vm,
         builder: (context, _) {
+          if (_vm.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (_vm.errorMessage != null) {
+            return _ErrorScreen(message: _vm.errorMessage!);
+          }
           if (_vm.attachments.isEmpty) return const _EmptyScreen();
           return ListView.separated(
             padding: const EdgeInsets.all(16),
@@ -506,6 +514,41 @@ class _EmptyScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ErrorScreen extends StatelessWidget {
+  final String message;
+  const _ErrorScreen({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64,
+                color: theme.colorScheme.error),
+            const SizedBox(height: 16),
+            Text(
+              'Error al cargar adjuntos',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
