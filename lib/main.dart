@@ -10,7 +10,7 @@ import 'package:ubook_app/database/app_database.dart';
 import 'package:ubook_app/firebase_options.dart';
 import 'package:ubook_app/view/subjects/subjects_view.dart';
 import 'package:ubook_app/repository/attachments/attachment_repository.dart';
-import 'package:ubook_app/repository/attachments/firebase_attachment_repository.dart';
+import 'package:ubook_app/repository/attachments/floor_attachment_repository.dart';
 import 'package:ubook_app/repository/auth/firestore_user_repository.dart';
 import 'package:ubook_app/repository/auth/floor_user_repository.dart';
 import 'package:ubook_app/repository/auth/syncing_user_repository.dart';
@@ -18,9 +18,6 @@ import 'package:ubook_app/repository/auth/user_repository.dart';
 import 'package:ubook_app/repository/notification/floor_notification_repository.dart';
 import 'package:ubook_app/view_model/notification/notification_view_model.dart';
 import 'package:ubook_app/repository/process/floor_process_repository.dart';
-import 'package:ubook_app/repository/process/firestore_process_repository.dart';
-import 'package:ubook_app/repository/process/syncing_process_repository.dart';
-import 'package:ubook_app/repository/process/process_repository.dart';
 import 'package:ubook_app/repository/reviews/review_repository_provider.dart';
 import 'package:ubook_app/repository/teacher_subject/firestore_subject_teacher_repository.dart';
 import 'package:ubook_app/repository/teacher_subject/floor_subject_teacher_repository.dart';
@@ -40,6 +37,9 @@ import 'view_model/educational_center/educational_center_count_provider.dart';
 import 'view_model/teachers/teacher_count_provider.dart';
 import 'view/admin_user/admin_users_view.dart';
 import 'package:ubook_app/repository/career/career_repository_provider.dart';
+import 'package:ubook_app/model/educational_center/educational_center_model_repository.dart';
+import 'package:ubook_app/repository/educational_center/educational_center_repository_impl.dart';
+import 'package:ubook_app/repository/educational_center/firestore_educational_center_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,6 +65,7 @@ Future<void> main() async {
         migration6to7,
         migration7to8,
         migration8to9,
+        migration9to10,
       ])
       .build();
   final localUserRepository = FloorUserRepository.initialize(database);
@@ -83,21 +84,28 @@ Future<void> main() async {
   // cada push recibida en primer plano se guarda también en la campanita.
   await FcmService.instance.initialize();
   await ReviewRepositoryProvider.initialize(database);
+  EducationalCenterRepositoryImpl.initialize(database);
+  FirestoreEducationalCenterRepository.initialize();
 
   // ── Repositorio de adjuntos ───────────────────────────────────────────────
-  // Metadata (nombre, tipo, fechas, relaciones) → Cloud Firestore.
-  // Archivos binarios → Supabase Storage (bucket 'attachments').
+  // Implementación activa: almacenamiento local (Floor + SQLite).
+  //
+  // TODO: cuando la cuenta de Firebase Storage esté disponible, reemplazar
+  // estas dos líneas por la imentación Firebase:
+  //
+  //   import 'package:ubook_app/repository/attachments/firebase_attachment_repository.dart';
+  //
+  //   AttachmentRepository.setCurrent(
+  //     FirebaseAttachmentRepository.initialize(database),
+  //   );
+  //
+  // Firebase.initializeApp() ya se llama arriba, así que no se necesita
+  // ningún cambio adicional fuera de este bloque.
   AttachmentRepository.setCurrent(
-    SupabaseAttachmentRepository.initialize(),
+    FloorAttachmentRepository.initialize(database),
   );
-  final localProcessRepository = FloorProcessRepository.initialize(database);
-  final remoteProcessRepository = FirestoreProcessRepository.initialize();
-  final processRepository = SyncingProcessRepository.initialize(
-    localProcessRepository,
-    remoteProcessRepository,
-  );
+  final processRepository = FloorProcessRepository.initialize(database);
   await processRepository.ensureInitialized();
-  ProcessRepository.setInstance(processRepository);
   await CareerRepositoryProvider.initialize(database);
   final localSubjectTeacherRepo =
       FloorSubjectTeacherRepository.initialize(database);

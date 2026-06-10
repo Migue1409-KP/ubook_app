@@ -8,12 +8,14 @@ import 'package:ubook_app/model/attachments/attachment_model.dart';
 import 'package:ubook_app/model/auth/user_model.dart';
 import 'package:ubook_app/model/notification/notification_model.dart';
 import 'package:ubook_app/model/process/process_model.dart';
+import 'package:ubook_app/model/educational_center/educational_center_model.dart';
 import 'package:ubook_app/model/career/career_entity.dart';
 import 'package:ubook_app/model/reviews/review.dart';
 import 'package:ubook_app/model/subjectteacher/subjectteacher.dart';
 import 'package:ubook_app/repository/attachments/attachment_dao.dart';
 import 'package:ubook_app/repository/auth/floor_converters.dart';
 import 'package:ubook_app/repository/auth/user_dao.dart';
+import 'package:ubook_app/repository/educational_center/educational_center_dao.dart';
 import 'package:ubook_app/repository/career/career_dao.dart';
 import 'package:ubook_app/repository/notification/notification_dao.dart';
 import 'package:ubook_app/repository/notification/notification_floor_converters.dart';
@@ -162,6 +164,21 @@ final migration8to9 = Migration(8, 9, (database) async {
   );
 });
 
+final migration9to10 = Migration(9, 10, (database) async {
+  await database.execute(
+    'CREATE TABLE IF NOT EXISTS `educational_centers` ('
+        '`id` TEXT NOT NULL, '
+        '`name` TEXT NOT NULL, '
+        '`address` TEXT, '
+        '`type` TEXT, '
+        '`website` TEXT, '
+        '`createdAt` INTEGER NOT NULL, '
+        '`updatedAt` INTEGER NOT NULL, '
+        'PRIMARY KEY (`id`)'
+        ')',
+  );
+});
+
 @TypeConverters([
   AuthProviderConverter,
   StringListConverter,
@@ -171,7 +188,7 @@ final migration8to9 = Migration(8, 9, (database) async {
   NotificationStatusConverter,
 ])
 @Database(
-  version: 9,
+  version: 10,
   entities: [
     UserModel,
     Review,
@@ -181,6 +198,7 @@ final migration8to9 = Migration(8, 9, (database) async {
     ProcessModel,
     Teacher,
     NotificationModel,
+    EducationalCenter,
   ],
 )
 abstract class AppDatabase extends FloorDatabase {
@@ -192,4 +210,5 @@ abstract class AppDatabase extends FloorDatabase {
   SubjectTeacherDao get subjectTeacherDao;
   NotificationDao get notificationDao;
   TeacherDao get teacherDao;
+  EducationalCenterDao get educationalCenterDao;
 }
