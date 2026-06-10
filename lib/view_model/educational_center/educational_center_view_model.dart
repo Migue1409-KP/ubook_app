@@ -12,10 +12,9 @@ class EducationalCenterViewModel extends ChangeNotifier {
   List<EducationalCenter> _centers = [];
   List<EducationalCenter> _filteredCenters = [];
   bool _isLoading = false;
+  bool _searchActive = false;
 
-  List<EducationalCenter> get centers => _filteredCenters.isEmpty && _centers.isNotEmpty
-      ? _centers
-      : _filteredCenters;
+  List<EducationalCenter> get centers => _searchActive ? _filteredCenters : _centers;
 
   bool get isLoading => _isLoading;
 
@@ -26,7 +25,8 @@ class EducationalCenterViewModel extends ChangeNotifier {
 
     try {
       _centers = await _repository.getLocalEducationalCenters();
-      _filteredCenters = List.from(_centers);
+      _filteredCenters = [];
+      _searchActive = false;
     } catch (e) {
       debugPrint('Error cargando centros educativos: $e');
     } finally {
@@ -38,12 +38,14 @@ class EducationalCenterViewModel extends ChangeNotifier {
   /// Filtra u organiza los centros educativos localmente según la búsqueda
   void searchCenter(String query) {
     if (query.isEmpty) {
-      _filteredCenters = List.from(_centers);
+      _searchActive = false;
+      _filteredCenters = [];
     } else {
+      _searchActive = true;
       _filteredCenters = _centers
           .where(
             (center) => center.name.toLowerCase().contains(query.toLowerCase()),
-      )
+
           .toList();
     }
     notifyListeners();
