@@ -251,11 +251,12 @@ class _DashboardViewContent extends StatelessWidget {
       );
       return;
     }
+    final now = DateTime.now().millisecondsSinceEpoch;
     final center = EducationalCenter(
-      id: 'un_id_de_prueba',
-      name: 'Universidad de Prueba',
-      createdAt: DateTime.now().millisecondsSinceEpoch, // 📥 Agrega esto
-      updatedAt: DateTime.now().millisecondsSinceEpoch, // 📥 Agrega esto
+      id: rawId.toString(),
+      name: item['name'] as String? ?? '',
+      createdAt: now,
+      updatedAt: now,
     );
 
     Navigator.push(
