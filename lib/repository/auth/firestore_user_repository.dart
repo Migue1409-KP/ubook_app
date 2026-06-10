@@ -30,6 +30,15 @@ class FirestoreUserRepository implements UserRepository {
   Future<void> ensureInitialized() async {}
 
   @override
+  Future<List<UserModel>> findAll() async {
+    final snap = await _users.orderBy('updated_at', descending: true).get();
+    return snap.docs
+        .map((doc) => _fromData(doc.data()))
+        .whereType<UserModel>()
+        .toList();
+  }
+
+  @override
   Future<UserModel?> findById(String id) async {
     final doc = await _users.doc(id).get();
     return _fromData(doc.data());

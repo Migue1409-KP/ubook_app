@@ -36,6 +36,7 @@ import 'view_model/dashboard/dashboard_view_model.dart';
 import 'view_model/educational_center/educational_center_count_provider.dart';
 import 'view_model/teachers/teacher_count_provider.dart';
 import 'view/admin_user/admin_users_view.dart';
+import 'view_model/admin_user/admin_users_view_model.dart';
 import 'package:ubook_app/repository/career/career_repository_provider.dart';
 import 'package:ubook_app/model/educational_center/educational_center_model_repository.dart';
 import 'package:ubook_app/repository/educational_center/educational_center_repository_impl.dart';
@@ -158,7 +159,12 @@ class MyApp extends StatelessWidget {
             create: (_) => PQRSViewModel(),
             child: const PQRSPage(),
           ),
-          '/admin_user': (context) => const AdminUsersView(),
+          '/admin_user': (context) => ChangeNotifierProvider(
+            create: (ctx) => AdminUsersViewModel(
+              Provider.of<UserRepository>(ctx, listen: false),
+            ),
+            child: const AdminUsersView(),
+          ),
           '/subjects': (context) => SubjectsView(),
         },
         home: const AuthGate(),

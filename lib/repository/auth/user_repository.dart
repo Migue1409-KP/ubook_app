@@ -9,6 +9,8 @@ abstract class UserRepository {
 
   Future<UserModel?> findMostRecentUser();
 
+  Future<List<UserModel>> findAll();
+
   Future<void> insertUser(UserModel user);
 
   Future<int> updateUser(UserModel user);

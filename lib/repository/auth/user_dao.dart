@@ -3,6 +3,9 @@ import 'package:ubook_app/model/auth/user_model.dart';
 
 @dao
 abstract class UserDao {
+  @Query('SELECT * FROM users ORDER BY updatedAt DESC')
+  Future<List<UserModel>> findAll();
+
   @Query('SELECT * FROM users WHERE id = :id LIMIT 1')
   Future<UserModel?> findById(String id);
 

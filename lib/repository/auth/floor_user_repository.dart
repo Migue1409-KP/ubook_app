@@ -47,6 +47,11 @@ class FloorUserRepository implements UserRepository {
   }
 
   @override
+  Future<List<UserModel>> findAll() async {
+    return _database.userDao.findAll();
+  }
+
+  @override
   Future<UserModel?> findById(String id) async {
     return _database.userDao.findById(id);
   }

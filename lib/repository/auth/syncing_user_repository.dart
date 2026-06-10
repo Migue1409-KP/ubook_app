@@ -36,6 +36,19 @@ class SyncingUserRepository implements UserRepository {
   }
 
   @override
+  Future<List<UserModel>> findAll() async {
+    try {
+      final remoteList = await _remote.findAll();
+      for (final user in remoteList) {
+        await _upsertLocal(user);
+      }
+      return remoteList;
+    } catch (_) {
+      return _local.findAll();
+    }
+  }
+
+  @override
   Future<UserModel?> findById(String id) async {
     try {
       final remote = await _remote.findById(id);
