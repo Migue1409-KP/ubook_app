@@ -14,6 +14,8 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // Requerido por flutter_local_notifications (usa APIs de java.time vía desugaring).
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -44,4 +46,11 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Soporte de desugaring para flutter_local_notifications.
+    // Se usa 2.0.4 (sin metadata "variant") por compatibilidad con el AGP del
+    // proyecto; 2.1.x falla con "Failed to parse desugar_jdk_libs variant".
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
