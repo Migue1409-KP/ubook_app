@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../model/subjects/subjects.dart';
 import '../../theme/app_colors.dart';
 import '../../view_model/subjects/subjects_view_model.dart';
+import '../../utils/crash_test_helper.dart';
 import '../process/process_list_view.dart';
 import 'subject_delete_dialog.dart';
 import 'subject_detail_view.dart';
@@ -65,8 +66,11 @@ class _SubjectsViewState extends State<SubjectsView> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSearchAndCreateRow(),
+            const SizedBox(height: 16),
+            const CrashTestButton(),
             const SizedBox(height: 16),
             Expanded(
               child: subjects.isEmpty
@@ -131,24 +135,24 @@ class _SubjectsViewState extends State<SubjectsView> {
           ),
         ),
         const SizedBox(width: 12),
-        FilledButton.icon(
-          onPressed: _openFormView,
-          icon: const Icon(Icons.add),
-          label: const Text('Crear'),
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+FilledButton.icon(
+            onPressed: _openFormView,
+            icon: const Icon(Icons.add),
+            label: const Text('Crear'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmptyState() {
+        ],
+      );
+    }
+ 
+   Widget _buildEmptyState() {
     return const Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
