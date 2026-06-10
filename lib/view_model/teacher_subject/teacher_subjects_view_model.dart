@@ -3,7 +3,6 @@ import '../../model/teachers/teacher.dart';
 import '../../model/subjectteacher/subjectteacher.dart';
 import '../../model/subjectteacher/academic_period.dart';
 import '../../model/subjects/subjects.dart';
-import '../../repository/teacher_subject/floor_subject_teacher_repository.dart';
 import '../../repository/teacher_subject/academic_period_api_repository.dart';
 import '../../repository/teacher_subject/subject_teacher_repository.dart';
 
@@ -42,7 +41,7 @@ class TeacherSubjectsViewModel extends ChangeNotifier {
     this.allTeachers = const [],
     SubjectTeacherRepository? repository,
     AcademicPeriodApiRepository? periodoApi,
-  })  : _repository = repository ?? FloorSubjectTeacherRepository.instance,
+  })  : _repository = repository ?? SubjectTeacherRepository.instance,
         _periodoApi = periodoApi ?? AcademicPeriodApiRepository.instance,
         assert(teacher != null || subject != null) {
     _load();

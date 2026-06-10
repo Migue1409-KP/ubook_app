@@ -175,4 +175,8 @@ class FloorAttachmentRepository implements AttachmentRepository {
     if (!await file.exists()) return null;
     return file.readAsBytes();
   }
+
+  /// No aplica a almacenamiento local — siempre devuelve `null`.
+  @override
+  Future<String?> getSignedUrl(AttachmentModel attachment) async => null;
 }

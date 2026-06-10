@@ -63,6 +63,7 @@ dependencies:
   # con "Failed to parse desugar_jdk_libs variant". La 18.x usa la coordenada
   # correcta (com.android.tools:desugar_jdk_libs).
   flutter_local_notifications: ^18.0.1
+  url_launcher: ^6.3.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
