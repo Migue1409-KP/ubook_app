@@ -1,7 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:ubook_app/service/fcm_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
+import 'package:ubook_app/config/supabase_config.dart';
 import 'package:ubook_app/database/app_database.dart';
 import 'package:ubook_app/firebase_options.dart';
 import 'package:ubook_app/view/subjects/subjects_view.dart';
@@ -15,7 +19,10 @@ import 'package:ubook_app/repository/notification/floor_notification_repository.
 import 'package:ubook_app/view_model/notification/notification_view_model.dart';
 import 'package:ubook_app/repository/process/floor_process_repository.dart';
 import 'package:ubook_app/repository/reviews/review_repository_provider.dart';
+import 'package:ubook_app/repository/teacher_subject/firestore_subject_teacher_repository.dart';
 import 'package:ubook_app/repository/teacher_subject/floor_subject_teacher_repository.dart';
+import 'package:ubook_app/repository/teacher_subject/subject_teacher_repository.dart';
+import 'package:ubook_app/repository/teacher_subject/syncing_subject_teacher_repository.dart';
 import 'package:ubook_app/repository/teachers/floor_teacher_repository.dart';
 import 'view/dashboard/dashboard_view.dart';
 import 'view/auth/login_view.dart';
@@ -38,6 +45,14 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+  // Handler de notificaciones push recibidas con la app en segundo plano o
+  // cerrada. Debe registrarse antes de runApp y referenciar una función de
+  // nivel superior.
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
   );
 
   final database =
@@ -64,6 +79,10 @@ Future<void> main() async {
     database,
   );
   await notificationRepository.ensureInitialized();
+
+  // Notificaciones push (FCM). Se inicializa tras el repositorio local porque
+  // cada push recibida en primer plano se guarda también en la campanita.
+  await FcmService.instance.initialize();
   await ReviewRepositoryProvider.initialize(database);
   EducationalCenterRepositoryImpl.initialize(database);
   FirestoreEducationalCenterRepository.initialize();
@@ -88,7 +107,16 @@ Future<void> main() async {
   final processRepository = FloorProcessRepository.initialize(database);
   await processRepository.ensureInitialized();
   await CareerRepositoryProvider.initialize(database);
-  FloorSubjectTeacherRepository.initialize(database);
+  final localSubjectTeacherRepo =
+      FloorSubjectTeacherRepository.initialize(database);
+  final remoteSubjectTeacherRepo =
+      FirestoreSubjectTeacherRepository.initialize();
+  final subjectTeacherRepository = SyncingSubjectTeacherRepository.initialize(
+    localSubjectTeacherRepo,
+    remoteSubjectTeacherRepo,
+  );
+  await subjectTeacherRepository.ensureInitialized();
+  SubjectTeacherRepository.setInstance(subjectTeacherRepository);
   FloorTeacherRepository.initialize(database);
 
   runApp(MyApp(database: database, userRepository: userRepository));
