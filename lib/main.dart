@@ -35,6 +35,7 @@ import 'view_model/educational_center/educational_center_count_provider.dart';
 import 'view_model/teachers/teacher_count_provider.dart';
 import 'view/admin_user/admin_users_view.dart';
 import 'package:ubook_app/repository/career/career_repository_provider.dart';
+import 'package:ubook_app/repository/pqrs/pqrs_repository_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,6 +57,7 @@ Future<void> main() async {
         migration6to7,
         migration7to8,
         migration8to9,
+        migration9to10
       ])
       .build();
   final localUserRepository = FloorUserRepository.initialize(database);
@@ -88,6 +90,7 @@ Future<void> main() async {
   await CareerRepositoryProvider.initialize(database);
   FloorSubjectTeacherRepository.initialize(database);
   FloorTeacherRepository.initialize(database);
+  await PQRSRepositoryProvider.initialize(database);
 
   runApp(MyApp(database: database, userRepository: userRepository));
 }
@@ -125,7 +128,10 @@ class MyApp extends StatelessWidget {
           '/dashboard': (context) => const DashboardView(),
           '/admin_notifications': (context) => const NotificationAdminView(),
           '/pqrs': (context) => ChangeNotifierProvider(
-            create: (_) => PQRSViewModel(),
+            create: (_) => PQRSViewModel(
+              PQRSRepositoryProvider.instance,
+              context.read<UserRepository>(),
+            )..loadPQRS(),
             child: const PQRSPage(),
           ),
           '/admin_user': (context) => const AdminUsersView(),

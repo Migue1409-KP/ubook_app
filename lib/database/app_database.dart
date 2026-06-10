@@ -23,6 +23,8 @@ import 'package:ubook_app/repository/reviews/review_dao.dart';
 import 'package:ubook_app/repository/teacher_subject/subject_teacher_dao.dart';
 import 'package:ubook_app/model/teachers/teacher.dart';
 import 'package:ubook_app/repository/teachers/teacher_dao.dart';
+import 'package:ubook_app/model/pqrs/pqrs_entity.dart';
+import 'package:ubook_app/repository/pqrs/pqrs_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -161,6 +163,22 @@ final migration8to9 = Migration(8, 9, (database) async {
     'ALTER TABLE `careers` ADD COLUMN `modalityName` TEXT',
   );
 });
+final migration9to10 = Migration(9, 10, (database) async {
+  await database.execute(
+    '''
+    CREATE TABLE IF NOT EXISTS pqrs(
+      id TEXT NOT NULL,
+      userId TEXT NOT NULL,
+      userName TEXT NOT NULL,
+      tipo TEXT NOT NULL,
+      descripcion TEXT NOT NULL,
+      fechaMs INTEGER NOT NULL,
+      estado TEXT NOT NULL,
+      PRIMARY KEY(id)
+    )
+    '''
+  );
+});
 
 @TypeConverters([
   AuthProviderConverter,
@@ -171,7 +189,7 @@ final migration8to9 = Migration(8, 9, (database) async {
   NotificationStatusConverter,
 ])
 @Database(
-  version: 9,
+  version: 10,
   entities: [
     UserModel,
     Review,
@@ -181,6 +199,7 @@ final migration8to9 = Migration(8, 9, (database) async {
     ProcessModel,
     Teacher,
     NotificationModel,
+    PQRSEntity
   ],
 )
 abstract class AppDatabase extends FloorDatabase {
@@ -192,4 +211,5 @@ abstract class AppDatabase extends FloorDatabase {
   SubjectTeacherDao get subjectTeacherDao;
   NotificationDao get notificationDao;
   TeacherDao get teacherDao;
+  PQRSDao get pqrsDao;
 }

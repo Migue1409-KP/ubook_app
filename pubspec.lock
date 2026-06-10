@@ -1070,7 +1070,7 @@ packages:
     source: hosted
     version: "2.4.0+3"
   sqflite_common_ffi_web:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: sqflite_common_ffi_web
       sha256: "61ea702e7aba727f28be7ead00b84c19c745cd4a4934d0c41473303df11ac9ea"
@@ -1285,6 +1285,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.5"
+  uuid:
+    dependency: "direct main"
+    description:
+      name: uuid
+      sha256: "1fef9e8e11e2991bb773070d4656b7bd5d850967a2456cfc83cf47925ba79489"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.5.3"
   vector_math:
     dependency: transitive
     description:

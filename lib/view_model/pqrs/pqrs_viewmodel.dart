@@ -1,90 +1,73 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+
 import '../../model/pqrs/pqrs.dart';
+import '../../repository/auth/user_repository.dart';
+import '../../repository/pqrs/pqrs_repository.dart';
 
 class PQRSViewModel extends ChangeNotifier {
-  final String _currentUserId = 'user-001';
-  final String _currentUserName = 'Usuario demo';
+  final PQRSRepository _pqrsRepository;
+  final UserRepository _userRepository;
 
-  final List<PQRS> _items = [
-    PQRS(
-      userId: 'user-001',
-      userName: 'Usuario demo',
-      tipo: 'Peticion',
-      descripcion: 'Solicitud de informacion',
-      fecha: DateTime.now(),
-      estado: 'Abierta',
-    ),
-    PQRS(
-      userId: 'user-002',
-      userName: 'Laura Gomez',
-      tipo: 'Queja',
-      descripcion: 'Problema con el servicio',
-      fecha: DateTime.now(),
-      estado: 'En proceso',
-    ),
-    PQRS(
-      userId: 'user-003',
-      userName: 'Carlos Perez',
-      tipo: 'Reclamo',
-      descripcion: 'Cobro incorrecto',
-      fecha: DateTime.now(),
-      estado: 'Cerrada',
-    ),
-  ];
+  PQRSViewModel(
+    this._pqrsRepository,
+    this._userRepository,
+  );
 
-  int _counter = 0;
+  List<PQRS> _items = [];
 
   List<PQRS> get items => List.unmodifiable(_items);
 
-  void addSample() {
-    final types = ['Peticion', 'Queja', 'Reclamo'];
-    final statuses = ['Abierta', 'En proceso', 'Cerrada'];
-    final index = _counter % types.length;
-
-    _items.insert(
-      0,
-      PQRS(
-        userId: _currentUserId,
-        userName: _currentUserName,
-        tipo: types[index],
-        descripcion: 'Nueva solicitud creada desde la app',
-        fecha: DateTime.now(),
-        estado: statuses[index],
-      ),
-    );
-
-    _counter++;
+  Future<void> loadPQRS() async {
+    _items = await _pqrsRepository.getAll();
     notifyListeners();
   }
 
-  void addPQRS({
+  Future<void> addPQRS({
     required String tipo,
     required String descripcion,
     String estado = 'Abierta',
-  }) {
-    _items.insert(
-      0,
-      PQRS(
-        userId: _currentUserId,
-        userName: _currentUserName,
-        tipo: tipo,
-        descripcion: descripcion,
-        fecha: DateTime.now(),
-        estado: estado,
-      ),
+  }) async {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+
+    if (firebaseUser == null) {
+      throw Exception('No hay usuario autenticado');
+    }
+
+    final user =
+        await _userRepository.findById(firebaseUser.uid);
+
+    if (user == null) {
+      throw Exception('Usuario no encontrado');
+    }
+
+    final pqrs = PQRS(
+      userId: user.id,
+      userName: user.name,
+      tipo: tipo,
+      descripcion: descripcion,
+      fecha: DateTime.now(),
+      estado: estado,
     );
+
+    final saved = await _pqrsRepository.save(pqrs);
+
+    _items.insert(0, saved);
+
     notifyListeners();
   }
 
-  void updatePQRS({
+  Future<void> updatePQRS({
     required int index,
     required String tipo,
     required String descripcion,
     required String estado,
-  }) {
+  }) async {
     if (index < 0 || index >= _items.length) return;
+
     final current = _items[index];
-    _items[index] = PQRS(
+
+    final updated = PQRS(
       id: current.id,
       userId: current.userId,
       userName: current.userName,
@@ -93,13 +76,23 @@ class PQRSViewModel extends ChangeNotifier {
       fecha: current.fecha,
       estado: estado,
     );
+
+    await _pqrsRepository.save(updated);
+
+    _items[index] = updated;
+
     notifyListeners();
   }
 
-  void updateEstado(int index, String estado) {
+  Future<void> updateEstado(
+    int index,
+    String estado,
+  ) async {
     if (index < 0 || index >= _items.length) return;
+
     final current = _items[index];
-    _items[index] = PQRS(
+
+    final updated = PQRS(
       id: current.id,
       userId: current.userId,
       userName: current.userName,
@@ -108,6 +101,25 @@ class PQRSViewModel extends ChangeNotifier {
       fecha: current.fecha,
       estado: estado,
     );
+
+    await _pqrsRepository.save(updated);
+
+    _items[index] = updated;
+
+    notifyListeners();
+  }
+
+  Future<void> deletePQRS(
+    int index,
+  ) async {
+    if (index < 0 || index >= _items.length) return;
+
+    final item = _items[index];
+
+    await _pqrsRepository.delete(item);
+
+    _items.removeAt(index);
+
     notifyListeners();
   }
 }
