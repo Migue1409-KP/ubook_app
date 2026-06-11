@@ -1,0 +1,128 @@
+import 'package:floor/floor.dart';
+
+@Entity(tableName: 'teachers')
+class Teacher {
+  @primaryKey
+  final String id;
+  @ColumnInfo(name: 'first_name')
+  final String firstName;
+  @ColumnInfo(name: 'last_name')
+  final String lastName;
+  final String email;
+  final String phone;
+  final int age;
+  final String department;
+  final String specialty;
+  final List<String> subjects;
+  @ColumnInfo(name: 'profile_image_url')
+  final String profileImageUrl;
+  @ColumnInfo(name: 'is_active')
+  final bool isActive;
+  @ColumnInfo(name: 'created_at')
+  final DateTime createdAt;
+  @ColumnInfo(name: 'updated_at')
+  final DateTime updatedAt;
+
+  const Teacher({
+    required this.id,
+    required this.firstName,
+    required this.lastName,
+    required this.email,
+    this.phone = '',
+    this.age = 0,
+    this.department = '',
+    this.specialty = '',
+    this.subjects = const [],
+    this.profileImageUrl = '',
+    this.isActive = true,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  String get fullName => '$firstName $lastName';
+
+  factory Teacher.fromJson(Map<String, dynamic> json) {
+    return Teacher(
+      id: json['id'] as String,
+      firstName: json['first_name'] as String,
+      lastName: json['last_name'] as String,
+      email: json['email'] as String,
+      phone: json['phone'] as String? ?? '',
+      age: json['age'] as int? ?? 0,
+      department: json['department'] as String? ?? '',
+      specialty: json['specialty'] as String? ?? '',
+      subjects: (json['subjects'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      profileImageUrl: json['profile_image_url'] as String? ?? '',
+      isActive: json['is_active'] as bool? ?? true,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'first_name': firstName,
+      'last_name': lastName,
+      'email': email,
+      'phone': phone,
+      'age': age,
+      'department': department,
+      'specialty': specialty,
+      'subjects': subjects,
+      'profile_image_url': profileImageUrl,
+      'is_active': isActive,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
+  Teacher copyWith({
+    String? id,
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? phone,
+    int? age,
+    String? department,
+    String? specialty,
+    List<String>? subjects,
+    String? profileImageUrl,
+    bool? isActive,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return Teacher(
+      id: id ?? this.id,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      age: age ?? this.age,
+      department: department ?? this.department,
+      specialty: specialty ?? this.specialty,
+      subjects: subjects ?? this.subjects,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'Teacher(id: $id, name: $fullName, email: $email, department: $department)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Teacher && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
+}

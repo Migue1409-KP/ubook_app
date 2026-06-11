@@ -1,0 +1,275 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import '../model/notification/notification_model.dart';
+import '../model/process/process_model.dart';
+import '../repository/process/process_repository.dart';
+import '../service/notification_service.dart';
+
+class ProcessViewModel extends ChangeNotifier {
+  ProcessViewModel({
+    ProcessRepository? repository,
+    this.educationalCenterId,
+    this.educationalCenterName,
+    this.careerId,
+    this.careerName,
+    this.subjectId,
+    this.subjectName,
+  }) : _repository = repository ?? ProcessRepository.instance {
+    loadProcesses();
+  }
+
+  final ProcessRepository _repository;
+  final String? educationalCenterId;
+  final String? educationalCenterName;
+  final String? careerId;
+  final String? careerName;
+  final String? subjectId;
+  final String? subjectName;
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  List<ProcessModel> _processes = [];
+
+  // Filter state
+  String _selectedFilter = 'Todos';
+
+  // Loading state
+  bool _isLoading = false;
+
+  // Getters
+  List<ProcessModel> get processes => _getFilteredProcesses();
+  String get selectedFilter => _selectedFilter;
+  bool get isLoading => _isLoading;
+  bool get isEducationalCenterScoped => educationalCenterId != null;
+  bool get isCareerScoped => careerId != null;
+  bool get isSubjectScoped => subjectId != null;
+  List<String> get filterOptions {
+    if (isEducationalCenterScoped) {
+      return const ['Todos', 'Centro educativo', 'Activos', 'Inactivos'];
+    }
+    if (isCareerScoped) {
+      return const ['Todos', 'Carrera', 'Activos', 'Inactivos'];
+    }
+    if (isSubjectScoped) {
+      return const ['Todos', 'Materia', 'Activos', 'Inactivos'];
+    }
+    return const [
+      'Todos',
+      'Carrera',
+      'Materia',
+      'Centro educativo',
+      'Activos',
+      'Inactivos',
+    ];
+  }
+
+  Future<void> loadProcesses() async {
+    _isLoading = true;
+    notifyListeners();
+
+    final processes = await _repository.getProcesses();
+    if (_disposed) return;
+
+    if (isEducationalCenterScoped) {
+      _processes = processes
+          .where(
+            (p) =>
+                p.processType == ProcessType.educationalCenter &&
+                p.relatedId == educationalCenterId,
+          )
+          .toList();
+    } else if (isCareerScoped) {
+      _processes = processes
+          .where(
+            (p) =>
+                p.processType == ProcessType.career && p.relatedId == careerId,
+          )
+          .toList();
+    } else if (isSubjectScoped) {
+      _processes = processes
+          .where(
+            (p) =>
+                p.processType == ProcessType.subject &&
+                p.relatedId == subjectId,
+          )
+          .toList();
+    } else {
+      _processes = processes;
+    }
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  // Get filtered processes based on selected filter
+  List<ProcessModel> _getFilteredProcesses() {
+    switch (_selectedFilter) {
+      case 'Carrera':
+        return List.unmodifiable(
+          _processes.where((p) => p.processType == ProcessType.career),
+        );
+      case 'Materia':
+        return List.unmodifiable(
+          _processes.where((p) => p.processType == ProcessType.subject),
+        );
+      case 'Centro educativo':
+        return List.unmodifiable(
+          _processes.where(
+            (p) => p.processType == ProcessType.educationalCenter,
+          ),
+        );
+      case 'Activos':
+        return List.unmodifiable(_processes.where((p) => p.isActive));
+      case 'Inactivos':
+        return List.unmodifiable(_processes.where((p) => !p.isActive));
+      default:
+        return List.unmodifiable(_processes);
+    }
+  }
+
+  // Set filter
+  void setFilter(String filter) {
+    if (!filterOptions.contains(filter)) return;
+    _selectedFilter = filter;
+    notifyListeners();
+  }
+
+  // Add process (mockup)
+  Future<void> addProcess(ProcessModel process) async {
+    _isLoading = true;
+    notifyListeners();
+
+    final now = DateTime.now();
+    final processToSave = isEducationalCenterScoped
+        ? process.copyWith(
+            processType: ProcessType.educationalCenter,
+            relatedId: educationalCenterId,
+            createdAt: now,
+            updatedAt: now,
+          )
+        : isCareerScoped
+        ? process.copyWith(
+            processType: ProcessType.career,
+            relatedId: careerId,
+            createdAt: now,
+            updatedAt: now,
+          )
+        : isSubjectScoped
+        ? process.copyWith(
+            processType: ProcessType.subject,
+            relatedId: subjectId,
+            createdAt: now,
+            updatedAt: now,
+          )
+        : process.copyWith(
+            createdAt: now,
+            updatedAt: now,
+          );
+
+    await _repository.addProcess(processToSave);
+    unawaited(NotificationService.push(
+      title: 'Nuevo proceso registrado',
+      message: 'El proceso "${processToSave.name}" fue registrado en el sistema.',
+      type: NotificationType.other,
+    ));
+    if (_disposed) return;
+
+    _processes.add(processToSave);
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  // Update process (mockup)
+  Future<void> updateProcess(ProcessModel process) async {
+    _isLoading = true;
+    notifyListeners();
+
+    final now = DateTime.now();
+    final processToSave = isEducationalCenterScoped
+        ? process.copyWith(
+            processType: ProcessType.educationalCenter,
+            relatedId: educationalCenterId,
+            updatedAt: now,
+          )
+        : isCareerScoped
+        ? process.copyWith(
+            processType: ProcessType.career,
+            relatedId: careerId,
+            updatedAt: now,
+          )
+        : isSubjectScoped
+        ? process.copyWith(
+            processType: ProcessType.subject,
+            relatedId: subjectId,
+            updatedAt: now,
+          )
+        : process.copyWith(
+            updatedAt: now,
+          );
+
+    await _repository.updateProcess(processToSave);
+    unawaited(NotificationService.push(
+      title: 'Proceso actualizado',
+      message: 'El proceso "${processToSave.name}" fue actualizado.',
+      type: NotificationType.other,
+    ));
+    if (_disposed) return;
+
+    final index = _processes.indexWhere((p) => p.id == processToSave.id);
+    if (index != -1) {
+      _processes[index] = processToSave;
+    }
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  // Delete process (mockup)
+  Future<void> deleteProcess(String processId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    final process = _processes.firstWhere((p) => p.id == processId);
+    await _repository.deleteProcess(processId);
+    unawaited(NotificationService.push(
+      title: 'Proceso eliminado',
+      message: 'El proceso "${process.name}" fue eliminado del sistema.',
+      type: NotificationType.other,
+    ));
+    if (_disposed) return;
+
+    _processes.removeWhere((p) => p.id == processId);
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  // Restore a previously deleted process at a specific index
+  void restoreProcess(ProcessModel process, int index) {
+    if (_disposed) return;
+    if (index >= 0 && index <= _processes.length) {
+      _processes.insert(index, process);
+    } else {
+      _processes.add(process);
+    }
+    _repository.addProcess(process);
+    notifyListeners();
+  }
+
+  // Get the raw index of a process in the internal list
+  int indexOfProcess(ProcessModel process) {
+    return _processes.indexOf(process);
+  }
+
+  // Get process by ID
+  ProcessModel? getProcessById(String id) {
+    try {
+      return _processes.firstWhere((p) => p.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+}

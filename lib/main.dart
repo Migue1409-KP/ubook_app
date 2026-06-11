@@ -1,122 +1,192 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'package:ubook_app/service/fcm_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
+import 'package:ubook_app/config/supabase_config.dart';
+import 'package:ubook_app/database/app_database.dart';
+import 'package:ubook_app/firebase_options.dart';
+import 'package:ubook_app/view/subjects/subjects_view.dart';
+import 'package:ubook_app/repository/attachments/attachment_repository.dart';
+import 'package:ubook_app/repository/attachments/floor_attachment_repository.dart';
+import 'package:ubook_app/repository/auth/firestore_user_repository.dart';
+import 'package:ubook_app/repository/auth/floor_user_repository.dart';
+import 'package:ubook_app/repository/auth/syncing_user_repository.dart';
+import 'package:ubook_app/repository/auth/user_repository.dart';
+import 'package:ubook_app/repository/notification/floor_notification_repository.dart';
+import 'package:ubook_app/view_model/notification/notification_view_model.dart';
+import 'package:ubook_app/repository/process/floor_process_repository.dart';
+import 'package:ubook_app/repository/reviews/review_repository_provider.dart';
+import 'package:ubook_app/repository/teacher_subject/firestore_subject_teacher_repository.dart';
+import 'package:ubook_app/repository/teacher_subject/floor_subject_teacher_repository.dart';
+import 'package:ubook_app/repository/teacher_subject/subject_teacher_repository.dart';
+import 'package:ubook_app/repository/teacher_subject/syncing_subject_teacher_repository.dart';
+import 'package:ubook_app/repository/teachers/floor_teacher_repository.dart';
+import 'view/dashboard/dashboard_view.dart';
+import 'view/auth/login_view.dart';
+import 'view/auth/profile_view.dart';
+import 'view/auth/register_view.dart';
+import 'view/notification/notification_admin_view.dart';
+import 'view/pqrs/pqrs_page.dart';
+import 'view_model/pqrs/pqrs_viewmodel.dart';
+import 'view_model/auth/user_count_provider.dart';
+import 'view_model/dashboard/dashboard_view_model.dart';
+import 'view_model/educational_center/educational_center_count_provider.dart';
+import 'view_model/teachers/teacher_count_provider.dart';
+import 'view/admin_user/admin_users_view.dart';
+import 'view_model/admin_user/admin_users_view_model.dart';
+import 'package:ubook_app/repository/career/career_repository_provider.dart';
+import 'package:ubook_app/repository/educational_center/educational_center_repository_impl.dart';
+import 'package:ubook_app/repository/educational_center/firestore_educational_center_repository.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  // Handler de notificaciones push recibidas con la app en segundo plano o
+  // cerrada. Debe registrarse antes de runApp y referenciar una función de
+  // nivel superior.
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
+  );
+
+  final database =
+      await $FloorAppDatabase.databaseBuilder('ubook_app.db').addMigrations([
+        migration1to2,
+        migration2to3,
+        migration3to4,
+        migration4to5,
+        migration5to6,
+        migration6to7,
+        migration7to8,
+        migration8to9,
+        migration9to10,
+      ])
+      .build();
+  final localUserRepository = FloorUserRepository.initialize(database);
+  final remoteUserRepository = FirestoreUserRepository.initialize();
+  final userRepository = SyncingUserRepository.initialize(
+    localUserRepository,
+    remoteUserRepository,
+  );
+  await userRepository.ensureInitialized();
+  final notificationRepository = FloorNotificationRepository.initialize(
+    database,
+  );
+  await notificationRepository.ensureInitialized();
+
+  // Notificaciones push (FCM). Se inicializa tras el repositorio local porque
+  // cada push recibida en primer plano se guarda también en la campanita.
+  await FcmService.instance.initialize();
+  await ReviewRepositoryProvider.initialize(database);
+  EducationalCenterRepositoryImpl.initialize(database);
+  FirestoreEducationalCenterRepository.initialize();
+
+  // ── Repositorio de adjuntos ───────────────────────────────────────────────
+  // Implementación activa: almacenamiento local (Floor + SQLite).
+  //
+  // TODO: cuando la cuenta de Firebase Storage esté disponible, reemplazar
+  // estas dos líneas por la imentación Firebase:
+  //
+  //   import 'package:ubook_app/repository/attachments/firebase_attachment_repository.dart';
+  //
+  //   AttachmentRepository.setCurrent(
+  //     FirebaseAttachmentRepository.initialize(database),
+  //   );
+  //
+  // Firebase.initializeApp() ya se llama arriba, así que no se necesita
+  // ningún cambio adicional fuera de este bloque.
+  AttachmentRepository.setCurrent(
+    FloorAttachmentRepository.initialize(database),
+  );
+  final processRepository = FloorProcessRepository.initialize(database);
+  await processRepository.ensureInitialized();
+  await CareerRepositoryProvider.initialize(database);
+  final localSubjectTeacherRepo =
+      FloorSubjectTeacherRepository.initialize(database);
+  final remoteSubjectTeacherRepo =
+      FirestoreSubjectTeacherRepository.initialize();
+  final subjectTeacherRepository = SyncingSubjectTeacherRepository.initialize(
+    localSubjectTeacherRepo,
+    remoteSubjectTeacherRepo,
+  );
+  await subjectTeacherRepository.ensureInitialized();
+  SubjectTeacherRepository.setInstance(subjectTeacherRepository);
+  FloorTeacherRepository.initialize(database);
+
+  runApp(MyApp(database: database, userRepository: userRepository));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, this.database, this.userRepository});
 
-  // This widget is the root of your application.
+  final AppDatabase? database;
+  final UserRepository? userRepository;
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+    return MultiProvider(
+      providers: [
+        if (database != null) Provider<AppDatabase>.value(value: database!),
+        if (userRepository != null)
+          Provider<UserRepository>.value(value: userRepository!),
+        ChangeNotifierProvider(create: (_) => NotificationViewModel()),
+        ChangeNotifierProvider(create: (_) => UserCountProvider()),
+        ChangeNotifierProvider(create: (_) => TeacherCountProvider()),
+        ChangeNotifierProvider(create: (_) => EducationalCenterCountProvider()),
+        ChangeNotifierProvider(create: (_) => DashboardViewModel()),
+      ],
+      child: MaterialApp(
+        title: 'UBook',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+          useMaterial3: true,
+        ),
+        routes: {
+          '/login': (context) => const LoginView(),
+          '/register': (context) => const RegisterView(),
+          '/profile': (context) => const ProfileView(),
+          '/dashboard': (context) => const DashboardView(),
+          '/admin_notifications': (context) => const NotificationAdminView(),
+          '/pqrs': (context) => ChangeNotifierProvider(
+            create: (_) => PQRSViewModel(),
+            child: const PQRSPage(),
+          ),
+          '/admin_user': (context) => ChangeNotifierProvider(
+            create: (ctx) => AdminUsersViewModel(
+              Provider.of<UserRepository>(ctx, listen: false),
+            ),
+            child: const AdminUsersView(),
+          ),
+          '/subjects': (context) => SubjectsView(),
+        },
+        home: const AuthGate(),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        return snapshot.data != null ? const DashboardView() : const LoginView();
+      },
     );
   }
 }

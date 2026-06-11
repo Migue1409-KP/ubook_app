@@ -1,0 +1,1306 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:ubook_app/model/subjectteacher/academic_period.dart';
+import 'package:ubook_app/model/subjectteacher/subjectteacher.dart';
+import 'package:ubook_app/view/teacher_subject/assign_subject_teacher_page.dart';
+import '../../model/reviews/review.dart';
+import '../../model/reviews/review_entity_types.dart';
+import '../../model/teachers/teacher.dart';
+import '../../model/subjects/subjects.dart';
+import '../../theme/app_colors.dart';
+import '../../view/reviews/create_review_view.dart';
+import '../../view_model/reviews/reviews_view_model.dart';
+import '../../view_model/teacher_subject/teacher_subjects_view_model.dart';
+import '../../view/attachments/attachments_view.dart';
+
+// ---------------------------------------------------------------------------
+// Entry point — crea el ViewModel y lo inyecta con ChangeNotifierProvider
+// ---------------------------------------------------------------------------
+class TeacherSubjectsPage extends StatelessWidget {
+  final Teacher? teacher;
+  final Subject? subject;
+  final List<Subject> allSubjects;
+  final List<Teacher> allTeachers;
+
+  const TeacherSubjectsPage({
+    super.key,
+    this.teacher,
+    this.subject,
+    this.allSubjects = const [],
+    this.allTeachers = const [],
+  }) : assert(teacher != null || subject != null);
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => TeacherSubjectsViewModel(
+        teacher: teacher,
+        subject: subject,
+        allSubjects: allSubjects,
+        allTeachers: allTeachers,
+      ),
+      child: _TeacherSubjectsView(
+        teacher: teacher,
+        subject: subject,
+        allSubjects: allSubjects,
+        allTeachers: allTeachers,
+      ),
+    );
+  }
+}
+
+class _TeacherSubjectsView extends StatefulWidget {
+  final Teacher? teacher;
+  final Subject? subject;
+  final List<Subject> allSubjects;
+  final List<Teacher> allTeachers;
+
+  const _TeacherSubjectsView({
+    this.teacher,
+    this.subject,
+    this.allSubjects = const [],
+    this.allTeachers = const [],
+  });
+
+  @override
+  State<_TeacherSubjectsView> createState() => _TeacherSubjectsViewState();
+}
+
+class _TeacherSubjectsViewState extends State<_TeacherSubjectsView>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  final TextEditingController _searchCtrl = TextEditingController();
+  String? _busySubjectId;
+  ReviewsViewModel? _reviewsViewModel;
+
+  void _onReviewsChange() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+      length: widget.teacher != null ? 3 : 1,
+      vsync: this,
+    );
+
+    if (widget.teacher != null) {
+      _reviewsViewModel = ReviewsViewModel();
+      _reviewsViewModel!.addListener(_onReviewsChange);
+      _reviewsViewModel!.loadReviews(
+        entityId: widget.teacher!.id,
+        entityType: ReviewEntityTypes.teacher,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _reviewsViewModel?.removeListener(_onReviewsChange);
+    _reviewsViewModel?.dispose();
+    _tabController.dispose();
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // context.watch reconstruye el widget cada vez que el VM notifica
+    final vm = context.watch<TeacherSubjectsViewModel>();
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        title: Text(
+          vm.pageTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Recargar',
+            onPressed: vm.isInitialLoading ? null : vm.refresh,
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_link_rounded),
+            tooltip: 'Asignar nueva relación',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AssignSubjectTeacherPage(
+                  allTeachers: widget.allTeachers,
+                  allSubjects: widget.allSubjects,
+                ),
+              ),
+            ).then((_) => vm.refresh()),
+          ),
+        ],
+        bottom: vm.isTeacherMode
+            ? TabBar(
+                controller: _tabController,
+                indicatorColor: Colors.white,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white60,
+                tabs: [
+                  Tab(
+                    icon: const Icon(Icons.book),
+                    text: 'Asignadas (${vm.assignedSubjects.length})',
+                  ),
+                  Tab(
+                    icon: const Icon(Icons.add_box_outlined),
+                    text: 'Disponibles (${vm.availableSubjects.length})',
+                  ),
+                  Tab(
+                    icon: const Icon(Icons.reviews_outlined),
+                    text: 'Reseñas (${_reviewsViewModel?.reviews.length ?? 0})',
+                  ),
+                ],
+              )
+            : null,
+      ),
+      body: vm.isInitialLoading
+          ? _buildSkeleton()
+          : vm.errorMessage != null &&
+                (vm.isTeacherMode
+                    ? vm.assignedSubjects.isEmpty
+                    : vm.subjectLinks.isEmpty)
+          ? _buildError(vm)
+          : vm.isTeacherMode
+          ? _buildTeacherBody(vm)
+          : _buildSubjectBody(vm),
+    );
+  }
+
+  // ── Modo PROFESOR ─────────────────────────────────────────────────────────
+  Widget _buildTeacherBody(TeacherSubjectsViewModel vm) {
+    return Column(
+      children: [
+        _buildTeacherHeader(vm),
+        if (vm.apiWarning != null) _buildApiWarningBanner(vm),
+        if (vm.periodos.isNotEmpty) _buildPeriodoSelector(vm),
+        _buildSearchBar(vm),
+        const SizedBox(height: 4),
+        if (vm.errorMessage != null) _buildErrorBanner(vm),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildSubjectList(vm, vm.filteredAssigned(), assigned: true),
+              _buildSubjectList(vm, vm.filteredAvailable(), assigned: false),
+              _buildReviewsTab(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPeriodoSelector(TeacherSubjectsViewModel vm) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.06),
+        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.event_note_rounded, color: AppColors.primary, size: 18),
+          const SizedBox(width: 8),
+          Text('Periodo:',
+              style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: DropdownButton<AcademicPeriod>(
+              isExpanded: true,
+              value: vm.selectedPeriodo,
+              underline: const SizedBox.shrink(),
+              items: vm.periodos
+                  .map((p) => DropdownMenuItem(
+                        value: p,
+                        child: Text(
+                          '${p.etiqueta}${p.estaActivo ? " • activo" : ""}',
+                          style: TextStyle(
+                              color: AppColors.textPrimary, fontSize: 13),
+                        ),
+                      ))
+                  .toList(),
+              onChanged: (p) {
+                if (p != null) vm.selectPeriodo(p);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApiWarningBanner(TeacherSubjectsViewModel vm) => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.1),
+          border: Border.all(color: Colors.orange.withOpacity(0.4)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.cloud_off_rounded,
+                color: Colors.orange, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                vm.apiWarning!,
+                style: const TextStyle(color: Colors.orange, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _buildReviewsTab() {
+    final reviewsVm = _reviewsViewModel;
+    if (reviewsVm == null) {
+      return const SizedBox.shrink();
+    }
+
+    final reviews = reviewsVm.reviews;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: FilledButton.icon(
+            onPressed: _openCreateReview,
+            icon: const Icon(Icons.rate_review_outlined, size: 18),
+            label: const Text('Crear reseñas'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (reviewsVm.isLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (reviewsVm.errorMessage != null)
+          _buildReviewStatusCard(
+            message: reviewsVm.errorMessage!,
+            actionLabel: 'Reintentar',
+            onAction: reviewsVm.refresh,
+          )
+        else if (reviews.isEmpty)
+          _buildReviewStatusCard(
+            message: 'Aun no hay reseñas para este profesor.',
+          )
+        else ...[
+          _buildReviewSummaryCard(reviewsVm),
+          const SizedBox(height: 10),
+          ...reviews.map(_buildReviewCard),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildReviewSummaryCard(ReviewsViewModel reviewsVm) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.star_rounded, color: Colors.amber, size: 24),
+          const SizedBox(width: 8),
+          Text(
+            reviewsVm.averageRating.toStringAsFixed(1),
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            '${reviewsVm.reviews.length} reseñas',
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewCard(Review review) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  review.title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              Text(
+                _formatDate(review.createdAt),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _buildStars(review.rating),
+          if (review.content != null && review.content!.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              review.content!,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewStatusCard({
+    required String message,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+            ),
+          ),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: onAction,
+              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+              child: Text(actionLabel),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStars(int rating) {
+    return Row(
+      children: List<Widget>.generate(5, (index) {
+        return Icon(
+          index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+          color: Colors.amber,
+          size: 18,
+        );
+      }),
+    );
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '--/--/----';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    return '$day/$month/$year';
+  }
+
+  Future<void> _openCreateReview() async {
+    if (widget.teacher == null || _reviewsViewModel == null) return;
+
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateReviewView(
+          entityId: widget.teacher!.id,
+          entityType: ReviewEntityTypes.teacher,
+          userId: 'USR-APP-001',
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+
+    await _reviewsViewModel!.refresh();
+  }
+
+  // ── Modo MATERIA ──────────────────────────────────────────────────────────
+  Widget _buildSubjectBody(TeacherSubjectsViewModel vm) {
+    final links = vm.subjectLinks;
+    return Column(
+      children: [
+        _buildSubjectHeader(vm),
+        if (vm.apiWarning != null) _buildApiWarningBanner(vm),
+        if (vm.periodos.isNotEmpty) _buildPeriodoSelector(vm),
+        if (vm.errorMessage != null) _buildErrorBanner(vm),
+        links.isEmpty
+            ? Expanded(child: _buildEmpty())
+            : Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  itemCount: links.length,
+                  itemBuilder: (_, i) => _TeacherLinkCard(
+                    link: links[i],
+                    isBusy: vm.isBusy,
+                    onRemove: () => _handleRemoveLink(links[i]),
+                  ),
+                ),
+              ),
+      ],
+    );
+  }
+
+  Widget _buildSubjectList(
+    TeacherSubjectsViewModel vm,
+    List<Subject> subjects, {
+    required bool assigned,
+  }) {
+    if (subjects.isEmpty) {
+      return _EmptyState(
+        icon: assigned ? Icons.book_outlined : Icons.check_circle_outline,
+        message: vm.searchQuery.isEmpty
+            ? assigned
+                  ? 'Este profesor no tiene materias asignadas.'
+                  : 'Todas las materias ya están asignadas.'
+            : 'No hay resultados para "${vm.searchQuery}".',
+        actionLabel: assigned ? 'Ver disponibles' : null,
+        onAction: assigned ? () => _tabController.animateTo(1) : null,
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 16),
+      itemCount: subjects.length,
+      itemBuilder: (_, i) {
+        final s = subjects[i];
+        final link = assigned ? vm.linkForSubject(s.id) : null;
+        return _SubjectCard(
+          subject: s,
+          isAssigned: assigned,
+          isLoading: _busySubjectId == s.id,
+          periodoEtiqueta: link?.periodoEtiqueta,
+          onToggle: _busySubjectId != null
+              ? null
+              : assigned
+              ? () => _handleRemove(s)
+              : () => _handleAssign(s),
+          onAdjuntos: assigned ? () => _goToAdjuntos(vm, s.id) : null,
+        );
+      },
+    );
+  }
+
+  // ── Headers ───────────────────────────────────────────────────────────────
+  Widget _buildTeacherHeader(TeacherSubjectsViewModel vm) {
+    final t = widget.teacher!;
+    return Column(
+      children: [
+        _InfoHeader(
+          initials: '${t.firstName[0]}${t.lastName[0]}',
+          title: t.fullName,
+          subtitle: t.email,
+          tag: t.department,
+          badge1Label: 'Materias',
+          badge1Value: '${vm.assignedSubjects.length}',
+          badge2Label: 'Créditos',
+          badge2Value: '${vm.totalCredits}',
+        ),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.save_outlined, color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Total asignaciones almacenadas: ${vm.storedLinkCount}',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubjectHeader(TeacherSubjectsViewModel vm) {
+    final s = widget.subject!;
+    return Column(
+      children: [
+        _InfoHeader(
+          initials: s.nombre.substring(0, 2).toUpperCase(),
+          title: s.nombre,
+          subtitle: s.contenido,
+          tag: '${s.creditos} créditos  •  ${s.horas} h',
+          badge1Label: 'Profesores',
+          badge1Value: '${vm.subjectLinks.length}',
+          badge2Label: '',
+          badge2Value: '',
+        ),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.save_outlined, color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Total asignaciones almacenadas: ${vm.storedLinkCount}',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Acciones ──────────────────────────────────────────────────────────────
+  Future<void> _handleAssign(Subject subject) async {
+    // context.read accede al VM sin suscribirse (solo para llamar métodos)
+    final vm = context.read<TeacherSubjectsViewModel>();
+    setState(() => _busySubjectId = subject.id);
+    final ok = await vm.assignSubject(subject);
+    setState(() => _busySubjectId = null);
+    if (!mounted) return;
+    if (ok) {
+      _snack('✅  ${subject.nombre} asignada correctamente');
+      _tabController.animateTo(0);
+    } else {
+      _snack('❌  ${vm.errorMessage}', isError: true);
+    }
+  }
+
+  Future<void> _handleRemove(Subject subject) async {
+    final vm = context.read<TeacherSubjectsViewModel>();
+    final confirmed = await _confirmDialog(subject.nombre);
+    if (!confirmed || !mounted) return;
+    setState(() => _busySubjectId = subject.id);
+    final ok = await vm.removeSubject(subject);
+    setState(() => _busySubjectId = null);
+    if (!mounted) return;
+    ok
+        ? _snack('🗑  ${subject.nombre} quitada del profesor')
+        : _snack('❌  ${vm.errorMessage}', isError: true);
+  }
+
+  Future<void> _handleRemoveLink(SubjectTeacher link) async {
+    final vm = context.read<TeacherSubjectsViewModel>();
+    final confirmed = await _confirmDialog(link.teacherName);
+    if (!confirmed || !mounted) return;
+    final ok = await vm.removeLink(link);
+    if (!mounted) return;
+    ok
+        ? _snack('🗑  Asignación eliminada')
+        : _snack('❌  ${vm.errorMessage}', isError: true);
+  }
+
+  void _goToAdjuntos(TeacherSubjectsViewModel vm, String subjectId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AttachmentsView(
+          subjectId:    subjectId,
+          teacherId:    widget.teacher?.id ?? '',
+          uploadedById: widget.teacher?.id ?? '',
+        ),
+      ),
+    );
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  Future<bool> _confirmDialog(String name) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: Text(
+              'Confirmar',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
+            content: Text(
+              '¿Quitar "$name" de esta asignación?',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(
+                  'Cancelar',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Quitar'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  void _snack(String msg, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? Colors.redAccent : AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(TeacherSubjectsViewModel vm) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    child: TextField(
+      controller: _searchCtrl,
+      style: TextStyle(color: AppColors.textPrimary),
+      onChanged: vm.setSearch,
+      decoration: InputDecoration(
+        hintText: 'Buscar materia...',
+        hintStyle: TextStyle(color: AppColors.placeholder),
+        prefixIcon: Icon(Icons.search, color: AppColors.placeholder),
+        filled: true,
+        fillColor: AppColors.inputFill,
+        contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        border: _border(AppColors.divider),
+        enabledBorder: _border(AppColors.divider),
+        focusedBorder: _border(AppColors.primary),
+        suffixIcon: vm.searchQuery.isNotEmpty
+            ? IconButton(
+                icon: Icon(Icons.clear, color: AppColors.placeholder),
+                onPressed: () {
+                  _searchCtrl.clear();
+                  vm.setSearch('');
+                },
+              )
+            : null,
+      ),
+    ),
+  );
+
+  OutlineInputBorder _border(Color c) => OutlineInputBorder(
+    borderRadius: BorderRadius.circular(8),
+    borderSide: BorderSide(color: c),
+  );
+
+  Widget _buildSkeleton() => ListView.builder(
+    padding: const EdgeInsets.all(16),
+    itemCount: 5,
+    itemBuilder: (_, __) => Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      height: 72,
+      decoration: BoxDecoration(
+        color: AppColors.inputFill,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 16),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(height: 14, width: 140, color: AppColors.divider),
+                const SizedBox(height: 8),
+                Container(height: 10, width: 90, color: AppColors.divider),
+              ],
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            width: 70,
+            height: 30,
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _buildError(TeacherSubjectsViewModel vm) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.wifi_off_rounded, size: 60, color: AppColors.textSecondary),
+        const SizedBox(height: 12),
+        Text(
+          vm.errorMessage!,
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton.icon(
+          onPressed: vm.refresh,
+          icon: const Icon(Icons.refresh),
+          label: const Text('Reintentar'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildEmpty() => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.link_off_rounded, size: 60, color: AppColors.textSecondary),
+        const SizedBox(height: 12),
+        Text(
+          'No hay asignaciones aún.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AssignSubjectTeacherPage(
+                allTeachers: widget.allTeachers,
+                allSubjects: widget.allSubjects,
+              ),
+            ),
+          ).then((_) => context.read<TeacherSubjectsViewModel>().refresh()),
+          icon: const Icon(Icons.add_link_rounded),
+          label: const Text('Asignar nueva relación'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildErrorBanner(TeacherSubjectsViewModel vm) => Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    decoration: BoxDecoration(
+      color: Colors.redAccent.withOpacity(0.1),
+      border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.error_outline, color: Colors.redAccent, size: 18),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            vm.errorMessage!,
+            style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// ── Card materia ──────────────────────────────────────────────────────────
+class _SubjectCard extends StatelessWidget {
+  final Subject subject;
+  final bool isAssigned;
+  final bool isLoading;
+  final String? periodoEtiqueta;
+  final VoidCallback? onToggle;
+  final VoidCallback? onAdjuntos;
+
+  const _SubjectCard({
+    required this.subject,
+    required this.isAssigned,
+    required this.isLoading,
+    this.periodoEtiqueta,
+    this.onToggle,
+    this.onAdjuntos,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: isAssigned ? AppColors.primary.withOpacity(0.08) : Colors.white,
+        border: Border.all(
+          color: isAssigned ? AppColors.primary : AppColors.divider,
+          width: 1.2,
+        ),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            leading: CircleAvatar(
+              backgroundColor: isAssigned
+                  ? AppColors.primary
+                  : AppColors.inputFill,
+              child: Text(
+                subject.nombre.substring(0, 2).toUpperCase(),
+                style: TextStyle(
+                  color: isAssigned ? Colors.white : AppColors.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            title: Text(
+              subject.nombre,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            subtitle: Text(
+              '${subject.creditos} créditos  •  ${subject.horas} h',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+            trailing: isLoading
+                ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  )
+                : OutlinedButton(
+                    onPressed: onToggle,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: isAssigned
+                          ? Colors.redAccent
+                          : AppColors.primary,
+                      side: BorderSide(
+                        color: isAssigned
+                            ? Colors.redAccent
+                            : AppColors.primary,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      minimumSize: const Size(76, 32),
+                    ),
+                    child: Text(
+                      isAssigned ? 'Quitar' : 'Asignar',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+          ),
+          if (isAssigned && periodoEtiqueta != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 6),
+              child: _MetaChip(
+                icon: Icons.event_note_rounded,
+                label: periodoEtiqueta!,
+              ),
+            ),
+          if (isAssigned && onAdjuntos != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
+              child: OutlinedButton.icon(
+                onPressed: isLoading ? null : onAdjuntos,
+                icon: const Icon(Icons.attach_file_rounded, size: 16),
+                label: const Text('Adjuntos', style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Card profesor (modo materia) ──────────────────────────────────────────
+class _TeacherLinkCard extends StatelessWidget {
+  final SubjectTeacher link;
+  final bool isBusy;
+  final VoidCallback onRemove;
+
+  const _TeacherLinkCard({
+    required this.link,
+    required this.isBusy,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = link.teacherName.trim().split(' ');
+    final initials = parts.length >= 2
+        ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
+        : link.teacherName.substring(0, 2).toUpperCase();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AppColors.divider, width: 1.2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: AppColors.primary,
+          child: Text(
+            initials,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Text(
+          link.teacherName,
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              link.teacherEmail,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+            if (link.periodoEtiqueta != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: _MetaChip(
+                  icon: Icons.event_note_rounded,
+                  label: link.periodoEtiqueta!,
+                ),
+              ),
+          ],
+        ),
+        trailing: isBusy
+            ? SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary,
+                ),
+              )
+            : IconButton(
+                icon: const Icon(
+                  Icons.link_off_rounded,
+                  color: Colors.redAccent,
+                ),
+                tooltip: 'Quitar asignación',
+                onPressed: onRemove,
+              ),
+      ),
+    );
+  }
+}
+
+// ── Info header ───────────────────────────────────────────────────────────
+class _InfoHeader extends StatelessWidget {
+  final String initials, title, subtitle, tag;
+  final String badge1Label, badge1Value, badge2Label, badge2Value;
+
+  const _InfoHeader({
+    required this.initials,
+    required this.title,
+    required this.subtitle,
+    required this.tag,
+    required this.badge1Label,
+    required this.badge1Value,
+    required this.badge2Label,
+    required this.badge2Value,
+  });
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.all(16),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: AppColors.divider),
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 6,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        CircleAvatar(
+          radius: 26,
+          backgroundColor: AppColors.primary,
+          child: Text(
+            initials,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              if (subtitle.isNotEmpty)
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+              if (tag.isNotEmpty)
+                Text(
+                  tag,
+                  style: TextStyle(color: AppColors.primary, fontSize: 11),
+                ),
+            ],
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            _Badge(label: badge1Label, value: badge1Value),
+            if (badge2Label.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              _Badge(label: badge2Label, value: badge2Value),
+            ],
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+class _Badge extends StatelessWidget {
+  final String label, value;
+  const _Badge({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: AppColors.inputFill,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: '$value ',
+            style: TextStyle(
+              color: AppColors.primary,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+          TextSpan(
+            text: label,
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+// ── Meta chip (periodo / modalidad) ───────────────────────────────────────
+class _MetaChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _MetaChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: AppColors.primary),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────
+class _EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  const _EmptyState({
+    required this.icon,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 60, color: AppColors.textSecondary),
+        const SizedBox(height: 12),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+        ),
+        if (actionLabel != null && onAction != null) ...[
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: onAction,
+            child: Text(
+              actionLabel!,
+              style: TextStyle(color: AppColors.primary),
+            ),
+          ),
+        ],
+      ],
+    ),
+  );
+}
