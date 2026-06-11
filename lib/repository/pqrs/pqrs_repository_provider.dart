@@ -1,5 +1,7 @@
 import '../../database/app_database.dart';
 import 'pqrs_repository.dart';
+import 'FirestorePQRSRepository.dart';
+import 'SyncingPQRSRepository.dart';
 
 class PQRSRepositoryProvider {
 
@@ -9,8 +11,17 @@ class PQRSRepositoryProvider {
     AppDatabase database,
   ) async {
 
+    final localRepository =
+    FloorPQRSRepository.initialize(database);
+
+    final remoteRepository =
+        FirestorePQRSRepository.initialize();
+
     final repository =
-        FloorPQRSRepository.initialize(database);
+        SyncingPQRSRepository.initialize(
+          localRepository,
+          remoteRepository,
+        );
 
     await repository.ensureInitialized();
 
