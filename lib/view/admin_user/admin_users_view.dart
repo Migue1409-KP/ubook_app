@@ -29,6 +29,15 @@ class _AdminUsersViewState extends State<AdminUsersView> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
